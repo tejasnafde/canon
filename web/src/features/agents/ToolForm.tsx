@@ -29,7 +29,10 @@ export function ToolForm({ spec }: { spec: ToolSpec }) {
       const data = await callTool(spec.name, typedArgs(spec, args))
       return { ms: Math.round(performance.now() - t0), data }
     },
-    onSettled: () => invalidateRecord(), // the call shows in the feed; record/flag also write
+    // the call shows in the feed; record and flag also write
+    onSettled: () => {
+      void invalidateRecord()
+    },
   })
   const set = (k: string, v: string) => setArgs(a => ({ ...a, [k]: v }))
   const check = spec.name === 'check_intent' && call.data ? CheckResult.safeParse(call.data.data) : undefined

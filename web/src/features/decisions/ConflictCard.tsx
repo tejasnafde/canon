@@ -4,7 +4,7 @@ import { ToneBadge } from '@/components/badges'
 import { QuoteBlock } from '@/components/citation'
 import { friendly } from '@/components/states'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { api } from '@/lib/api'
 import { alertTone, humanize } from '@/lib/format'
 import { invalidateRecord, q } from '@/lib/query'
@@ -44,7 +44,9 @@ export function ConflictCard({ a, decisionId, src, recordQuote }: Props) {
       toast.error('Could not resolve the alert', { description: friendly(err) })
     },
     onSuccess: (_alert, action) => toast.success(DONE[action]),
-    onSettled: () => invalidateRecord(),
+    onSettled: () => {
+      void invalidateRecord()
+    },
   })
 
   const s = src(a.source_id)
@@ -55,12 +57,12 @@ export function ConflictCard({ a, decisionId, src, recordQuote }: Props) {
 
   return (
     <Card className={cn('gap-0 py-0 transition-opacity duration-200', resolved ? 'opacity-60' : 'border-signal/50')}>
-      <CardHeader className={cn('flex items-center justify-between border-b py-2.5', resolved ? 'bg-muted' : 'bg-signal text-white')}>
+      <div className={cn('flex items-center justify-between border-b px-6 py-2.5', resolved ? 'bg-muted' : 'bg-signal text-white')}>
         <span className="font-mono text-xs tracking-[0.08em] uppercase">
           {resolved ? `Resolved / ${humanize(a.resolution ?? '')}` : 'Contradicted by'}
         </span>
         <span className="font-mono text-xs tracking-[0.08em] uppercase">{a.severity}</span>
-      </CardHeader>
+      </div>
       <CardContent className="flex flex-col gap-3 py-5">
         <ToneBadge tone={alertTone(a.kind)}>{a.kind}</ToneBadge>
         {s && <h3 className="text-xl font-medium">{s.title}</h3>}

@@ -1,41 +1,36 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider } from 'next-themes'
-import { StrictMode } from 'react'
+import { StrictMode, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/components/app-shell'
 import { ErrorBoundary, ErrorPage, RootFallback, RouteError } from '@/components/error-boundary'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import AboutPage from '@/features/about/AboutPage'
-import AgentsPage from '@/features/agents/AgentsPage'
-import AskPage from '@/features/ask/AskPage'
-import BenchmarkPage from '@/features/benchmark/BenchmarkPage'
-import DecisionListPage from '@/features/decisions/DecisionListPage'
-import DecisionPage from '@/features/decisions/DecisionPage'
-import HomePage from '@/features/home/HomePage'
-import IngestPage from '@/features/ingest/IngestPage'
 import { queryClient } from '@/lib/query'
 import { installGlobalHandlers } from '@/lib/report'
 import './index.css'
 
 installGlobalHandlers()
 
+// one chunk per page; the shell and the first page load together
+const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
+
 const router = createBrowserRouter([
   {
     element: <AppShell />,
     errorElement: <RouteError />,
+    HydrateFallback: () => null,
     children: [
       {
         errorElement: <RouteError />,
         children: [
-          { path: '/', element: <HomePage /> },
-          { path: '/decisions', element: <DecisionListPage /> },
-          { path: '/decisions/:id', element: <DecisionPage /> },
-          { path: '/ask', element: <AskPage /> },
-          { path: '/ingest', element: <IngestPage /> },
-          { path: '/agents', element: <AgentsPage /> },
-          { path: '/benchmark', element: <BenchmarkPage /> },
-          { path: '/about', element: <AboutPage /> },
+          { path: '/', lazy: page(() => import('@/features/home/HomePage')) },
+          { path: '/decisions', lazy: page(() => import('@/features/decisions/DecisionListPage')) },
+          { path: '/decisions/:id', lazy: page(() => import('@/features/decisions/DecisionPage')) },
+          { path: '/ask', lazy: page(() => import('@/features/ask/AskPage')) },
+          { path: '/ingest', lazy: page(() => import('@/features/ingest/IngestPage')) },
+          { path: '/agents', lazy: page(() => import('@/features/agents/AgentsPage')) },
+          { path: '/benchmark', lazy: page(() => import('@/features/benchmark/BenchmarkPage')) },
+          { path: '/about', lazy: page(() => import('@/features/about/AboutPage')) },
           { path: '*', element: <ErrorPage notFound /> },
         ],
       },
@@ -49,13 +44,11 @@ if (!root) throw new Error('index.html has no #root')
 createRoot(root).render(
   <StrictMode>
     <ErrorBoundary fallback={() => <RootFallback />}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider delayDuration={300}>
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delayDuration={300}>
+          <RouterProvider router={router} />
+        </TooltipProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

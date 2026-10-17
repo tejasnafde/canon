@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Menu, Moon, Search, Sun } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/lib/theme'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router-dom'
 import { MOCK } from '@/lib/api'
@@ -134,17 +134,12 @@ function Health() {
 }
 
 function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const dark = resolvedTheme === 'dark'
+  const { theme, toggle } = useTheme()
+  const dark = theme === 'dark'
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setTheme(dark ? 'light' : 'dark')}
-          aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-        >
+        <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}>
           {dark ? <Sun aria-hidden /> : <Moon aria-hidden />}
         </Button>
       </TooltipTrigger>
