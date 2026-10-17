@@ -76,7 +76,7 @@ async def follow_up(app_id: str, token: str, task: asyncio.Task) -> None:
 @router.post("/discord/interactions")
 async def interactions(request: Request, background: BackgroundTasks):
     body = await request.body()
-    if not verify(os.environ.get("DISCORD_PUBLIC_KEY", ""), body,
+    if not verify(os.environ.get("CANON_DISCORD_PUBLIC_KEY") or os.environ.get("DISCORD_PUBLIC_KEY", ""), body,
                   request.headers.get("x-signature-ed25519"), request.headers.get("x-signature-timestamp")):
         raise HTTPException(401, "invalid request signature")
     i = json.loads(body)

@@ -50,6 +50,8 @@ P0 = must ship and be in the video. P1 = ship if P0 is green by 2026-10-18 10:00
   Reads cover `acme` plus the visitor workspace. Writes go to the visitor workspace.
 - `POST /api/workspace/reset` deletes the visitor workspace.
 - MCP/agent calls without a header use workspace `agents` (a shared, resettable demo space).
+- Messages synced from the public Discord demo server go to workspace `discord`.
+  Visitor reads cover the base workspace, `agents`, `discord` and their own workspace.
 
 ## Firestore data model (database `canon`)
 
@@ -66,6 +68,7 @@ All docs carry `workspace: str` and `created_at: timestamp`.
   `quotes: [{source_id, quote}]`, `status` (open|resolved), `resolution`, `created_by`.
 - `activity/{id}`: `actor` (e.g. `human:web`, `agent:claude-code`, `agent:pm-bot`),
   `action` (ingest|ask|check|record|briefing|resolve), `summary`, `ref_ids: [id]`, `verdict`.
+- `connector_state/{id}`: per-channel Discord cursor, daily and per-user ingest counters.
 - `people/{id}`: `name`, `role`, `team`, `status` (active|left), `left_at`.
 
 Vector indexes: `chunks.embedding` and `decisions.embedding`, 768 dims, COSINE, with
