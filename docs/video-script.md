@@ -1,40 +1,40 @@
 # Canon demo video script (3:30)
 
-Target length 3:30, hard limit 4:00. Narration is about 480 words, at about 140 words per minute.
-Record at 1280x800 or larger. Use a clean browser profile and a fresh workspace (Ingest, then "Reset my workspace").
+Target 3:30, hard limit 4:00. Tejas narrates in his own voice, about 140 words per minute (about 480 words).
+Every scene is one clip file, recorded at 1920x1080. Screen clips come from Playwright against https://canon.tn07.dev; motion clips (01, 10, 12) are built separately. The editor lays the clips end to end in this order and cuts each to its slot.
 
-Before you record:
+Before recording:
 
-- Warm the service: open https://canon-tn07.web.app and wait for "Online" in the header. Cloud Run scales to zero, so the first call is slower.
-- In a terminal, run `claude mcp add --transport http canon https://canon.tn07.dev/mcp` and start Claude Code in a scratch repo that has a `.github/workflows/` folder.
-- Have `backend/scripts/agent_demo.py` ready in a second terminal tab.
-- Copy the Friday paste text (below) to the clipboard.
+- Warm the service: open https://canon.tn07.dev and wait for the counts on Home. Cloud Run scales to zero.
+- Use a fresh browser workspace (no earlier pastes).
+- Terminal for clip 05: `claude mcp add --transport http canon https://canon.tn07.dev/mcp`, then start Claude Code in a scratch repo that has `.github/workflows/`.
+- Discord for clip 07: join https://discord.gg/HwSgjmcgF5 with a test account. Have the web app open on Decisions in a second window.
 
-| Time | On screen | Narration |
-|---|---|---|
-| 0:00 - 0:15 | Home page of https://canon-tn07.web.app, Engineer persona. Slowly scroll past the briefing and "Next best actions". | "This is Canon, the shared memory of a company. It keeps one record of decisions, for people and for AI agents. And it flags the moment anyone, or anything, drifts from it." |
-| 0:15 - 0:30 | Cut to the Claude Code terminal. Type: `Add a GitHub Actions cron that deploys to production every Friday.` | "Here is the problem. Coding agents now change real systems. They read the code, but they never read the incident review where the team decided something." |
-| 0:30 - 0:55 | Claude Code calls the `check_intent` tool. Show the tool result: verdict `block`, the decision "no production deploys on Fridays, including scheduled jobs and configuration-only releases", owner Mei Tan. Claude Code stops and explains. | "Claude Code has Canon as an MCP server. Before it writes the workflow, it calls check intent. Canon finds the decision from the March incident review: no production deploys on Fridays, scheduled jobs included. The verdict is block, with the quote and the owner. The agent stops and tells me why." |
-| 0:55 - 1:05 | Switch to the browser, Home page. The red "Agent blocked" card and the live Agent activity feed show the call. | "Every agent call lands in the live activity feed. The team sees what their agents tried, and what Canon said." |
-| 1:05 - 1:25 | Second terminal: run `uv run python scripts/agent_demo.py https://canon.tn07.dev/mcp`. The script first repeats the blocked check, then the PM bot runs `catch_me_up` (persona pm, last 30 days) and `ask_why` ("Why do we not deploy on Fridays?"). Let that part scroll. | "Agents also read the record. This product manager bot asks Canon to catch it up on the last thirty days, then asks why we stopped Friday deploys. It gets a briefing and a cited answer, in seconds." |
-| 1:25 - 1:35 | Browser: Home, switch the persona to PM. Set Since to the widest range. Show the ranked actions with scores and reasons (Route Lens price and GA date items). | "People get the same briefing, ranked by what to do next, with a score and the reasons behind it." |
-| 1:35 - 2:05 | Go to Ingest. Kind `paste`, author `Pranav Menon`, title `Dispatch cron review`. Paste the Friday text and click "Ingest and reconcile". Show the extracted decision with its verified quote and the alert. Then go to Home and open the alert on the **Release process** wiki: "contradicted by a newer decision", with both quotes. | "Now a human makes the same mistake. Pranav pastes a note: a Friday refresh, taken from the Release process wiki. Canon extracts the decision, checks the quote word for word, and raises an alert against the record. It also shows the real cause. The Release process wiki still lists the old Friday window. Canon marks it as contradicted by the newer decision, with both quotes side by side." |
-| 2:05 - 2:30 | Home, switch the persona to New hire, since company day one. Scroll to "Who to ask". Then Ask why: type `Which company acquired Northwind Labs?` and show the refusal. | "A new hire gets onboarding from the same record, plus who to ask. And when the record has no answer, Canon says I do not know. It does not invent one." |
-| 2:30 - 3:00 | Architecture slide from the deck (or the README mermaid diagram). Point to each box as you name it. | "Under the hood. Firebase Hosting serves the web app. One Cloud Run service runs the API, the MCP server, and an ADK agent over A2A. Gemini 3.5 Flash-Lite on Vertex AI does extraction, reconciliation and verdicts, all with structured output. Gemini embeddings and Firestore vector search, filtered by workspace, find the right decisions. Every quote is checked against its source, and source text is fenced off from instructions." |
-| 3:00 - 3:20 | Benchmark page in the app (or the benchmark slide). Highlight decisions found, refusals, latency. | "We planted the problems in a synthetic company archive, then measured. Canon found 37 of 38 decisions, refused all 5 unanswerable questions, and got 13 of 15 agent checks right, at a median of about one second. We show the misses too." |
-| 3:20 - 3:30 | Back to the Home page. Show the URL `canon-tn07.web.app` and the MCP command. | "Canon. One record of decisions, for your people and your agents. Try it now, and connect your own agent in one line." |
+| Clip | Time | On screen | Narration |
+|---|---|---|---|
+| `clip-01-title.mp4` (motion) | 0:00 - 0:07 | Ribbon logo draws in on paper. "Canon. The shared memory of a company, for its people and its AI agents." Team Localhost. | "Companies decide things every day. Then they forget. Canon remembers." |
+| `clip-02-home.mp4` | 0:07 - 0:20 | Home. Hold on the headline and the counts: 380 items read, 345 official decisions, 27 documents now out of date. Scroll slowly to "Pick a story". | "Canon read two years of a made-up company, Northwind Labs. Three hundred eighty sources. It found three hundred forty-five decisions, and twenty-seven documents that are now wrong." |
+| `clip-03-new-hire.mp4` | 0:20 - 0:38 | Click "I am new here". Hold on the red warning: the Priority support routing page is out of date, old line and new decision side by side. Scroll to "5 things you must know" and "People to ask". | "A new hire gets the five things that will get them in trouble. And a warning: this handbook page is out of date, do not follow it. Here is the old line, and the decision that replaced it. Plus who to ask, by topic." |
+| `clip-04-catch-up.mp4` | 0:38 - 0:55 | "What changed while I was away?" Pick Engineer: summary and ranked to-do list with scores. Switch to Sales: the list changes. | "Back from leave? Pick your role. An engineer gets deploy and incident changes, ranked by urgency. Switch to sales, and it is pricing and promises to customers. Fourteen roles, one record." |
+| `clip-05-agent-blocked.mp4` | 0:55 - 1:30 | "Watch an AI agent get stopped": the four steps and the red Block with the rule, owner Mei Tan, 9 March 2026. Cut to the real Claude Code terminal: prompt "Add a GitHub Actions cron that deploys the dispatch service to production every Friday." Claude Code calls `canon.check_intent`, gets block, stops and offers Tuesday or Thursday morning. | "Now the part nobody else does. Coding agents ship code on their own. They never read the incident review. So Claude Code asks Canon first, over MCP. A real tool call. Canon finds the rule: no production deploys on Fridays, scheduled jobs included. Who made it, when, and the outage behind it. The verdict is block. The agent does not write the job. It explains why, and offers Tuesday instead." |
+| `clip-06-paste-drift.mp4` | 1:30 - 1:48 | "Paste a new message". Sample "Friday deploy job", click "Check this message". Show the extracted decision with its verified quote, and what it goes against: the Friday ban and the old Release process wiki. | "People make the same mistake. Pranav schedules a Friday job, from a slot in the wiki. Canon checks the quote word for word, flags the clash with the Friday ban, and shows the real cause: the wiki is out of date." |
+| `clip-07-discord-live.mp4` | 1:48 - 2:15 | Discord #engineering: post "lets ship the dispatch cron this friday". Speed up the wait (label "about a minute"). Canon replies under the message with the rule and a link. Cut to the web app: the new alert, marked from Discord. | "This also runs live, on a public Discord server. Every minute, Canon reads new messages, threads, files and screenshots. I post: let's ship the dispatch cron this Friday. Canon replies under my message with the rule it breaks. The alert lands in the web app. And a guest cannot change a rule: Canon marks it unverified and asks the right lead." |
+| `clip-08-ask-why.mp4` | 2:15 - 2:32 | Ask why: "Why can we no longer deploy production on Fridays?" Show the answer, timeline and verified quotes. Then "Which company acquired Northwind Labs?" and the refusal. | "Ask why, and you get a cited answer with the timeline. Ask something the record does not hold, and Canon says: I do not know. It does not invent an answer." |
+| `clip-09-decisions-org.mp4` | 2:32 - 2:47 | Decisions list: official, proposed, out-of-date copies. Open People: the org tree, someone who left, their successor. | "Every decision shows its authority and its effective date. Old copies are marked outdated. The org tree says who owns what, who left, and who took over." |
+| `clip-10-architecture.mp4` (motion) | 2:47 - 3:05 | Architecture diagram builds box by box: Firebase Hosting, Cloud Run (API, MCP, ADK agent over A2A, Discord sync), Cloud Scheduler, Gemini on Vertex AI, embeddings, Firestore vector search. | "Firebase Hosting serves the app. One Cloud Run service runs the API, MCP, and an ADK agent over A2A. Gemini Flash-Lite on Vertex judges with structured output, and reads PDFs and images. Firestore holds the record, with vector search." |
+| `clip-11-benchmark.mp4` | 3:05 - 3:20 | "How well does it work?": 82 of 82, 35 of 39, 18 of 19, 32 of 37, 5 of 5. Scroll to memory health. | "We planted problems in the archive and measured. Eighty-two of eighty-two decisions found. Thirty-five of thirty-nine changes caught. All five unanswerable questions refused. The misses are on the page too." |
+| `clip-12-close.mp4` (motion) | 3:20 - 3:30 | Logo, canon.tn07.dev, the one-line MCP command, the Discord invite. | "Canon. One memory, for your people and your agents. Try it, and connect your agent in one line." |
 
-## Friday paste text
+## Text to type
 
-From `data/samples/live_paste.json`, key `friday-contradiction`:
+- Clip 05, Claude Code: `Add a GitHub Actions cron that deploys the dispatch service to production every Friday.`
+- Clip 06: the "Friday deploy job" sample (`web/src/samples/live_paste.json`, key `friday-contradiction`).
+- Clip 07, Discord #engineering: `lets ship the dispatch cron this friday`
+- Clip 08: `Why can we no longer deploy production on Fridays?` then `Which company acquired Northwind Labs?`
 
-```
-Pranav: I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time. It runs unattended, including configuration changes. I used the slot from the Release process wiki. This is routine housekeeping, not incident mitigation.
-```
+## Notes
 
-## Notes for the recording
-
-- The numbers in the narration come from `backend/canon/eval_report.json` (run 2026-10-17 12:47 UTC). If a newer run is committed, update the 3:00 line to match it.
-- Model output varies between runs. On one live probe the Friday paste was classed as an update with a premise alert, not a contradiction. Record the Ingest step until it shows a clear alert, and keep the Release process stale-doc alert on screen either way: it is part of the seeded record.
-- If Claude Code does not call `check_intent` on its own, add "Check with Canon first." to the prompt. Do not edit the tool output.
-- Speak slowly and keep the microphone close. Judges asked for clear, loud audio.
+- Numbers come from `backend/canon/eval_report.json` (dataset acme4, run 2026-10-17, check score re-measured 2026-10-18) and `/api/stats` on 2026-10-18. If either changes, update clips 02 and 11 and their lines.
+- Model output varies. Record clips 06 and 07 until they show a clear alert. Do not edit tool output.
+- If Claude Code does not call `check_intent` on its own, add "Check with Canon first." to the prompt.
+- Speak slowly, microphone close. Judges asked for clear, loud audio.
