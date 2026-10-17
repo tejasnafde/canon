@@ -193,6 +193,14 @@ async def _unhandled(request: Request, exc: Exception):  # fallback; the middlew
 
 
 Ws = Header(default=None, alias="X-Canon-Workspace")
+DISCORD = "discord"
+
+
+def view(x: str | None) -> list[str]:
+    """Read scope for the record pages: also the live Discord workspace, so judges see their message land.
+    The visitor workspace stays last, so writes (alert resolution) still go there."""
+    ws = scope(x)
+    return list(dict.fromkeys([ws[0], DISCORD, ws[-1]]))
 
 
 @app.get("/health")
@@ -276,34 +284,34 @@ async def expert(req: ExpertRequest, x: str | None = Ws):
 
 @app.get("/api/decisions", response_model=list[Decision])
 async def decisions(status: str | None = None, topic: str | None = None, x: str | None = Ws):
-    return await core.list_decisions(scope(x), status=status or None, topic=topic or None)
+    return await core.list_decisions(view(x), status=status or None, topic=topic or None)
 
 
 @app.get("/api/decisions/{decision_id}", response_model=DecisionDetail)
 async def decision(decision_id: str, x: str | None = Ws):
-    return await core.get_decision(decision_id, scope(x))
+    return await core.get_decision(decision_id, view(x))
 
 
 @app.get("/api/alerts", response_model=list[Alert])
 async def alerts(status: str | None = None, x: str | None = Ws):
-    return await core.list_alerts(scope(x), status=status or None)
+    return await core.list_alerts(view(x), status=status or None)
 
 
 @app.post("/api/alerts/{alert_id}/resolve", response_model=Alert)
 async def resolve(alert_id: str, req: ResolveRequest, x: str | None = Ws):
     enforce(req)
-    return await core.resolve_alert(alert_id, req, scope(x))
+    return await core.resolve_alert(alert_id, req, view(x))
 
 
 @app.get("/api/sources/{source_id}", response_model=Source)
 async def source(source_id: str, x: str | None = Ws):
-    return await core.get_source(source_id, scope(x))
+    return await core.get_source(source_id, view(x))
 
 
 @app.get("/api/activity", response_model=list[Activity])
 async def activity(since: str | None = None, x: str | None = Ws):
-    # Visitors also see agent traffic (MCP/A2A write to "agents"), so the feed shows Claude Code live.
-    return await core.list_activity(list(dict.fromkeys([BASE, AGENTS, *scope(x)])), since_iso=since or None)
+    # Visitors also see agent traffic (MCP/A2A write to "agents") and Discord, so the feed shows both live.
+    return await core.list_activity(list(dict.fromkeys([BASE, AGENTS, DISCORD, *scope(x)])), since_iso=since or None)
 
 
 @app.get("/api/people", response_model=list[Person])
