@@ -1,1 +1,0 @@
-{"verdict": "block", "explanation": "Deploying to production on Friday violates the decision \"The team will not perform production deploys on Fridays, including scheduled jobs and configuration-only releases\" by Mei.", "deciding": ["D1"]}

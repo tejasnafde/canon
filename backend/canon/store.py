@@ -4,12 +4,14 @@ Docs are plain dicts with `id`, `workspace`, `created_at`. `embedding` is a list
 write and is stripped from every read. Every read takes the workspace scope explicitly.
 """
 import asyncio
+import logging
 import math
 import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+log = logging.getLogger("canon.store")
 COLLECTIONS = ["sources", "chunks", "decisions", "alerts", "activity", "people", "resolutions"]
 
 
@@ -149,9 +151,28 @@ class FirestoreStore:
             out.append((_clean({k2: v for k2, v in d.items() if k2 != "_dist"}), 1.0 - d["_dist"]))
         return out
 
+    async def _scan_ws(self, coll, ws, vector, k):
+        """Brute-force cosine over the workspace. Used when the vector index is missing or erroring."""
+        q = self.client.collection(coll).where(filter=self.fs.FieldFilter("workspace", "==", ws))
+        scored = []
+        async for s in q.stream():
+            d = s.to_dict()
+            if d.get("embedding") is not None:
+                scored.append((_clean(d), _cos(vector, list(d["embedding"]))))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored[:k]
+
+    async def _nearest_or_scan(self, coll, ws, vector, k):
+        try:
+            return await self._nearest_ws(coll, ws, vector, k)
+        except Exception as e:  # FailedPrecondition when the index is missing, or any backend error
+            log.warning("vector search on %s failed (%s: %s), falling back to in-memory scan",
+                        coll, type(e).__name__, str(e)[:200])
+            return await self._scan_ws(coll, ws, vector, k)
+
     async def nearest(self, coll: str, workspaces: list[str], vector: list[float], k: int) -> list[tuple[dict, float]]:
         # One equality-prefiltered query per workspace, merged: no `in` filter on vector queries.
-        parts = await asyncio.gather(*(self._nearest_ws(coll, ws, vector, k) for ws in workspaces))
+        parts = await asyncio.gather(*(self._nearest_or_scan(coll, ws, vector, k) for ws in workspaces))
         out = sorted((x for p in parts for x in p), key=lambda x: x[1], reverse=True)
         return out[:k]
 

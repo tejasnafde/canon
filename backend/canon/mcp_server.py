@@ -10,6 +10,7 @@ from typing import Literal
 from mcp.server.mcpserver import Context, MCPServer
 
 from canon import core
+from canon.limits import enforce
 from canon.models import (
     Alert, AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest, CheckResult, Decision,
     IngestRequest, IngestResult, Source,
@@ -74,6 +75,7 @@ async def check_intent(intent: str, ctx: Context, actor: str = "") -> CheckResul
     decision blocks the action and who owns it. On warn: proceed only after telling
     the user. `actor` is your agent name, e.g. "claude-code".
     """
+    enforce({"intent": intent, "actor": actor})
     ws = _scope(ctx)
     return await core.check(CheckRequest(intent=intent, actor=_actor(ctx, actor)), ws)
 
@@ -86,6 +88,7 @@ async def search_decisions(query: str, ctx: Context, limit: int = 5) -> list[Dec
     Firestore", "API versioning") before designing or proposing something. Returns
     decisions with statement, rationale, owner, date and source quotes.
     """
+    enforce({"query": query})
     ws = _scope(ctx)
     found = await core.search_decisions(query, ws, limit=max(1, min(limit, 20)))
     await core.log_activity(ws[-1], _actor(ctx, ""), "search", f"search: {query}",
@@ -101,6 +104,7 @@ async def ask_why(question: str, ctx: Context, actor: str = "") -> AskResult:
     architecture. Returns an answer, citations (source, quote) and a decision
     timeline. If `refused` is true, the record has no answer: say so and do not guess.
     """
+    enforce({"question": question, "actor": actor})
     ws = _scope(ctx)
     return await core.ask(AskRequest(question=question, actor=_actor(ctx, actor)), ws)
 
@@ -114,6 +118,7 @@ async def catch_me_up(ctx: Context, persona: Literal["engineer", "pm", "new_hire
     ago). Returns a summary, highlights and a ranked next-best-action list with
     reasons and citations. Use at the start of a task or when joining a project.
     """
+    enforce({"since": since, "actor": actor})
     ws = _scope(ctx)
     when = datetime.fromisoformat(since) if since else datetime.now(timezone.utc) - timedelta(days=7)
     req = BriefingRequest(persona=persona, since=when, actor=_actor(ctx, actor))
@@ -131,6 +136,7 @@ async def record_decision(statement: str, rationale: str, source_text: str, ctx:
     record: new, same, update (supersedes an older decision) or contradiction (an
     alert is raised for a human).
     """
+    enforce({"statement": statement, "rationale": rationale, "source_text": source_text, "actor": actor})
     ws = _scope(ctx)
     who = _actor(ctx, actor)
     src = Source(workspace=ws[-1], kind="agent", title=statement[:120], author=who,
@@ -148,4 +154,5 @@ async def flag_conflict(description: str, source_text: str, ctx: Context, actor:
     `description` says what conflicts with what; `source_text` is the verbatim
     conflicting text. Returns the open alert, linked to the closest decision.
     """
+    enforce({"description": description, "source_text": source_text, "actor": actor})
     return await core.raise_alert(description, source_text, _actor(ctx, actor), _scope(ctx))
