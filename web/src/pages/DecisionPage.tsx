@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Avatar, Bar, ErrorState, TextSkeleton } from '@/components/states'
 import { q } from '@/lib/query'
-import { actorName, fmtDate, fmtLong, quoteFrom, ruleOf, srcLine } from '@/lib/record'
+import { actorName, breaksByDecision, fmtDate, fmtLong, quoteFrom, srcLine } from '@/lib/record'
 import type { Alert, DecisionDetail } from '@/lib/schemas'
 import { useTitle } from '@/lib/title'
 
@@ -42,10 +42,10 @@ function Detail({ d }: { d: DecisionDetail }) {
   const activity = useQuery(q.activity())
   const role = people.data?.find(p => p.name === dec.owner)?.role.toLowerCase()
   const where = d.sources.find(s => s.id === dec.quotes[0]?.source_id)
-  const breaking = d.alerts.filter(a => a.status === 'open' && ruleOf(a) === dec.id)
+  const breaking = breaksByDecision(d.alerts).get(dec.id) ?? []
   const replaces = d.timeline.filter(t => dec.supersedes.includes(t.decision_id))
   const replacedBy = dec.superseded_by ? d.timeline.find(t => t.decision_id === dec.superseded_by) : undefined
-  const checks = (activity.data ?? []).filter(a => a.ref_ids.includes(dec.id)).slice(0, 6)
+  const checks = (activity.data ?? []).filter(a => a.action === 'check' && a.ref_ids.includes(dec.id)).slice(0, 6)
 
   const status =
     dec.status !== 'active' ? (
@@ -151,16 +151,7 @@ function Detail({ d }: { d: DecisionDetail }) {
               </li>
             ))}
             {breaking.map(a => (
-              <li key={a.id} className="bad">
-                <span className="when">{fmtDate(a.created_at)}</span>
-                <span>
-                  {a.kind === 'stale_doc'
-                    ? 'A document still says the old rule.'
-                    : a.kind === 'premise_changed'
-                      ? 'A reason behind it may no longer hold.'
-                      : 'Something goes against it.'}
-                </span>
-              </li>
+              <BreakRow key={a.id} a={a} />
             ))}
           </ul>
 
@@ -207,6 +198,8 @@ function Breaker({ a }: { a: Alert }) {
           `${title ?? 'A document'} still gives the old rule.`
         ) : a.kind === 'premise_changed' ? (
           `${title ?? 'New information'} may change the reason behind it.`
+        ) : a.kind === 'agent_violation' ? (
+          `${actorName(a.created_by)} was stopped from breaking it.`
         ) : (
           `${title ?? 'A new message'} goes against it.`
         )}
@@ -219,6 +212,23 @@ function Breaker({ a }: { a: Alert }) {
           {doc ? '. Out of date.' : ''}
         </p>
       )}
+    </li>
+  )
+}
+
+/** A break in the timeline, dated by when its source was written. */
+function BreakRow({ a }: { a: Alert }) {
+  const src = useQuery({ ...q.source(a.source_id ?? ''), enabled: !!a.source_id })
+  return (
+    <li className="bad">
+      <span className="when">{fmtDate(src.data?.ts ?? a.created_at)}</span>
+      <span>
+        {a.kind === 'stale_doc'
+          ? `${src.data?.title ?? 'A document'} still says the old rule.`
+          : a.kind === 'premise_changed'
+            ? 'A reason behind it may no longer hold.'
+            : `${src.data?.title ?? 'Something'} goes against it.`}
+      </span>
     </li>
   )
 }

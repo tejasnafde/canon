@@ -70,7 +70,7 @@ export default function NewHirePage() {
           ) : decisions.isPending || alerts.isPending ? (
             <ListSkeleton rows={5} />
           ) : (
-            <ol className="list must">
+            <ol className="list must" style={{ marginTop: 20 }}>
               {must.map((d, i) => (
                 <li key={d.id}>
                   <span className="n">{i + 1}</span>

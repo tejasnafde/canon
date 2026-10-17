@@ -188,6 +188,9 @@ nav.menu {
   flex: 1;
   align-items: baseline;
 }
+.kbd.far {
+  margin-left: auto;
+}
 nav.menu a {
   text-decoration: none;
   color: var(--ink-2);
@@ -201,9 +204,6 @@ nav.menu a:hover {
 nav.menu a.active {
   color: var(--ink);
   border-bottom-color: var(--ink);
-}
-nav.menu a.far {
-  margin-left: auto;
 }
 .kbd {
   font: 13px var(--sans);
@@ -858,6 +858,9 @@ table.rows td.owner {
 .legend b {
   color: var(--ink);
   font-weight: 500;
+}
+.legend b.breaks {
+  color: var(--signal);
 }
 .result {
   margin-top: 24px;

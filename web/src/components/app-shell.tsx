@@ -28,7 +28,7 @@ export function AppShell() {
                 {n.label}
               </NavLink>
             ))}
-            <button type="button" className="kbd" onClick={() => setCmdOpen(true)} aria-label="Search, shortcut Command K">
+            <button type="button" className="kbd far" onClick={() => setCmdOpen(true)} aria-label="Search, shortcut Command K">
               {MAC ? '⌘K' : 'Ctrl K'}
             </button>
           </nav>

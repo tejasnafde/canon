@@ -232,7 +232,7 @@ function Conflict({ a, r, rule }: { a: Alert; r: IngestResult; rule: Decision | 
   const oldSrc = useQuery({ ...q.source(old?.source_id ?? ''), enabled: !!old })
   return (
     <div className="flag" style={{ marginBottom: 48 }}>
-      <h3>Goes against {rule ? <q>{rule.statement}</q> : 'an active decision'}.</h3>
+      <h3>Goes against {rule ? <q>{rule.statement}</q> : 'an active decision.'}</h3>
       <div className="vs">
         <div>
           <span className="label">The new message, today</span>

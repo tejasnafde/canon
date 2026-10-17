@@ -82,6 +82,8 @@ export const avatar = (name: string) => `https://api.dicebear.com/9.x/notionists
 export function actorName(actor: string): string {
   const m = /^human:discord\/(.+)$/.exec(actor)
   if (m?.[1]) return `${m[1]} on Discord`
+  if (actor === 'human:web') return 'A visitor'
+  if (actor === 'canon') return 'Canon'
   return actor.replace(/^agent:/, '').replace(/^human:/, '')
 }
 
@@ -94,12 +96,15 @@ export function ruleOf(a: Alert): string | null {
   return a.kind === 'contradiction' ? (a.related_decision_id ?? a.decision_id) : a.decision_id
 }
 
-/** Open alerts grouped by the decision they break. */
+/** Open alerts grouped by the decision they break. One source counts once per decision and kind. */
 export function breaksByDecision(alerts: Alert[]): Map<string, Alert[]> {
   const m = new Map<string, Alert[]>()
+  const seen = new Set<string>()
   for (const a of alerts) {
     const id = ruleOf(a)
-    if (a.status !== 'open' || !id) continue
+    const key = `${id ?? ''}|${a.kind}|${a.source_id ?? a.id}`
+    if (a.status !== 'open' || !id || seen.has(key)) continue
+    seen.add(key)
     m.set(id, [...(m.get(id) ?? []), a])
   }
   return m

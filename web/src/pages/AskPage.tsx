@@ -63,7 +63,7 @@ export default function AskPage() {
                 <span className="muted">Canon did not answer this example.</span>
               ) : refusal.data.refused ? (
                 <>
-                  <b style={{ fontWeight: 500 }}>I do not know.</b> {refusal.data.answer}
+                  <b style={{ fontWeight: 500 }}>I do not know.</b> {stripIdk(refusal.data.answer)}
                 </>
               ) : (
                 refusal.data.answer
@@ -78,6 +78,8 @@ export default function AskPage() {
     </main>
   )
 }
+
+const stripIdk = (s: string) => s.replace(/^\s*I do not know\.?\s*/i, '')
 
 function AskForm({ initial, onAsk }: { initial: string; onAsk: (q: string) => void }) {
   const [draft, setDraft] = useState(initial)
@@ -105,7 +107,7 @@ function Answer({ r }: { r: AskResult }) {
           Answered in {secs(r.latency_ms)}
         </p>
         <p>
-          <b style={{ fontWeight: 500 }}>I do not know.</b> {r.answer}
+          <b style={{ fontWeight: 500 }}>I do not know.</b> {stripIdk(r.answer)}
         </p>
       </>
     )
