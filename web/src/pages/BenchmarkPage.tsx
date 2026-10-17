@@ -105,7 +105,10 @@ export function healthRows(r: EvalReport): { key: string; fig: ReactNode; title:
     out.push({
       key: 'health_chains_correct',
       fig: <Frac a={r.health_chains_correct} b={r.health_chains} />,
-      title: `Kept the history of ${r.health_chains_correct} of ${r.health_chains} rules that changed over time`,
+      title:
+        r.health_chains_correct === r.health_chains
+          ? 'Kept the full history of every rule that changed over time'
+          : `Kept the history of ${r.health_chains_correct} of ${r.health_chains} rules that changed over time`,
       body: 'Each new version points back at the one it replaced, in the right order.',
     })
   if (r.authority_cases != null && r.authority_correct != null)
