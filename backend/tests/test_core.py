@@ -93,6 +93,18 @@ def test_relation_decided_in_code_from_flags():
     assert decide([a("D2", s=True)], labels, yes)[0] == "update"
     assert decide([a("D2", s=True)], labels, no)[0] == "new"
     assert decide([a("D9", c=True)], labels, yes)[0] == "new"  # unknown label
+    # A known breach alone is not a conflict target: agreeing with the rule it broke is not a new contradiction.
+    assert decide([a("D1", c=True)], labels, no, {"d-breach"})[0] == "new"
+    # Two one-off actions that disagree (who covers a pager) are coordination, not a contradiction.
+    chore = {"id": "d-chore", "owner": "Yuki Mori", "kind": "action"}
+    assert decide([a("D1", c=True)], {"D1": chore}, no)[0] == "new"
+    # Revision wording in the source stands in for a missed explicit_supersede, but never for authority.
+    assert decide([a("D2", c=True)], labels, yes, revises=True)[0] == "update"
+    assert decide([a("D2", c=True)], labels, no, revises=True)[0] == "contradiction"
+    from canon.reconcile import REVISION
+    assert REVISION.search("Use three rounds. This replaces our January agreement.")
+    assert REVISION.search("Lower the timeout from 800 to 600 milliseconds.")
+    assert not REVISION.search("Please hold that packet while I replace the attachment.")
 
 
 async def test_contradiction_flags_the_stale_doc_it_relies_on():
@@ -289,3 +301,22 @@ def test_check_verdict_is_decided_in_code():
     assert verdict_of([(a, j())], {"a"})[0] == "warn"  # relies on a broken premise
     v, deciding = verdict_of([(a, j(violates=True)), (b, j(violates=True))], {"a"})
     assert v == "block" and [d for d, _ in deciding] == [b]
+
+
+async def test_repeating_a_replaced_rule_contradicts_its_successor():
+    fake(Extraction=extraction(("Use five interview rounds for permanent hires.", ["Use five interview rounds"], [])))
+    old = (await ingest("Use five interview rounds.", ts="2026-01-01T00:00:00Z")).decisions[0]
+    j = lambda *flags: {"assessments": [{"decision": f"D{i + 1}", "restates": r, "conflicts": c,  # noqa: E731
+                                         "explicit_supersede": s, "why": "x"} for i, (r, c, s) in enumerate(flags)],
+                        "authority_evidence": ""}
+    fake(Extraction=extraction(("Use three interview rounds for permanent hires.", ["Use three interview rounds"], [])),
+         Judgement=j((False, True, True)))
+    new = (await ingest("Use three interview rounds. This replaces our January agreement.",
+                        ts="2026-09-01T00:00:00Z")).decisions[0]
+    assert new.relation == "update"
+    # D1 is the live three-round rule, D2 the replaced five-round one; the packet repeats the replaced one.
+    fake(Extraction=extraction(("Use five interview rounds for permanent hires.", ["use five interview rounds"], [])),
+         Judgement=j((False, False, False), (True, False, False)))
+    r = await ingest("The packet sent this morning says: use five interview rounds.", ts="2026-09-18T00:00:00Z")
+    assert (r.decisions[0].relation, r.decisions[0].related_decision_id) == ("contradiction", new.decision.id)
+    assert old.decision.id != new.decision.id and [a.kind for a in r.alerts] == ["contradiction"]

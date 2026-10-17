@@ -113,29 +113,36 @@ def _dline(label: str, d: dict) -> str:
 async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: float = RELATED_MIN,
                      active_only: bool = True) -> list[tuple[dict, float]]:
     hits = await get_store().nearest("decisions", scope, emb, k * 2)
-    return [(d, s) for d, s in hits if s >= min_score and (not active_only or d["status"] == "active")][:k]
+    return [(d, s) for d, s in hits if s >= min_score and (not active_only or d.get("status", "active") == "active")][:k]
+
+
+# Wording that announces a revision. With a conflict and authority it counts as explicit_supersede even when the
+# model misses it (it does, run to run); a copied rule or a PR never words itself this way.
+REVISION = re.compile(r"\b(replaces|replacing|replaced|supersed\w*|instead of|no longer applies|"
+                      r"from [\w.:]+(?: [\w.]+)? to [\w.:]+)\b", re.I)
 
 
 def decide(assessments: list[dict], labels: dict[str, dict], authorised,
-           violators: set[str] = frozenset()) -> tuple[str, dict | None, dict | None]:
+           violators: set[str] = frozenset(), revises: bool = False) -> tuple[str, dict | None, dict | None]:
     """Relation from the structured judgement, in code. Returns (relation, related decision, its assessment).
 
     A conflict outranks a restatement: a paste that repeats an earlier violation still breaks the rule.
     A conflict is an update only when the text deliberately revises the decision AND carries authority
     (a verified approval quote, or the old decision's own owner); anything else that conflicts is a contradiction.
-    A decision already flagged as contradicting the record (`violators`) is the last conflict target: breaking a
-    rule matters more than disagreeing with an earlier breach of it.
+    Only a standing rule can be contradicted: two one-off actions that disagree (who covers a pager, where lunch
+    is) are coordination, not drift. A decision already flagged as contradicting the record (`violators`) is not
+    a conflict target either: that breach is already reported, and disagreeing with it restates the rule.
     """
     seen = [(a, pick(labels, a["decision"])) for a in assessments]
     seen = [(a, d) for a, d in seen if d is not None]
-    for a, d in sorted(seen, key=lambda x: x[1]["id"] in violators):
-        if a["conflicts"]:
-            return ("update" if a["explicit_supersede"] and authorised(d) else "contradiction"), d, a
     for a, d in seen:
+        if a["conflicts"] and d.get("status", "active") == "active" and d.get("kind", "rule") == "rule" and d["id"] not in violators:
+            return ("update" if (a["explicit_supersede"] or revises) and authorised(d) else "contradiction"), d, a
+    for a, d in sorted(seen, key=lambda x: x[1].get("status", "active") != "active"):
         if a["restates"]:
             return "same", d, a
     for a, d in seen:
-        if a["explicit_supersede"] and authorised(d):
+        if a["explicit_supersede"] and authorised(d) and d.get("status", "active") == "active":
             return "update", d, a  # narrows or extends it without a conflict
     return "new", None, None
 
@@ -155,7 +162,9 @@ Assess the NEW decision against EVERY existing decision, one entry each, with th
   breaks the existing rule. An operational action, schedule, job, PR, promise or plan that violates an active
   rule conflicts with it, even if it is phrased as routine work and never mentions the rule.
   Both must be about the same thing (the same system, policy, product, event or resource); two different
-  meetings, rooms, lunches or tickets do not conflict just because they look alike.
+  meetings, rooms, lunches or tickets do not conflict just because they look alike. A rule about HOW a process
+  runs does not conflict with a rule that pauses or limits WHETHER it runs, and a rule for one path, team or
+  customer group does not conflict with a different rule for another (the SOURCE may say they are separate).
 - explicit_supersede: the SOURCE deliberately changes THIS existing decision: it says to replace, revise, lift,
   move or narrow it, or it is the outcome of a review, meeting or approval that sets new terms on its subject.
   Simply doing something different, or following an older document, is NOT explicit_supersede.
@@ -179,10 +188,24 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     r = await llm.generate_json(prompt, Judgement, system=SYSTEM)
     approved = verified(r["authority_evidence"], src["text"]) and len(r["authority_evidence"].split()) >= 2
     people = {norm(src["author"]).lower(), norm(dec["owner"]).lower()}
-    rel, old, a = decide(r["assessments"], labels, lambda d: approved or norm(d["owner"]).lower() in people,
-                       violators)
+    # A meeting record is a decision forum: the group setting new terms there is the authority.
+    authorised = lambda d: approved or src["kind"] == "meeting" or norm(d["owner"]).lower() in people  # noqa: E731
+    revises = bool(REVISION.search(src["text"]))
+    rel, old, a = decide(r["assessments"], labels, authorised, violators, revises)
     if a is None:
         return "new", None, "No existing decision covers the same subject."
+    if rel == "same" and old["status"] == "superseded" and old.get("superseded_by") and not revises:
+        # Repeating a rule after it was replaced (a copied checklist, an old page pasted into a packet) contradicts
+        # the decision that replaced it.
+        nxt = (await get_store().get_many("decisions", [old["superseded_by"]])).get(old["superseded_by"])
+        if nxt and nxt["status"] == "active" and utc(nxt["ts"]) <= utc(dec["ts"]) and nxt["id"] not in violators:
+            return "contradiction", nxt, (f"It repeats the replaced rule \"{_short(old['statement'])}\"; the current "
+                                          f"decision is \"{_short(nxt['statement'])}\" ({nxt['owner']}, {utc(nxt['ts']).date()}).")
+    if rel == "update":
+        # The same old rule often lives in several decisions (the thread and a wiki copy); revise every copy.
+        dec["_also"] = [d for x in r["assessments"] if (d := pick(labels, x["decision"])) and d["id"] != old["id"]
+                        and x["conflicts"] and (x["explicit_supersede"] or revises) and authorised(d)
+                        and d["id"] not in violators and d.get("kind", "rule") == "rule" and d.get("status", "active") == "active"]
     return rel, old, unlabel(a["why"], labels, old)
 
 
@@ -206,16 +229,23 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
         "assumptions, and implicit facts that made it sensible (e.g. a 24 hour retry assumes requests stay "
         "valid for 24 hours; a price assumes a cost). For each decision ask: does the NEW information make one "
         "of its premises false (a number crossed a stated limit, a cost or duration changed, a vendor behaves "
-        "differently)? List those. Do not list a decision just because it is on the same topic. "
+        "differently)? List those. Do not list a decision just because it is on the same topic. An action, PR, "
+        "plan or copy that disobeys a decision does not break its premise (that is a violation, reported "
+        "elsewhere); only facts about the world do. "
         "evidence_quote must be copied word for word from the SOURCE below. Return an empty list if none.\n\n"
         f"SOURCE:\n{source_text[:6000]}"
     )
     r = await llm.generate_json(prompt, PremiseCheck, system=SYSTEM)
+    # Text the decision's own sources already contain (its rationale, repeated in a later thread) is not new
+    # information, so it cannot break a premise.
+    own = await get_store().get_many("sources", [q["source_id"] for d in labels.values() for q in d["quotes"]])
     out = []
     for b in r["broken"]:
         d = pick(labels, b["decision"])
         if (d and d["id"] not in {x["id"] for x, _ in out} and len(b["assumption"].split()) >= 3
-                and verified(b["evidence_quote"], source_text)):
+                and verified(b["evidence_quote"], source_text)
+                and not any(verified(b["evidence_quote"], own[q["source_id"]]["text"])
+                            for q in d["quotes"] if q["source_id"] in own)):
             out.append((d, Broken(**{**b, "explanation": unlabel(b["explanation"], labels, d)})))
     return out
 
