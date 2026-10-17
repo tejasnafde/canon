@@ -85,6 +85,10 @@ class Person(BaseModel):
     team: str
     status: Literal["active", "left"] = "active"
     left_at: datetime | None = None
+    reports_to: str | None = None  # Person.id of the manager; None for the CEO
+    level: Literal["ic", "lead", "head", "exec"] = "ic"
+    successor: str | None = None  # Person.id who took over when this person left
+    discord_username: str | None = None
 
 
 class Citation(BaseModel):
