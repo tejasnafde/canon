@@ -35,7 +35,7 @@ def source(kind, title, date, author, text):
     stamp = date + 'T04:30:00Z'
     slug = title.lower().replace(' ', '-').replace('/', '-')
     urls = {
-        'slack': f'https://northwind.slack.example/archives/CPLATFORM/p{int(datetime.fromisoformat(stamp.replace("Z", "+00:00")).timestamp())}000000',
+        'slack': f'https://northwind.slack.example/archives/CPLATFORM/p{int(datetime.fromisoformat(stamp.replace("Z", "+00:00")).timestamp())}{n:06}',
         'meeting': f'https://meet.northwind.example/recordings/{n}-{slug}',
         'wiki': f'https://wiki.northwind.example/pages/{n}/{slug}',
         'pr': f'https://git.northwind.example/northwind/dispatch/pull/{400+n}',
@@ -267,6 +267,16 @@ EXTRA = '''2025-01-30|Slack search in two languages|Yuki Mori|The Tokyo crew sea
 for line in EXTRA.splitlines():
     date,title,author,text=line.split('|',3)
     source('slack',title,date,author,text)
+
+# Expand the archive before serialization. Gold evidence remains unchanged.
+from archive_texture import enrich_sources
+from noise import add_noise
+
+enrich_sources(sources, items)
+noise_start = len(sources)
+add_noise(source)
+# Slack noise is authored as full threads, rather than wrapped a second time.
+enrich_sources([row for row in sources[noise_start:] if row['kind'] != 'slack'], [])
 
 # Attach the deciding evidence as well as the changed or conflicting evidence.
 by_key={i['key']:i for i in items if i['type']=='decision'}

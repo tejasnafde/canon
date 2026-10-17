@@ -61,7 +61,7 @@ def validate(root):
             if dt:
                 require(datetime(2025, 1, 1, tzinfo=timezone.utc) <= dt < datetime(2026, 11, 1, tzinfo=timezone.utc),
                         f'{label}: timestamp outside corpus range')
-    require(150 <= len(rows) <= 250, f'Expected 150-250 sources, got {len(rows)}')
+    require(250 <= len(rows) <= 300, f'Expected 250-300 sources, got {len(rows)}')
     titles = [r.get('title') for r in rows]
     require(len(titles) == len(set(titles)), 'Source titles must be unique')
     require(len({r.get('url') for r in rows}) == len(rows), 'Source URLs must be unique')
