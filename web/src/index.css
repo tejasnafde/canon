@@ -1,0 +1,172 @@
+/* Canon theme. Direction: "the record": warm paper, editorial serif, mono metadata, one vermilion signal. */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/fraunces';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', 'Helvetica Neue', sans-serif;
+  --font-heading: 'Fraunces Variable', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* 13px floor for small text: legible in a 1080p demo video */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-soft: var(--signal-soft);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-soft: var(--warn-soft);
+  --color-ok-ink: var(--ok-ink);
+  --color-ok-soft: var(--ok-soft);
+  --color-link: var(--link);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.3rem;
+  --background: #f5f1e8; /* paper */
+  --foreground: #17140f; /* ink */
+  --card: #fbf9f4;
+  --card-foreground: #17140f;
+  --popover: #fbf9f4;
+  --popover-foreground: #17140f;
+  --primary: #17140f;
+  --primary-foreground: #fbf9f4;
+  --secondary: #ebe5d8;
+  --secondary-foreground: #17140f;
+  --muted: #ebe5d8;
+  --muted-foreground: #5e584b; /* 5.9:1 on paper */
+  --accent: #ebe5d8;
+  --accent-foreground: #17140f;
+  --destructive: #c4301a;
+  --border: #ddd5c5;
+  --input: #c9bfab;
+  --ring: #1f4e8c;
+  --signal: #c4301a; /* drift, contradiction, block. White text on it is AA */
+  --signal-ink: #a82710; /* signal text on paper or soft, AA */
+  --signal-soft: #fbe4dc;
+  --warn-ink: #7f4f0c;
+  --warn-soft: #f8ecd2;
+  --ok-ink: #2a6247;
+  --ok-soft: #dfeee4;
+  --link: #1f4e8c;
+  --dot: rgb(23 20 15 / 0.035);
+}
+
+.dark {
+  --background: #14120e;
+  --foreground: #ede7da;
+  --card: #1c1914;
+  --card-foreground: #ede7da;
+  --popover: #1c1914;
+  --popover-foreground: #ede7da;
+  --primary: #ede7da;
+  --primary-foreground: #14120e;
+  --secondary: #2a261f;
+  --secondary-foreground: #ede7da;
+  --muted: #2a261f;
+  --muted-foreground: #aba291;
+  --accent: #2a261f;
+  --accent-foreground: #ede7da;
+  --destructive: #e0573f;
+  --border: #38332a;
+  --input: #4a4337;
+  --ring: #8db4ee;
+  --signal: #c4301a;
+  --signal-ink: #f29580;
+  --signal-soft: #3a1a13;
+  --warn-ink: #e7b45f;
+  --warn-soft: #33270f;
+  --ok-ink: #86c9a4;
+  --ok-soft: #16291f;
+  --link: #8db4ee;
+  --dot: rgb(237 231 218 / 0.025);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen text-base antialiased;
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading tracking-tight;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Mono uppercase metadata label. 13px is the smallest text in the app. */
+@utility label {
+  @apply font-mono text-xs tracking-[0.08em] text-muted-foreground uppercase;
+}
+
+/* Quoted source text with a rule on the left. */
+@utility quote {
+  @apply border-l-2 border-foreground pl-4 font-heading text-[17px] leading-snug;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
