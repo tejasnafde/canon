@@ -30,7 +30,7 @@ PAGE = 50  # messages per channel per sync; the rest arrive on the next run
 USER_DAILY_LIMIT = 20
 TEXT, THREADS = {0, 5}, {10, 11, 12}  # text/announcement channels, thread channels
 TEXT_FILES, TEXT_MAX = (".md", ".txt", ".csv"), 200_000
-IMAGE_FILES, IMAGE_MAX = (".png", ".jpg", ".jpeg", ".webp"), 5_000_000
+IMAGE_FILES, IMAGE_MAX = (".png", ".jpg", ".jpeg", ".webp", ".pdf"), 10_000_000  # Gemini reads PDFs natively
 ARCHIVED_DAYS = 14  # archived threads older than this are not read again
 _lock = asyncio.Lock()  # ponytail: per instance; overlapping syncs on 2+ instances could double ingest
 
