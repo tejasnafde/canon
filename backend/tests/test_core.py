@@ -93,6 +93,11 @@ def test_relation_decided_in_code_from_flags():
     assert decide([a("D2", s=True)], labels, yes)[0] == "update"
     assert decide([a("D2", s=True)], labels, no)[0] == "new"
     assert decide([a("D9", c=True)], labels, yes)[0] == "new"  # unknown label
+    # A known breach alone is not a conflict target: agreeing with the rule it broke is not a new contradiction.
+    assert decide([a("D1", c=True)], labels, no, {"d-breach"})[0] == "new"
+    # Two one-off actions that disagree (who covers a pager) are coordination, not a contradiction.
+    chore = {"id": "d-chore", "owner": "Yuki Mori", "kind": "action"}
+    assert decide([a("D1", c=True)], {"D1": chore}, no)[0] == "new"
 
 
 async def test_contradiction_flags_the_stale_doc_it_relies_on():

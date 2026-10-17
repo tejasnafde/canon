@@ -70,7 +70,7 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
                   "- violates: true if the action does what the decision forbids or skips what it requires\n"
                   "- exception_met: true only if the action itself states the conditions of a documented exception to this "
                   "decision, whether written in it or recorded as another decision above (for example an emergency rule)\n"
-                  "- note: one sentence on how the action relates to the decision, naming the decision and owner")
+                  "- note: one short sentence (at most 20 words) on how the action relates to the decision, naming its owner")
         r = await llm.generate_json(prompt, Guard, think=CHECK_THINK, temperature=0.0,
                                     system="You are Canon, a guard that checks actions against the company's decisions. " + NO_LABELS)
         js = r["judgements"]
@@ -85,8 +85,12 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
             why = " ".join(unlabel(j["note"], labels, d) for d, j in top[:2])
         if verdict == "warn" and any(d["id"] in broken for d in deciding):
             why = f"{why} The premise behind this decision has changed, so it needs review."
-    cites = await citations([(q["source_id"], q["quote"], d["id"]) for d in deciding for q in d["quotes"][:1]])
+    from canon.core import log_activity
     ws = workspaces[-1]
+    cites, _ = await asyncio.gather(
+        citations([(q["source_id"], q["quote"], d["id"]) for d in deciding for q in d["quotes"][:1]]),
+        log_activity(ws, req.actor, "check", f"Checked: {req.intent[:120]}", [d["id"] for d in deciding], verdict,
+                     explanation=why))
     if verdict == "block" and req.actor.startswith("agent:"):
         await get_store().put("alerts", {
             "id": new_id("a"), "workspace": ws, "kind": "agent_violation", "severity": "medium",
@@ -94,8 +98,5 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
             "explanation": f"{req.actor} intended: {req.intent[:200]}. Blocked: {why}",
             "quotes": [{"source_id": c.source_id, "quote": c.quote} for c in cites[:1]],
             "status": "open", "resolution": None, "created_by": req.actor, "created_at": now()})
-    from canon.core import log_activity
-    await log_activity(ws, req.actor, "check", f"Checked: {req.intent[:120]}", [d["id"] for d in deciding], verdict,
-                       explanation=why)
     return CheckResult(verdict=verdict, explanation=why, decisions=[Decision(**d) for d in deciding],
                        citations=cites, latency_ms=int((time.perf_counter() - t) * 1000))
