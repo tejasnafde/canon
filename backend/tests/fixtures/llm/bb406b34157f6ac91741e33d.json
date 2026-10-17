@@ -1,0 +1,1 @@
+{"verdict": "block", "explanation": "Deploying the dispatch service on Friday violates the decision on Friday deployments by Mei, which prohibits all production deploys on Fridays.", "deciding": ["D1"]}

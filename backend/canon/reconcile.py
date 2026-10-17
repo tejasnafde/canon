@@ -1,7 +1,6 @@
 """F3 reconciliation, F4 stale docs, F13 premise watch. Gemini judges, code decides what to write."""
 import asyncio
 import re
-from typing import Literal
 
 from pydantic import BaseModel
 
@@ -69,10 +68,17 @@ def pick(labels: dict[str, dict], ref: str) -> dict | None:
     return None
 
 
+class Assessment(BaseModel):
+    decision: str            # label like "D2"
+    restates: bool           # says the same thing, no change in substance
+    conflicts: bool          # NEW and this decision cannot both hold, or acting on NEW breaks it
+    explicit_supersede: bool  # NEW deliberately revises or replaces THIS decision, not just acts differently
+    why: str
+
+
 class Judgement(BaseModel):
-    relation: Literal["new", "same", "update", "contradiction"]
-    related: str  # label like "D2", or "" for new
-    explanation: str
+    assessments: list[Assessment]
+    authority_evidence: str  # word-for-word quote showing approval or a decision outcome, or ""
 
 
 class Broken(BaseModel):
@@ -110,33 +116,74 @@ async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: 
     return [(d, s) for d, s in hits if s >= min_score and (not active_only or d["status"] == "active")][:k]
 
 
-async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[str, dict | None, str]:
+def decide(assessments: list[dict], labels: dict[str, dict], authorised,
+           violators: set[str] = frozenset()) -> tuple[str, dict | None, dict | None]:
+    """Relation from the structured judgement, in code. Returns (relation, related decision, its assessment).
+
+    A conflict outranks a restatement: a paste that repeats an earlier violation still breaks the rule.
+    A conflict is an update only when the text deliberately revises the decision AND carries authority
+    (a verified approval quote, or the old decision's own owner); anything else that conflicts is a contradiction.
+    A decision already flagged as contradicting the record (`violators`) is the last conflict target: breaking a
+    rule matters more than disagreeing with an earlier breach of it.
+    """
+    seen = [(a, pick(labels, a["decision"])) for a in assessments]
+    seen = [(a, d) for a, d in seen if d is not None]
+    for a, d in sorted(seen, key=lambda x: x[1]["id"] in violators):
+        if a["conflicts"]:
+            return ("update" if a["explicit_supersede"] and authorised(d) else "contradiction"), d, a
+    for a, d in seen:
+        if a["restates"]:
+            return "same", d, a
+    for a, d in seen:
+        if a["explicit_supersede"] and authorised(d):
+            return "update", d, a  # narrows or extends it without a conflict
+    return "new", None, None
+
+
+JUDGE = """NEW decision ({date}, from {kind} "{title}" by {author}): {statement}
+Rationale: {rationale}
+
+SOURCE it came from:
+{text}
+
+EXISTING decisions:
+{existing}
+
+Assess the NEW decision against EVERY existing decision, one entry each, with these independent flags:
+- restates: it says the same thing as the existing one, no change in substance.
+- conflicts: the NEW decision and the existing one cannot both be followed, or doing what the NEW one says
+  breaks the existing rule. An operational action, schedule, job, PR, promise or plan that violates an active
+  rule conflicts with it, even if it is phrased as routine work and never mentions the rule.
+  Both must be about the same thing (the same system, policy, product, event or resource); two different
+  meetings, rooms, lunches or tickets do not conflict just because they look alike.
+- explicit_supersede: the SOURCE deliberately changes THIS existing decision: it says to replace, revise, lift,
+  move or narrow it, or it is the outcome of a review, meeting or approval that sets new terms on its subject.
+  Simply doing something different, or following an older document, is NOT explicit_supersede.
+- why: one sentence on this pair.
+An existing decision can be restated and conflicted by the same text only if it is internally inconsistent;
+judge each pair on its own.
+authority_evidence: a short span COPIED WORD FOR WORD from the SOURCE that shows an approval or a decision
+outcome (e.g. "I approve this change", "Decision from the review"), or "" if there is none."""
+
+
+async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
+                violators: set[str] = frozenset()) -> tuple[str, dict | None, str]:
     """Returns (relation, related decision dict or None, explanation)."""
     if not cands:
         return "new", None, "No related decision in the record."
     labels = {f"D{i + 1}": d for i, (d, _) in enumerate(cands)}
-    prompt = (
-        f"NEW decision ({utc(dec['ts']).date()}, from {src['kind']} \"{src['title']}\" by {src['author']}): "
-        f"{dec['statement']}\nRationale: {dec['rationale']}\n\n"
-        "EXISTING decisions:\n" + "\n".join(_dline(l, d) for l, d in labels.items()) +
-        "\n\nClassify the NEW decision against the closest EXISTING one:\n"
-        "- same: restates it, no change in substance\n"
-        "- update: an intentional change to it by people with the authority to change it (a review, meeting, "
-        "approval or announcement that revises, replaces, narrows or extends it); newer intent wins\n"
-        "- contradiction: conflicts with it but is NOT an authorised change: an implementation, promise, email, "
-        "doc or plan that ignores or breaks the existing decision\n"
-        "Signals of update: \"from now on\", \"replace\", \"we decided\", \"approved\", a review or meeting outcome. "
-        "Signals of contradiction: a customer promise, PR, commit or email that states different terms (often the "
-        "old ones) without saying the decision changed.\n"
-        "- new: a different subject; none of them is about the same thing\n"
-        "Set related to the label (e.g. D1), or \"\" for new. One sentence of explanation."
-    )
+    prompt = JUDGE.format(date=utc(dec["ts"]).date(), kind=src["kind"], title=src["title"], author=src["author"],
+                          statement=dec["statement"], rationale=dec["rationale"],
+                          text=llm.source_block(src["text"][:4000]),
+                          existing="\n".join(_dline(l, d) for l, d in labels.items()))
     r = await llm.generate_json(prompt, Judgement, system=SYSTEM)
-    rel = pick(labels, r["related"])
-    why = unlabel(r["explanation"], labels, rel)
-    if r["relation"] != "new" and rel is None:
-        return "new", None, why
-    return r["relation"], (rel if r["relation"] != "new" else None), why
+    approved = verified(r["authority_evidence"], src["text"]) and len(r["authority_evidence"].split()) >= 2
+    people = {norm(src["author"]).lower(), norm(dec["owner"]).lower()}
+    rel, old, a = decide(r["assessments"], labels, lambda d: approved or norm(d["owner"]).lower() in people,
+                       violators)
+    if a is None:
+        return "new", None, "No existing decision covers the same subject."
+    return rel, old, unlabel(a["why"], labels, old)
 
 
 async def premise_check(source_text: str, items: list[dict], emb_list: list[list[float]],

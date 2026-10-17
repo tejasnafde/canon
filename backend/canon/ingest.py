@@ -133,8 +133,11 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     sid = p.source["id"]
     await asyncio.gather(st.put("sources", p.source), *(st.put("chunks", c) for c in p.chunks))
 
+    violators = {a["decision_id"] for a in await st.query("alerts", scope, kind="contradiction", status="open")} \
+        if p.decisions else set()
+
     async def judge(d):
-        return await reconcile.judge(d, await reconcile.candidates(d["embedding"], scope), p.source)
+        return await reconcile.judge(d, await reconcile.candidates(d["embedding"], scope), p.source, violators)
 
     judged, broken, stales = await asyncio.gather(
         asyncio.gather(*(judge(d) for d in p.decisions)),
@@ -142,6 +145,9 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
                                 [i["embedding"] for i in p.facts + p.decisions], scope),
         asyncio.gather(*(reconcile.stale_check(d, d["embedding"], scope, sid) for d in p.decisions)),
     )
+    # A sibling that conflicts with a decision this same source deliberately revises is part of the revision.
+    revised = {old["id"] for rel, old, _ in judged if rel == "update" and old}
+    judged = [("update" if rel == "contradiction" and old["id"] in revised else rel, old, why) for rel, old, why in judged]
     # Docs quoted by a decision this source updates are stale too, no extra Gemini call needed.
     olds = [old for rel, old, _ in judged if rel == "update" and old]
     kinds = await st.get_many("sources", [q["source_id"] for o in olds for q in o["quotes"]])
@@ -149,14 +155,28 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     results, alerts, writes, flagged = [], [], [], set()
     touched = {old["id"] for _, old, _ in judged if old}
 
-    def stale_alert(d, doc_sid, quote, why, related=None):
+    def stale_alert(d, doc_sid, quote, why, related=None, extra=(), title=None):
         if doc_sid in flagged or doc_sid == sid:
             return
         flagged.add(doc_sid)
-        title = kinds.get(doc_sid, {}).get("title") or "Doc"
+        title = title or kinds.get(doc_sid, {}).get("title") or "Doc"
         alerts.append(_alert(ws, "stale_doc", "medium", d["id"], doc_sid,
                              f"\"{title}\" is contradicted by a newer decision: {why}",
-                             d["quotes"][:1] + [{"source_id": doc_sid, "quote": quote}], related_decision_id=related))
+                             d["quotes"][:1] + [{"source_id": doc_sid, "quote": quote}] + list(extra),
+                             related_decision_id=related))
+
+    async def stale_refs(old) -> list[tuple[str, str, str]]:
+        """Docs this source names by title that are stale against `old`: an open stale_doc alert on it, or a
+        doc quoted by a decision it superseded. Returns (doc source id, title, outdated quote)."""
+        refs = [(a["source_id"], q["quote"]) for a in await st.query("alerts", scope, kind="stale_doc",
+                                                                    decision_id=old["id"], status="open")
+                for q in a["quotes"] if q["source_id"] == a["source_id"]]
+        prev = await st.get_many("decisions", old.get("supersedes", []))
+        refs += [(q["source_id"], q["quote"]) for x in prev.values() for q in x["quotes"]]
+        docs = await st.get_many("sources", [r for r, _ in refs])
+        text = p.source["text"].lower()
+        return [(r, docs[r]["title"], q) for r, q in refs if r in docs and docs[r]["kind"] in ("wiki", "doc")
+                and len(docs[r]["title"]) >= 4 and docs[r]["title"].lower() in text]
 
     for d, (rel, old, why), stale in zip(p.decisions, judged, stales):
         if rel == "same" and old:
@@ -182,6 +202,10 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         if rel == "contradiction" and old:
             alerts.append(_alert(ws, "contradiction", "high", d["id"], sid, why, d["quotes"][:1] + old["quotes"][:1],
                                  related_decision_id=old["id"]))
+            for doc_sid, title, quote in await stale_refs(old):
+                stale_alert(old, doc_sid, quote, f"\"{p.source['title']}\" relies on it, and it still states what "
+                            f"the decision \"{reconcile.norm(old['statement'])}\" replaced.", d["id"],
+                            extra=d["quotes"][:1], title=title)
         if rel in ("new", "update") and d["status"] == "active":  # a contradicting decision does not make docs stale
             for c, h in stale:
                 kinds.setdefault(c["source_id"], {"title": c.get("title")})
@@ -190,7 +214,7 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         results.append(ReconciledDecision(decision=Decision(**d), relation=rel,
                                           related_decision_id=old["id"] if old else None, explanation=why))
     for old, b in broken:
-        if old["id"] in touched:  # already reported as update / contradiction
+        if old["id"] in touched or old["id"] in violators:  # already reported, or itself a known breach
             continue
         alerts.append(_alert(ws, "premise_changed", "medium", old["id"], sid,
                              f"Assumption \"{b.assumption}\" may no longer hold: {b.explanation}",
