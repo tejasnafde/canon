@@ -103,13 +103,13 @@ def png(svg_text, px):
     return Image.open(BytesIO(out.stdout)).convert("RGBA")
 
 
-def sheet():
+def sheet(title="Canon - logo concepts"):
     W, ROW, PAD = 1880, 250, 40
     img = Image.new("RGB", (W, 120 + ROW * len(CONCEPTS)), PAPER)
     d = ImageDraw.Draw(img)
     big = ImageFont.truetype("/System/Library/Fonts/Supplemental/Georgia.ttf", 28)
     small = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 15)
-    d.text((PAD, 30), "Canon - logo concepts", fill=INK, font=big)
+    d.text((PAD, 30), title, fill=INK, font=big)
     heads = [(PAD + 220, "symbol"), (PAD + 430, "dark"), (PAD + 640, "lockup"), (PAD + 1120, "app icon"),
              (PAD + 1290, "32 light / dark"), (PAD + 1450, "16 light / dark"), (PAD + 1610, "16 at 4x")]
     for x, t in heads:
@@ -120,7 +120,7 @@ def sheet():
         d.text((PAD, y + 80), f"{i + 1}. {name}", fill=INK, font=big)
         img.paste(png(symbol(fn), 180), (PAD + 220, y + 15), png(symbol(fn), 180))
         d.rectangle((PAD + 420, y + 5, PAD + 620, y + 205), fill=INK)
-        dk = png(symbol(fn, PAPER, "#e0533a"), 180)
+        dk = png(symbol(fn, PAPER, "#e0533a", INK), 180)
         img.paste(dk, (PAD + 430, y + 15), dk)
         lk = png(lockup(fn), 440)
         img.paste(lk, (PAD + 640, y + 105 - lk.height // 2), lk)
@@ -128,7 +128,7 @@ def sheet():
         img.paste(ic, (PAD + 1120, y + 30), ic)
         for j, (px, x0) in enumerate([(32, PAD + 1290), (16, PAD + 1450)]):
             d.rectangle((x0 + 60, y + 70, x0 + 120, y + 130), fill=INK)
-            a, b = png(symbol(fn), px), png(symbol(fn, PAPER, "#e0533a"), px)
+            a, b = png(symbol(fn), px), png(symbol(fn, PAPER, "#e0533a", INK), px)
             img.paste(a, (x0 + 10, y + 100 - px // 2), a)
             img.paste(b, (x0 + 90 - px // 2, y + 100 - px // 2), b)
         z = png(symbol(fn), 16).resize((64, 64), Image.NEAREST)
