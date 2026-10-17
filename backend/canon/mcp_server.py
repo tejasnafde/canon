@@ -3,6 +3,7 @@
 Tool descriptions matter: they are what Claude Code and Codex read to decide
 when to call Canon, so they say plainly WHEN to call each tool.
 """
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -16,7 +17,7 @@ from canon.models import (
     IngestRequest, IngestResult, Source,
 )
 
-BASE = "acme"
+BASE = os.environ.get("CANON_BASE_WS", "acme")  # seeded corpus, read-only
 AGENTS = "agents"
 _VISITOR = re.compile(r"^v-[A-Za-z0-9-]{1,64}$")
 

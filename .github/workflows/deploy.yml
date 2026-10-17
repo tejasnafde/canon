@@ -56,7 +56,7 @@ jobs:
             --allow-unauthenticated --min-instances=0 --max-instances=3 \
             --cpu=1 --memory=1Gi --timeout=300 --concurrency=40 \
             --labels=app=canon \
-            --set-env-vars="CANON_PUBLIC_URL=$PUBLIC_URL,GOOGLE_CLOUD_PROJECT=$PROJECT" \
+            --set-env-vars="CANON_PUBLIC_URL=$PUBLIC_URL,GOOGLE_CLOUD_PROJECT=$PROJECT,CANON_BASE_WS=acme2" \
             --quiet
       - name: Smoke test
         run: curl -fsS "https://canon-974343814740.asia-south1.run.app/health"

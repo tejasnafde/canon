@@ -348,6 +348,6 @@ async def list_people(workspaces):
 
 
 async def reset_workspace(workspace):
-    if workspace == "acme":
+    if workspace == os.environ.get("CANON_BASE_WS", "acme"):
         raise PermissionError("the base workspace is read-only")
     await get_store().delete_workspace(workspace)

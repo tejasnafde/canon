@@ -17,7 +17,7 @@ from canon import core
 from canon.models import AskRequest, BriefingRequest, CheckRequest
 
 router = APIRouter()
-WORKSPACES = ["acme", "agents"]
+WORKSPACES = [os.environ.get("CANON_BASE_WS", "acme"), "agents"]
 INLINE_SECONDS = 2.5  # Discord wants a reply within 3 s
 API = "https://discord.com/api/v10"
 

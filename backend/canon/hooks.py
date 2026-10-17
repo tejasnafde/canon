@@ -16,7 +16,7 @@ from canon import core
 from canon.models import CheckRequest
 
 router = APIRouter()
-WORKSPACES = ["acme", "agents"]
+WORKSPACES = [os.environ.get("CANON_BASE_WS", "acme"), "agents"]
 ACTOR = "agent:github"
 MAX_DIFF = 8000
 

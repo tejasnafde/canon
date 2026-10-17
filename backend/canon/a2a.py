@@ -22,7 +22,7 @@ from google.genai import types  # noqa: E402
 from canon import core  # noqa: E402
 from canon.models import AskRequest, BriefingRequest, CheckRequest  # noqa: E402
 
-WORKSPACES = ["acme", "agents"]
+WORKSPACES = [os.environ.get("CANON_BASE_WS", "acme"), "agents"]
 ACTOR = "agent:a2a"
 PUBLIC_URL = os.environ.get("CANON_PUBLIC_URL", "https://canon-tn07.web.app").rstrip("/")
 
