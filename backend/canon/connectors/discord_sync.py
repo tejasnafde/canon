@@ -32,22 +32,30 @@ TEXT, THREADS = {0, 5}, {10, 11, 12}  # text/announcement channels, thread chann
 TEXT_FILES, TEXT_MAX = (".md", ".txt", ".csv"), 200_000
 IMAGE_FILES, IMAGE_MAX = (".png", ".jpg", ".jpeg", ".webp", ".pdf"), 10_000_000  # Gemini reads PDFs natively
 ARCHIVED_DAYS = 14  # archived threads older than this are not read again
+ARCHIVED_EVERY = timedelta(minutes=30)  # archived threads are listed at most this often (one call per channel)
 _lock = asyncio.Lock()  # ponytail: per instance; overlapping syncs on 2+ instances could double ingest
 
 
 class DiscordClient:
     def __init__(self, token: str):
         self.h = {"Authorization": f"Bot {token}"}
+        self._c: httpx.AsyncClient | None = None
 
     async def get(self, path: str, params: dict | None = None):
-        async with httpx.AsyncClient(timeout=10) as c:
-            for _ in range(3):
-                r = await c.get(API + path, params=params, headers=self.h)
-                if r.status_code != 429:
-                    break
-                await asyncio.sleep(min(float(r.json().get("retry_after", 1)), 5))
-            r.raise_for_status()
-            return r.json()
+        # One kept-alive connection for the whole sync: a fresh TLS handshake per call was most of a quiet run.
+        if self._c is None:
+            self._c = httpx.AsyncClient(timeout=10)
+        for _ in range(3):
+            r = await self._c.get(API + path, params=params, headers=self.h)
+            if r.status_code != 429:
+                break
+            await asyncio.sleep(min(float(r.json().get("retry_after", 1)), 5))
+        r.raise_for_status()
+        return r.json()
+
+    async def aclose(self):
+        if self._c is not None:
+            await self._c.aclose()
 
     async def download(self, url: str, limit: int) -> bytes:
         """Attachment bytes from the CDN (signed URL, no auth header), at most `limit` bytes."""
@@ -222,16 +230,24 @@ async def channels(client) -> list[dict]:
     their public threads archived in the last ARCHIVED_DAYS. Threads carry `parent_name`."""
     ids = [c.strip() for c in os.environ.get("CANON_DISCORD_CHANNELS", "").split(",") if c.strip()]
     gid = os.environ.get("CANON_DISCORD_GUILD_ID", "")
+    active = client.get(f"/guilds/{gid}/threads/active") if gid else asyncio.sleep(0, {})
     if ids:
-        chans = list(await asyncio.gather(*(client.get(f"/channels/{i}") for i in ids)))
+        *chans, act = await asyncio.gather(*(client.get(f"/channels/{i}") for i in ids), active)
     elif gid:
-        chans = [c for c in await client.get(f"/guilds/{gid}/channels") if c["type"] in TEXT]
+        listed, act = await asyncio.gather(client.get(f"/guilds/{gid}/channels"), active)
+        chans = [c for c in listed if c["type"] in TEXT]
     else:
         return []
     names = {c["id"]: c["name"] for c in chans if c["type"] in TEXT}
-    found = (await client.get(f"/guilds/{gid}/threads/active")).get("threads", []) if gid else []
+    found = list(act.get("threads", []))
     cutoff = datetime.now(timezone.utc) - timedelta(days=ARCHIVED_DAYS)
-    for cid in names:
+    scan = (await state.get("discord-archived-scan")).get("at")
+    if scan and datetime.now(timezone.utc) - store.utc(scan) < ARCHIVED_EVERY:
+        names_to_scan = []  # a thread that gets a new message is unarchived, so it shows up as active anyway
+    else:
+        names_to_scan = list(names)
+        await state.merge("discord-archived-scan", {"at": store.now()})
+    for cid in names_to_scan:
         try:
             old = await client.get(f"/channels/{cid}/threads/archived/public", {"limit": 50})
         except httpx.HTTPError as e:
@@ -255,9 +271,10 @@ async def starter(thread: dict, client) -> dict | None:
         return None
 
 
-async def sync_channel(channel: dict, client) -> dict:
+async def sync_channel(channel: dict, client, cursor: str | None = None, read: bool = True) -> dict:
     key = f"discord-{channel['id']}"
-    cursor = (await state.get(key)).get("last_id")
+    if read:
+        cursor = (await state.get(key)).get("last_id")
     name = channel.get("parent_name", "") + "/" * bool(channel.get("parent_name")) + channel["name"]
     idle = {"channel": name, "fetched": 0, "ingested": 0, "replies": 0}
     last = channel.get("last_message_id")
@@ -288,11 +305,16 @@ async def sync(client=None) -> dict:
     if _lock.locked():
         return {"busy": True}
     async with _lock:
+        own = client is None
         client = client or DiscordClient(os.environ["CANON_DISCORD_BOT_TOKEN"])
         out = []
-        for c in await channels(client):
+        chans = await channels(client)
+        cursors = await state.get_many([f"discord-{c['id']}" for c in chans])  # one read, not one per channel
+        for c in chans:
             try:
-                out.append(await sync_channel(c, client))
+                out.append(await sync_channel(c, client, cursors.get(f"discord-{c['id']}", {}).get("last_id"), False))
             except httpx.HTTPError as e:  # e.g. no access to one channel; keep going
                 log.warning("discord sync of %s failed: %s", c.get("id"), e)
+        if own:
+            await client.aclose()
         return {"channels": out}

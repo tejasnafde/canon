@@ -188,7 +188,11 @@ async def prepare(src: Source, workspace: str, actor: str = "human:web", scope: 
 
 
 def authority_decider(d: dict, old: dict, src: dict, org) -> str:
-    who = org_auth.decider(d, old, src, org) if org else None
+    """Who confirms or dismisses an unverified claim: the owner of the topic it touches, else the decider."""
+    if not org:
+        return old["owner"]
+    who = org_auth.owner_of(org_auth.org_topic(old.get("topic", ""), old.get("statement", "")), org) \
+        or org_auth.decider(d, old, src, org)
     return org.label(who) if who else old["owner"]
 
 
@@ -266,7 +270,7 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
             continue
         also = d.pop("_also", [])
         unverified = d.pop("_unverified", False) or (rel == "contradiction" and d.get("authority") == "claim")
-        if rel in ("update", "contradiction") and old and reconcile.when(d) < reconcile.when(old):
+        if rel in ("update", "contradiction") and old and reconcile.older(d, old):
             # An older-dated copy arriving after the newer decision (the v2 PDF after v4): never an update.
             d["status"], d["superseded_by"] = "superseded", old["id"]
             alerts.append(_alert(ws, "stale_doc", "low", d["id"], sid,

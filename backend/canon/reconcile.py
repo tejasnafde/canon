@@ -134,6 +134,15 @@ def when(d: dict):
     return utc(d.get("effective_at") or d["ts"])
 
 
+def older(new: dict, old: dict) -> bool:
+    """The new decision is an older version: its own effective date is before the old one takes effect, or, with
+    no date of its own, its source is older (a backdated paste). A plain message is never compared with a
+    future effective date."""
+    if new.get("effective_at"):
+        return utc(new["effective_at"]) < when(old)
+    return utc(new["ts"]) < utc(old["ts"])
+
+
 def _dline(label: str, d: dict) -> str:
     return f"[{label}] ({when(d).date()}, owner {d['owner']}, status {d['status']}) {d['statement']}"
 
