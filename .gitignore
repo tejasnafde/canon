@@ -9,3 +9,4 @@ sa-*.json
 .secrets/
 __pycache__/
 *.tsbuildinfo
+.wrangler/
