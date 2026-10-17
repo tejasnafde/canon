@@ -46,7 +46,7 @@ export function AppShell() {
       </footer>
       <CommandMenu open={cmdOpen} onOpenChange={setCmdOpen} />
       <Toaster position="bottom-right" />
-      <ScrollRestoration />
+      <ScrollRestoration getKey={loc => loc.pathname} />
     </>
   )
 }
