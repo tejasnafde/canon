@@ -1,0 +1,99 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../motion/base.css">
+<script src="../motion/vendor/gsap.min.js"></script><script src="../motion/lib.js"></script>
+<script src="exchange.js"></script>
+<style>
+body{background:#e9e2d3}
+.win{position:absolute;left:120px;top:70px;width:1680px;height:940px;background:var(--ink);border-radius:10px;
+  box-shadow:0 30px 80px rgba(28,26,23,.25);overflow:hidden}
+.bar{height:58px;display:flex;align-items:center;padding:0 24px;gap:10px;border-bottom:1px solid #34302a}
+.bar i{width:14px;height:14px;border-radius:50%;background:#4a453d;display:block}
+.bar span{margin-left:18px;font-family:'IBM Plex Mono',monospace;font-size:20px;color:#9d9586}
+.view{position:absolute;top:58px;left:0;right:0;bottom:0;overflow:hidden}
+.body{position:absolute;left:44px;right:44px;top:30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.55;color:#ece5d6}
+.ln{white-space:pre-wrap;min-height:1.55em}
+.who{color:#9d9586;margin-top:22px}
+.dim{color:#9d9586}
+.k{color:#b8ae9b}.s{color:#e9dcc0}.n{color:#c8b98f}
+.red{color:#ff7a5c;font-weight:500}
+.tag{display:inline-block;padding:0 10px;border-radius:3px;background:#c8361e;color:#fff;font-weight:500}
+.cursor{display:inline-block;width:.6em;height:1.1em;background:#ece5d6;vertical-align:-.18em;margin-left:2px}
+.note{position:absolute;left:120px;top:1026px;font-size:21px;color:var(--ink-2)}
+</style></head><body>
+<div class="win">
+  <div class="bar"><i></i><i></i><i></i><span id="title"></span></div>
+  <div class="view"><div class="body" id="body"></div></div>
+</div>
+<p class="note" id="note"></p>
+<script>
+// Replays the real exchange in exchange.json (fetch_mcp.py): the tool call and Canon's answer are
+// verbatim, trimmed to the fields that matter on screen. Only the two "agent" lines are narration.
+const X = window.EXCHANGE, R = X.result, D = R.decisions[0], C = R.citations[0];
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const hl = json => esc(json)
+  .replace(/^(\s*)"([^"]+)":/gm, '$1<span class="k">"$2"</span>:')
+  .replace(/: "((?:[^"\\]|\\.)*)"/g, ': <span class="s">"$1"</span>')
+  .replace(/: (\d+)/g, ': <span class="n">$1</span>')
+  .replace('<span class="s">"block"</span>', '<span class="red">"block"</span>');
+const request = { name: 'check_intent', arguments: X.request.params.arguments };
+const shown = {
+  verdict: R.verdict,
+  explanation: R.explanation,
+  decisions: [{ statement: D.statement, owner: D.owner, ts: D.ts, status: D.status, authority: D.authority,
+                quotes: D.quotes.map(q => q.quote) }],
+  citations: [{ title: C.title, kind: C.kind, ts: C.ts }],
+  latency_ms: R.latency_ms,
+};
+document.getElementById('title').textContent = `agent session  -  MCP server canon.tn07.dev/mcp`;
+document.getElementById('note').textContent =
+  `Real check_intent call to canon.tn07.dev/mcp, ${X.fetched_at.slice(0, 10)}. Response trimmed to the fields shown. Server time ${R.latency_ms} ms.`;
+
+const body = document.getElementById('body');
+const add = (html, cls = 'ln') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; body.appendChild(d); return d; };
+const lines = [];  // [element, reveal time]
+let t = 0.6;
+
+add('developer', 'ln who');
+const prompt = add('<span class="dim">&gt; </span><span id="p"></span><span class="cursor" id="cur"></span>');
+const P = X.request.params.arguments.intent;
+const typeAt = t;
+t += P.length / 14 + 0.6;
+
+const a1 = add('agent', 'ln who'); lines.push([a1, t]);
+const a2 = add('This changes a production deploy schedule. Checking with Canon first.'); lines.push([a2, t]); t += 1.2;
+const c0 = add(`<span class="dim">-&gt; tools/call</span>`); lines.push([c0, t]); t += 0.2;
+hl(JSON.stringify(request, null, 2)).split('\n').forEach(l => { lines.push([add(l), t]); t += 0.07; });
+t += 0.9;
+const w = add('<span class="dim">waiting for canon...</span>'); lines.push([w, t]);
+const wait = t; t += Math.min(1.3, R.latency_ms / 1000);
+const r0 = add(`<span class="dim">&lt;- result</span>`); lines.push([r0, t]); t += 0.2;
+hl(JSON.stringify(shown, null, 2)).split('\n').forEach(l => { lines.push([add(l), t]); t += 0.06; });
+t += 1.4;
+const b1 = add('agent', 'ln who'); lines.push([b1, t]);
+const b2 = add('<span class="tag">BLOCK</span>  I did not add the job. Northwind bans production deploys on Fridays,'); lines.push([b2, t]);
+const b3 = add('scheduled jobs included (Mei Tan, INC-042 review, 9 March 2026).'); lines.push([b3, t]);
+t += 4.0;
+
+window.__ready = () => Promise.all(['400 20px "IBM Plex Mono"', '500 20px "IBM Plex Mono"', '400 20px "IBM Plex Sans"']
+  .map(f => document.fonts.load(f))).then(() => document.fonts.ready).then(build);
+
+function build() {
+  // keep the newest line in view: scroll the body as lines appear
+  const viewH = 940 - 58 - 60;
+  lines.forEach(([el]) => { el.dataset.bottom = el.offsetTop + el.offsetHeight; });
+  tl.set(lines.map(l => l[0]), { opacity: 0 }, 0);
+  tl.set('#cur', { opacity: 1 }, 0);
+  typeOn(document.getElementById('p'), P, typeAt, 14);
+  tl.set('#cur', { opacity: 0 }, typeAt + P.length / 14 + 0.3);
+  let scrolled = 0;
+  for (const [el, at] of lines) {
+    tl.set(el, { opacity: 1 }, at);
+    const need = Math.max(0, +el.dataset.bottom - viewH);
+    if (need > scrolled + 1) { tl.to(body, { y: -need, duration: 0.25, ease: 'power2.out' }, at); scrolled = need; }
+  }
+  tl.set(w, { opacity: 0 }, wait + Math.min(1.3, R.latency_ms / 1000));
+  tl.to({}, { duration: 0.01 }, t);
+  window.__duration = t;
+  return true;
+}
+</script></body></html>

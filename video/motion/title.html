@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><script src="vendor/gsap.min.js"></script><script src="lib.js"></script>
+<style>
+.stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mark{width:150px;height:150px;overflow:hidden}
+.mark svg{width:150px;height:150px;display:block}
+h1{font-size:150px;font-weight:500;letter-spacing:-.01em;line-height:1;margin-top:34px}
+.rule{width:560px;height:2px;background:var(--ink);margin:46px 0 40px;transform-origin:center}
+p{font-size:44px;color:var(--ink-2);max-width:1240px;text-align:center;line-height:1.35}
+p em{font-style:normal;color:var(--ink)}
+</style></head><body>
+<div class="stage"><div class="mark"><svg viewBox="0 0 64 64"><path d="M12 4H52V60H12ZM18 10V54H46V10Z" fill="#1c1a17" fill-rule="evenodd"/><path class="ribbon" d="M30 4H42V42L36 36L30 42Z" fill="#c8361e"/></svg></div><h1 class="serif">Canon</h1><div class="rule"></div>
+<p>The shared memory of a company,<br><em>for its people and its AI agents.</em></p></div>
+<script>
+window.__duration = 5;
+tl.fromTo('.mark svg path:first-child', {opacity:0, y:14}, {opacity:1, y:0, duration:.7}, .15)
+  .fromTo('.ribbon', {y:-44}, {y:0, duration:.8, ease:'power4.out'}, .45)
+  .fromTo('h1', {opacity:0, y:22}, {opacity:1, y:0, duration:.9}, .75)
+  .fromTo('.rule', {scaleX:0}, {scaleX:1, duration:.8, ease:'power2.inOut'}, 1.35)
+  .fromTo('p', {opacity:0, y:14}, {opacity:1, y:0, duration:.9}, 1.75)
+  .to({}, {duration:.01}, 5);
+</script></body></html>
