@@ -1,0 +1,114 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Decision</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .layout { grid-template-columns: 1fr 440px; align-items: start; }
+  .stmt { font-family: var(--serif); font-size: 52px; line-height: 1.02; letter-spacing: -.03em; font-weight: 500; }
+  .meta { display: grid; grid-template-columns: repeat(4, auto); gap: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin-top: 20px; }
+  .meta > div { padding: 10px 16px 10px 0; }
+  .meta > div + div { padding-left: 16px; border-left: 1px solid var(--rule); }
+  .meta b { font-weight: 500; display: block; margin-top: 2px; }
+  .assume li { list-style: none; padding: 9px 0; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+  .assume li + li { border-top: 1px dashed var(--rule); }
+  .tl { position: relative; padding-left: 24px; }
+  .tl::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 1px; background: var(--ink); }
+  .tl .e { position: relative; padding: 0 0 18px; }
+  .tl .e::before { content: ''; position: absolute; left: -24px; top: 5px; width: 11px; height: 11px; background: var(--sheet); border: 1px solid var(--ink); }
+  .tl .e.cur::before { background: var(--ink); }
+  .tl .e.bad::before { background: var(--signal); border-color: var(--signal); }
+  .conflict { border: 1px solid var(--signal); background: var(--sheet); }
+  .conflict .hd { background: var(--signal); color: #fff; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .conflict .hd .label { color: #fff; }
+  .vs { display: grid; grid-template-columns: 1fr 1fr; }
+  .vs > div { padding: 16px; }
+  .vs > div + div { border-left: 1px solid var(--rule); }
+  strike, del { text-decoration-color: var(--signal); text-decoration-thickness: 2px; }
+  pre.diff { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; background: var(--paper); border: 1px solid var(--rule); padding: 10px 12px; margin-top: 10px; }
+  .add { background: var(--signal-bg); color: var(--signal); display: block; }
+  .htl { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
+  .htl > div { position: relative; padding: 14px 14px 0 0; }
+  .htl > div::before { content: ''; position: absolute; top: -7px; left: 0; width: 12px; height: 12px; background: var(--sheet); border: 2px solid var(--ink); }
+  .htl > div.bad::before, .htl > div.cur::before { background: var(--signal); border-color: var(--signal); }
+  .htl p { font-size: 14px; margin-top: 3px; }
+  .htl .cur p { color: var(--signal); font-weight: 500; }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="label"><a href="#">Decisions</a> / Engineering / Release / dec_7f3a</div>
+  <div class="grid layout" style="margin-top:14px">
+    <div>
+      <div class="row" style="gap:8px;margin-bottom:14px"><span class="tag green">active</span><span class="tag line">v3 / supersedes 2</span><span class="tag ghost">recorded by human</span></div>
+      <h1 class="stmt">No production deploys on Fridays.</h1>
+      <p class="lede muted" style="margin-top:12px;font-size:20px">Sev1 hotfixes are the only exception, and they need sign-off from the on-call lead.</p>
+      <div class="meta">
+        <div><span class="label">Owner</span><b>Priya Raman, VP Eng</b></div>
+        <div><span class="label">Decided</span><b class="tnum">16 Mar 2026</b></div>
+        <div><span class="label">Last changed</span><b class="tnum">2 Jun 2026</b></div>
+        <div><span class="label">Checked by agents</span><b class="tnum">27 times / 4 blocks</b></div>
+      </div>
+
+      <section style="margin-top:22px">
+        <div class="label ink" style="margin-bottom:10px">How it evolved</div>
+        <div class="htl">
+          <div class="bad"><span class="label">13 Mar 2026 / incident</span><p>Friday billing migration, 3 h 12 m EU outage</p></div>
+          <div><span class="label">16 Mar / new</span><p>"No production deploys on Fridays"</p></div>
+          <div><span class="label">2 Jun / update</span><p>Sev1 hotfix exception, on-call lead signs off</p></div>
+          <div class="cur"><span class="label">Today / contradiction</span><p>PR #412 tries a Friday cron. Blocked.</p></div>
+        </div>
+      </section>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:28px;margin-top:26px">
+        <section>
+          <div class="sec"><h2 class="h3">Why</h2></div>
+          <p style="margin-top:10px;font-size:15.5px">On Friday 13 March a billing migration took route planning down for EU customers for 3 h 12 m. Weekend on-call is one person, and the rollback needed two. Shipping earlier in the week leaves a full team to fix what breaks.</p>
+        </section>
+        <section>
+          <div class="sec"><h2 class="h3">Assumptions</h2><span class="label">Canon watches these</span></div>
+          <ul class="assume">
+            <li>Weekend on-call is one person.<span class="tag green">holds</span></li>
+            <li>DB migrations have no automated rollback.<span class="tag amber">premise changed</span></li>
+            <li>Most customers are active Mon to Fri.<span class="tag green">holds</span></li>
+          </ul>
+        </section>
+      </div>
+
+      <section style="margin-top:26px">
+        <div class="sec"><h2 class="h3">Verified quotes</h2><span class="label">Each one matched word for word in its source</span></div>
+        <div class="grid" style="gap:18px;margin-top:14px">
+          <div class="q">"Starting Monday, nothing goes to production on a Friday. I would rather ship Thursday and sleep."
+            <div class="src"><span class="ok-mark">verified</span><span class="chip"><span class="k">meeting</span> INC-2291 postmortem / 16 Mar 2026</span><span class="muted">Priya Raman</span></div></div>
+          <div class="q">"rollback took 3h12m because only one person was on call and the migration had no down script"
+            <div class="src"><span class="ok-mark">verified</span><span class="chip"><span class="k">slack</span> #incidents / 13 Mar 2026</span><span class="muted">Dev Okafor</span></div></div>
+          <div class="q">"Sev1 hotfixes can go out on Fridays if the on-call lead signs off in the ticket."
+            <div class="src"><span class="ok-mark">verified</span><span class="chip"><span class="k">email</span> Re: Friday rule exceptions / 2 Jun 2026</span><span class="muted">Priya Raman</span></div></div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="grid" style="gap:22px">
+      <section class="conflict">
+        <div class="hd"><span class="label">Contradicted by / stale doc</span><span class="label">high</span></div>
+        <div style="padding:14px 16px 4px"><div class="h3">Wiki: Release process</div><div class="small muted">Last edited 4 Nov 2025 by Marcus Lee (left May 2026)</div></div>
+        <div class="vs">
+          <div><div class="label" style="margin-bottom:6px">The wiki says</div><div class="q red" style="font-size:15px">"Deploys go out every Friday at 16:00 IST after the weekly release train."</div></div>
+          <div><div class="label" style="margin-bottom:6px">The record says</div><div class="q" style="font-size:15px">"nothing goes to production on a Friday"</div></div>
+        </div>
+        <div class="row" style="padding:0 16px 14px;gap:8px"><a class="btn sm" href="#">Accept update</a><a class="btn sm ghost" href="#">Dismiss</a></div>
+      </section>
+
+      <section class="conflict">
+        <div class="hd"><span class="label">Agent check / pr_deviation</span><span class="v block" style="background:#fff;color:var(--signal)">block</span></div>
+        <div style="padding:14px 16px">
+          <div class="h3">PR #412 Add weekly release cron</div>
+          <div class="small muted">Opened by Arjun Mehta / checked by <span class="actor agent">codex</span> 2 h ago</div>
+          <pre class="diff">  on:
+    schedule:
+<span class="add">+     - cron: "0 17 * * 5"   # Fri 17:00</span>  jobs:
+    release: { env: production }</pre>
+          <p class="small" style="margin-top:10px">Draft review comment: "This schedules a production release every Friday. That contradicts the no-Friday-deploys decision (Priya Raman, 16 Mar). Move it to Thursday?"</p>
+        </div>
+      </section>
+
+    </aside>
+  </div>
+</main>
+</body></html>
