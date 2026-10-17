@@ -1,33 +1,38 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Canon: how well does it work?</title><link rel="stylesheet" href="v2.css">
+<!-- Every number below comes from backend/canon/eval_report.json. The data-key names the field, so a new
+     run is a find-and-replace: decisions_found/decisions_planted, contradictions_found/contradictions_planted,
+     false_positives, check_correct/check_cases, refused_correctly/unanswerable, p50_ms, p95_ms, run_at, quotes (notes). -->
 <style>
-.res { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: center; }
-.res .fig { font: 500 44px/1 var(--serif); } .res .fig small { font-size: 22px; color: var(--ink-2); }
-.res h3 { font-size: 21px; } .res p { color: var(--ink-2); margin-top: 4px; }
-.meter { height: 8px; background: var(--rule-2); border-radius: 4px; margin-top: 10px; overflow: hidden; } .meter i { display: block; height: 100%; background: var(--ok-ink); }
-@media (max-width: 760px) { .res { grid-template-columns: 1fr; gap: 8px; } }
+.results { list-style: none; border-top: 1px solid var(--ink); margin-top: 28px; }
+.results li { display: grid; grid-template-columns: 220px 1fr; gap: 32px; padding: 28px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.results .fig { font: 500 48px/1 var(--serif); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; }
+.results .fig small { font-size: 22px; color: var(--ink-2); letter-spacing: 0; }
+.results h3 { font-size: 21px; } .results p { color: var(--ink-2); margin-top: 6px; }
+@media (max-width: 760px) { .results li { grid-template-columns: 1fr; gap: 8px; padding: 22px 0; } .results .fig { font-size: 40px; } }
 </style></head>
-<body data-nav="">
+<body data-nav="bench">
 <main class="wrap">
   <h1>How well does it work?</h1>
-  <p class="lede">We hid known decisions, changes and conflicts in Northwind's 259 items, then checked how many Canon found on its own. These are the results of our last run, on 17 October 2026.</p>
-  <div class="section">
-    <div class="card res"><div><div class="fig tnum">36 <small>of 38</small></div><div class="meter"><i style="width:94.7%"></i></div></div>
-      <div><h3>Found 36 of 38 decisions</h3><p>From messy chats and transcripts, Canon pulled out almost every real decision, with who made it and when.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">16 <small>of 17</small></div><div class="meter"><i style="width:94.1%"></i></div></div>
-      <div><h3>Caught 16 of 17 changes and contradictions</h3><p>When a new message changed or went against an old decision, Canon noticed. It raised 3 false alarms.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">8 <small>of 8</small></div><div class="meter"><i style="width:100%"></i></div></div>
-      <div><h3>Found all 8 out-of-date documents</h3><p>Wiki pages that still describe an old decision were all flagged.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">14 <small>of 15</small></div><div class="meter"><i style="width:93.3%"></i></div></div>
-      <div><h3>Gave agents the right answer 14 of 15 times</h3><p>Allow, warn or block. The one miss was too careful: it blocked a Friday deploy to a test system.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">5 <small>of 5</small></div><div class="meter"><i style="width:100%"></i></div></div>
-      <div><h3>Said "I do not know" to all 5 questions it could not answer</h3><p>It did not make anything up when the record had no answer.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">1.1 <small>s</small></div></div>
-      <div><h3>Typical answer in 1.1 seconds</h3><p>Half of all questions and checks came back faster than this. 95 in 100 came back within 1.4 seconds.</p></div></div>
-    <div class="card res"><div><div class="fig tnum">184</div></div>
-      <div><h3>Every one of 184 quotes checked word for word</h3><p>Canon only keeps a quote if it appears exactly in the source. No invented quotes.</p></div></div>
-  </div>
-  <p class="small muted" style="margin-top:20px">Model: Gemini 3.5 Flash Lite on Vertex AI, in Mumbai (asia-south1). The test set and the scoring script are in the GitHub repo.</p>
+  <p class="lede">We hid known decisions, changes and conflicts in Northwind's 259 items, then checked how many Canon found on its own. These are the results of the last run, on <span data-key="run_at">17 October 2026</span>.</p>
+
+  <ol class="results">
+    <li><div class="fig"><span data-key="decisions_found">36</span> <small>of <span data-key="decisions_planted">38</span></small></div>
+      <div><h3>Found 36 of 38 decisions</h3><p>From messy chats and transcripts, Canon pulled out almost every real decision, with who made it and when.</p></div></li>
+    <li><div class="fig"><span data-key="contradictions_found">16</span> <small>of <span data-key="contradictions_planted">17</span></small></div>
+      <div><h3>Caught 16 of 17 changes and contradictions</h3><p>When a new message changed or went against an old decision, Canon noticed. It raised <span data-key="false_positives">3</span> false alarms.</p></div></li>
+    <li><div class="fig"><span data-key="stale_found">8</span> <small>of <span data-key="stale_planted">8</span></small></div>
+      <div><h3>Found all 8 out-of-date documents</h3><p>Every wiki page that still describes an old decision was flagged.</p></div></li>
+    <li><div class="fig"><span data-key="check_correct">14</span> <small>of <span data-key="check_cases">15</span></small></div>
+      <div><h3>Gave agents the right answer 14 of 15 times</h3><p>Allow, warn or block. The one miss was too careful: it blocked a Friday deploy to a test system.</p></div></li>
+    <li><div class="fig"><span data-key="refused_correctly">5</span> <small>of <span data-key="unanswerable">5</span></small></div>
+      <div><h3>Said "I do not know" to all 5 questions it could not answer</h3><p>It did not make anything up when the record had no answer.</p></div></li>
+    <li><div class="fig"><span data-key="p50_ms">1.1</span> <small>s</small></div>
+      <div><h3>A typical answer in 1.1 seconds</h3><p>Half of all questions and checks came back faster than this. 95 in 100 came back within <span data-key="p95_ms">1.4</span> seconds.</p></div></li>
+    <li><div class="fig"><span data-key="quotes">184</span></div>
+      <div><h3>Every one of 184 quotes checked word for word</h3><p>Canon keeps a quote only if it appears exactly in the source. No invented quotes.</p></div></li>
+  </ol>
+  <p class="small muted" style="margin-top:24px">Model: Gemini 3.5 Flash Lite on Vertex AI, in Mumbai (asia-south1). The test set and the scoring script are in the GitHub repo.</p>
 </main>
 <script src="chrome.js"></script>
 </body></html>

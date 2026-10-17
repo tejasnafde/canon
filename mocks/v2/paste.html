@@ -1,58 +1,55 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Canon: paste a message and see what it breaks</title><link rel="stylesheet" href="v2.css">
 <style>
-.progress { display: flex; gap: 22px; align-items: center; font: 14px var(--mono); color: var(--ink-2); margin-top: 16px; flex-wrap: wrap; }
-.progress .ok { color: var(--ok-ink); } .progress .ok::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok-ink); margin-right: 8px; vertical-align: 1px; }
-.understood dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 16px; margin-top: 12px; font-size: 15px; }
+.samples { display: flex; gap: 22px; align-items: baseline; margin-top: 36px; }
+.progress { margin-top: 14px; font-size: 15px; color: var(--ink-2); }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 18px; }
+.vs .label { display: block; margin-bottom: 4px; }
+.vs blockquote { margin-top: 4px; }
+.vs .by { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+.understood dl { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; margin-top: 20px; font-size: 16px; border-top: 1px solid var(--ink); padding-top: 16px; }
 .understood dt { color: var(--ink-2); }
-.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
-.vs > div { background: var(--sheet); border-radius: 4px; padding: 14px 16px; }
-.vs .label { font: 500 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
-@media (max-width: 760px) { .vs { grid-template-columns: 1fr; } .understood dl { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .vs { grid-template-columns: 1fr; gap: 24px; } .understood dl { grid-template-columns: 1fr; gap: 2px 0; } .understood dd { margin-bottom: 10px; } .samples { flex-wrap: wrap; } }
 </style></head>
 <body data-nav="home">
 <main class="wrap">
-  <a href="home.html" class="small">&larr; Back to the stories</a>
-  <h1 style="margin-top:12px">Paste a new message and see what it breaks.</h1>
-  <p class="lede">Paste anything: a Slack message, meeting notes, an email. Canon reads it, compares it with every decision Northwind has made, and tells you what it goes against.</p>
+  <a href="home.html" class="back">&larr; Stories</a>
+  <h1 style="margin-top:16px">Paste a new message and see what it breaks.</h1>
+  <p class="lede">A Slack message, meeting notes, an email. Canon reads it, compares it with every decision Northwind has made, and tells you what it goes against.</p>
 
-  <div class="card" style="margin-top:26px">
-    <div class="pill-row" style="margin-bottom:12px"><span class="small muted" style="align-self:center">Try a sample:</span>
-      <span class="pill on">Friday deploy job</span><span class="pill">New timeout setting</span><span class="pill">New label supplier</span></div>
-    <textarea class="input">Pranav: I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time. It runs unattended, including configuration changes. I used the slot from the Release process wiki. This is routine housekeeping, not incident mitigation.</textarea>
-    <div style="margin-top:12px;display:flex;gap:12px;align-items:center"><span class="btn">Check this message</span><span class="small muted">Your paste stays in your own space. Other visitors do not see it.</span></div>
-    <div class="progress"><span class="ok">Reading the message</span><span class="ok">Checking 36 decisions</span><span class="ok">Done in 3.4 s</span></div>
-  </div>
+  <div class="samples"><span class="label">Try a sample</span><div class="choices"><span class="on">Friday deploy job</span><span>New timeout setting</span><span>New label supplier</span></div></div>
+  <textarea class="input" style="margin-top:20px">Pranav: I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time. It runs unattended, including configuration changes. I used the slot from the Release process wiki. This is routine housekeeping, not incident mitigation.</textarea>
+  <div style="margin-top:20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap"><span class="btn">Check this message</span><span class="small muted">Your paste stays in your own space. Other visitors do not see it.</span></div>
+  <p class="progress">Read the message. Checked 36 decisions. Done in 3.4 seconds.</p>
 
   <div class="section split">
     <div>
-      <div class="alert">
-        <span class="badge b-block">Goes against a decision</span>
-        <h3 style="margin-top:10px">This message goes against "No production deploys on Fridays".</h3>
+      <div class="flag">
+        <h3>Goes against "No production deploys on Fridays".</h3>
         <div class="vs">
-          <div class="q-bad"><span class="label">The new message, today</span><blockquote>"I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time."</blockquote><p class="small muted" style="margin-top:8px">Pranav Menon, pasted</p></div>
-          <div class="q-good"><span class="label">The decision, 9 Mar 2026</span><blockquote>"No production deploys on Fridays, including scheduled jobs and configuration-only releases."</blockquote><p class="small muted" style="margin-top:8px">Owner Mei Tan &middot; INC-042 review meeting</p></div>
+          <div><span class="label">The new message, today</span><blockquote>"I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time."</blockquote><p class="by">Pranav Menon, pasted</p></div>
+          <div><span class="label">The decision, 9 March 2026</span><blockquote>"No production deploys on Fridays, including scheduled jobs and configuration-only releases."</blockquote><p class="by">Mei Tan, INC-042 review meeting</p></div>
         </div>
-        <p style="margin-top:14px">Both quotes are checked word for word against their source. Canon never makes up a quote.</p>
+        <p class="small muted" style="margin-top:18px">Both quotes are checked word for word against their source. Canon never makes up a quote.</p>
       </div>
-      <div class="alert warn" style="margin-top:16px">
-        <span class="badge b-warn">Document out of date</span>
-        <h3 style="margin-top:10px">This also shows the Release process wiki page is out of date.</h3>
-        <p style="margin-top:8px">The message says it "used the slot from the Release process wiki". That page still says:</p>
+
+      <div class="flag" style="margin-top:48px;border-color:var(--rule)">
+        <h3 style="color:var(--ink)">It also shows the Release process wiki page is out of date.</h3>
+        <p style="margin-top:8px;color:var(--ink-2)">The message says it "used the slot from the Release process wiki". That page still says:</p>
         <blockquote>"Friday afternoon, 14:00 to 16:00 SGT, is our production release window."</blockquote>
-        <p style="margin-top:10px">It was written on 12 Feb 2025, before the Friday ban. Ask Thao Tran, the page owner, to update it.</p>
+        <p style="margin-top:12px;color:var(--ink-2)">Written on 12 February 2025, before the Friday ban. Ask Thao Tran, the page owner, to update it.</p>
       </div>
     </div>
-    <aside class="card understood">
-      <span class="kicker">What Canon understood</span>
+    <aside class="understood">
+      <h2>What Canon understood</h2>
       <dl>
         <dt>What</dt><dd>A production deploy that runs on its own, every Friday at 15:00</dd>
         <dt>Who</dt><dd>Pranav Menon, backend engineer</dd>
         <dt>Includes</dt><dd>Configuration changes</dd>
-        <dt>Is it an emergency?</dt><dd>No, routine housekeeping</dd>
-        <dt>Source it used</dt><dd>The Release process wiki</dd>
+        <dt>Emergency?</dt><dd>No, routine housekeeping</dd>
+        <dt>Source used</dt><dd>The Release process wiki</dd>
       </dl>
-      <p class="small muted" style="margin-top:14px">Canon saved this as a new item and raised 2 alerts. A person can accept or dismiss them.</p>
+      <p class="small muted" style="margin-top:20px">Canon saved this as a new item and raised two alerts. A person can accept or dismiss them.</p>
     </aside>
   </div>
 </main>

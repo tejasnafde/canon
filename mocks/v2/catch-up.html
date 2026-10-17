@@ -1,37 +1,76 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Canon: what changed while I was away</title><link rel="stylesheet" href="v2.css">
 <style>
-.picker { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 26px; }
-.picker label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; }
-.todo { display: grid; grid-template-columns: 34px 1fr 170px; gap: 16px; align-items: start; }
-.todo .rank { font: 500 24px var(--serif); color: var(--ink-2); }
-.todo h3 { font-size: 19px; } .todo .why { margin-top: 4px; font-size: 15px; color: var(--ink-2); }
-.todo .why b { color: var(--ink); font-weight: 600; }
-.summary { font: 400 22px/1.45 var(--serif); background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--ink); padding: 20px 24px; border-radius: 4px; }
-@media (max-width: 760px) { .picker { grid-template-columns: 1fr; } .todo { grid-template-columns: 26px 1fr; } .todo .score { grid-column: 2; } }
+.picker { display: grid; grid-template-columns: 1fr auto; gap: 24px 64px; align-items: end; margin-top: 32px; }
+.section { margin-top: 44px; }
+.picker .label { display: block; margin-bottom: 8px; }
+.summary { font: 400 25px/1.4 var(--serif); max-width: 40ch; }
+.todo { list-style: none; border-top: 1px solid var(--ink); margin-top: 20px; }
+.todo li { display: grid; grid-template-columns: 36px 1fr 56px; gap: 16px; padding: 22px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+.todo .n { font: 500 22px/1.2 var(--serif); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.todo .u { font: 500 22px/1.2 var(--serif); text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.todo li.hot .u { color: var(--signal); }
+.todo h3 { font-size: 20px; max-width: 56ch; }
+.todo p { margin-top: 6px; color: var(--ink-2); font-size: 16px; }
+.todo .src { margin-top: 8px; }
+.head { display: flex; justify-content: space-between; align-items: baseline; }
+.head .label { text-align: right; }
+@media (max-width: 760px) {
+  .picker { grid-template-columns: 1fr; gap: 20px; } .summary { font-size: 21px; }
+  .todo li { grid-template-columns: 28px 1fr 44px; gap: 10px; } .todo .n, .todo .u { font-size: 19px; }
+}
 </style></head>
 <body data-nav="home">
 <main class="wrap">
-  <a href="home.html" class="small">&larr; Back to the stories</a>
-  <h1 style="margin-top:12px">What changed while you were away?</h1>
+  <a href="home.html" class="back">&larr; Stories</a>
+  <h1 style="margin-top:16px">What changed while you were away?</h1>
   <p class="lede">Pick your role and how long you were gone. Canon reads everything that happened and tells you what matters to you, most urgent first.</p>
+
   <div class="picker">
-    <div><label>My role</label><div class="pill-row"><span class="pill on">Engineer</span><span class="pill">Product</span><span class="pill">Sales &amp; Support</span><span class="pill">Security &amp; Compliance</span><span class="pill">Finance &amp; Ops</span><span class="pill">New hire</span></div></div>
-    <div><label>I was away for</label><div class="pill-row"><span class="pill">1 week</span><span class="pill">1 month</span><span class="pill on">Since I joined</span></div></div>
+    <div><span class="label">My role</span>
+      <div class="choices"><span class="on">Engineer</span><span>Product</span><span>Sales</span>
+        <span class="sel">More roles<select aria-label="More roles">
+          <option>More roles</option>
+          <optgroup label="Build"><option>Design</option><option>Data</option><option>Security</option></optgroup>
+          <optgroup label="Customers"><option>Support</option><option>Marketing</option></optgroup>
+          <optgroup label="Company"><option>Finance</option><option>Operations</option><option>People and HR</option><option>Legal</option><option>Leadership</option></optgroup>
+          <optgroup label="Just joined"><option>New hire</option></optgroup>
+        </select></span></div></div>
+    <div><span class="label">I was away for</span>
+      <div class="choices"><span>1 week</span><span>1 month</span><span class="on">3 months</span></div></div>
   </div>
+
   <div class="section">
-    <span class="kicker">Engineer, joined 1 June 2026</span>
-    <p class="summary" style="margin-top:12px">Since you joined, three pull requests and one proposal went against rules the team already agreed. The most urgent: PR 684 would deploy to production every Friday, which the team banned after the March outage.</p>
+    <p class="summary">In the last three months, three pull requests and one proposal went against rules the team already agreed. The most urgent: PR 684 would deploy to production every Friday, which the team banned after the March outage.</p>
   </div>
-  <div class="section"><h2>Your to-do list</h2><div class="card todo"><div class="rank">1</div><div><h3>Stop PR 684. It deploys to production every Friday at 15:00.</h3><p class="why"><b>Why this is high:</b> it runs by itself on a Friday, the exact case that caused the 47-minute outage in March.</p><div class="chips"><span class="chip"><b>PR</b> PR 684: unattended dispatch refresh &middot; 14 Aug 2026</span><span class="chip"><b>Meeting</b> INC-042 review: the Friday release &middot; 9 Mar 2026</span></div></div>
-<div class="score"><div class="track"><div class="fill hot" style="width:96%"></div></div><span>96</span></div></div><div class="card todo"><div class="rank">2</div><div><h3>Fix the Release process wiki page. It still says to release on Friday.</h3><p class="why"><b>Why this is high:</b> PR 684 copied its Friday slot from this page. The next person will copy it too.</p><div class="chips"><span class="chip"><b>Wiki</b> Release process &middot; 12 Feb 2025</span></div></div>
-<div class="score"><div class="track"><div class="fill hot" style="width:88%"></div></div><span>88</span></div></div><div class="card todo"><div class="rank">3</div><div><h3>PR 702 writes full carrier data into the logs.</h3><p class="why"><b>Why this is high:</b> the team agreed to log only event IDs and error codes, because carrier data holds customer details.</p><div class="chips"><span class="chip"><b>PR</b> PR 702: parser diagnostics &middot; 11 Jun 2026</span><span class="chip"><b>Meeting</b> Queue log sampling &middot; 2 Oct 2025</span></div></div>
-<div class="score"><div class="track"><div class="fill hot" style="width:84%"></div></div><span>84</span></div></div><div class="card todo"><div class="rank">4</div><div><h3>The new backup plan puts Sakura snapshots in Singapore.</h3><p class="why"><b>Why this is high:</b> Sakura's contract says its data and backups stay in Japan.</p><div class="chips"><span class="chip"><b>Slack</b> Backup footprint proposal &middot; 2 Jul 2026</span><span class="chip"><b>Meeting</b> Sakura residency review &middot; 20 Feb 2025</span></div></div>
-<div class="score"><div class="track"><div class="fill hot" style="width:80%"></div></div><span>80</span></div></div><div class="card todo"><div class="rank">5</div><div><h3>PR 731 lets warehouse viewers download shipment CSV files.</h3><p class="why"><b>Why this is high:</b> only tenant admins may download these files. The PR skips that check.</p><div class="chips"><span class="chip"><b>PR</b> PR 731: warehouse download shortcut &middot; 16 Jul 2026</span><span class="chip"><b>Slack</b> CSV permission review &middot; 17 Apr 2025</span></div></div>
-<div class="score"><div class="track"><div class="fill mid" style="width:74%"></div></div><span>74</span></div></div><div class="card todo"><div class="rank">6</div><div><h3>The fleet dashboard rule may no longer be safe.</h3><p class="why"><b>Why this is on the list:</b> the 5-minute cache was agreed while traffic stayed under 2,000 events a second. Traffic is now above that.</p><div class="chips"><span class="chip"><b>Slack</b> Fleet peak after eastern rollout &middot; 18 Jun 2026</span><span class="chip"><b>Slack</b> Operations dashboard cache &middot; 4 Dec 2025</span></div></div>
-<div class="score"><div class="track"><div class="fill " style="width:58%"></div></div><span>58</span></div></div><div class="card todo"><div class="rank">7</div><div><h3>The regional AI model is now slower than its limit.</h3><p class="why"><b>Why this is on the list:</b> the team keeps this model only while it answers in under 250 ms. New traces show it is slower.</p><div class="chips"><span class="chip"><b>Slack</b> Route Lens low-volume trace &middot; 9 Jul 2026</span><span class="chip"><b>Slack</b> Route Lens serving budget &middot; 26 Feb 2026</span></div></div>
-<div class="score"><div class="track"><div class="fill " style="width:52%"></div></div><span>52</span></div></div></div>
-  <p class="small muted" style="margin-top:16px">Score: how urgent this is for you, from 0 to 100. Canon ranks by how serious the rule is, how recent the change is, and how close it is to your work.</p>
+
+  <div class="section">
+    <div class="head"><h2>Your to-do list</h2><span class="label">Urgency, 0 to 100</span></div>
+    <ol class="todo">
+      <li class="hot"><span class="n">1</span><div><h3>Stop PR 684. It deploys to production every Friday at 15:00.</h3>
+        <p>It runs by itself on a Friday, the exact case that caused the 47-minute outage in March.</p>
+        <p class="src">PR 684, unattended dispatch refresh, 14 Aug 2026. Meeting, INC-042 review, 9 Mar 2026.</p></div><span class="u">96</span></li>
+      <li class="hot"><span class="n">2</span><div><h3>Fix the Release process wiki page. It still says to release on Friday.</h3>
+        <p>PR 684 copied its Friday slot from this page. The next person will copy it too.</p>
+        <p class="src">Wiki, Release process, 12 Feb 2025.</p></div><span class="u">88</span></li>
+      <li class="hot"><span class="n">3</span><div><h3>PR 702 writes full carrier data into the logs.</h3>
+        <p>The team agreed to log only event IDs and error codes, because carrier data holds customer details.</p>
+        <p class="src">PR 702, parser diagnostics, 11 Jun 2026. Meeting, Queue log sampling, 2 Oct 2025.</p></div><span class="u">84</span></li>
+      <li class="hot"><span class="n">4</span><div><h3>The new backup plan puts Sakura snapshots in Singapore.</h3>
+        <p>Sakura's contract says its data and backups stay in Japan.</p>
+        <p class="src">Slack, Backup footprint proposal, 2 Jul 2026. Meeting, Sakura residency review, 20 Feb 2025.</p></div><span class="u">80</span></li>
+      <li><span class="n">5</span><div><h3>PR 731 lets warehouse viewers download shipment CSV files.</h3>
+        <p>Only tenant admins may download these files. The PR skips that check.</p>
+        <p class="src">PR 731, warehouse download shortcut, 16 Jul 2026. Slack, CSV permission review, 17 Apr 2025.</p></div><span class="u">74</span></li>
+      <li><span class="n">6</span><div><h3>The fleet dashboard cache may no longer be safe.</h3>
+        <p>The 5-minute cache was agreed while traffic stayed under 2,000 events a second. Traffic is now above that.</p>
+        <p class="src">Slack, Fleet peak after eastern rollout, 18 Jun 2026. Slack, Operations dashboard cache, 4 Dec 2025.</p></div><span class="u">58</span></li>
+      <li><span class="n">7</span><div><h3>The regional AI model is now slower than its limit.</h3>
+        <p>The team keeps this model only while it answers in under 250 ms. New traces show it is slower.</p>
+        <p class="src">Slack, Route Lens low-volume trace, 9 Jul 2026. Slack, Route Lens serving budget, 26 Feb 2026.</p></div><span class="u">52</span></li>
+    </ol>
+    <p class="small muted" style="margin-top:20px">Canon ranks by how serious the rule is, how recent the change is, and how close it is to your work. An open conflict stays on the list until someone resolves it, however old it is.</p>
+  </div>
 </main>
 <script src="chrome.js"></script>
 </body></html>
