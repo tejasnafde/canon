@@ -5,6 +5,8 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 from canon import llm, reconcile
@@ -14,6 +16,7 @@ from canon.store import get_store, new_id, now, utc
 
 
 class ExDecision(BaseModel):
+    kind: Literal["rule", "action", "proposal"]
     statement: str
     rationale: str
     assumptions: list[str]
@@ -35,11 +38,19 @@ class Extraction(BaseModel):
 
 EXTRACT = """Extract the decisions recorded in this {kind} ("{title}", by {author}, {date}).
 A decision is a durable commitment meant to hold beyond today: a rule, policy, price, plan, deadline,
-technical or vendor choice, or a change to one of these. NOT a decision: status updates, who is doing
-what right now, incident play-by-play, questions, suggestions, open discussion, pleasantries.
+technical or vendor choice, public copy or customer-facing claim, or a change to one of these. NOT a decision:
+status updates, who is doing what right now, incident play-by-play, questions, open discussion, pleasantries.
 Most chat messages and commits contain no decision; return [] for them. Implementation changes that
-set behaviour (e.g. a PR that schedules a job or changes a timeout) ARE decisions.
+set behaviour (e.g. a PR that schedules a job, changes a schedule, a timeout, a permission or what gets
+logged or copied) ARE decisions, even when the author calls them routine or housekeeping.
+When the text quotes a rule from a document, packet, page or message that is in circulation, extract that
+rule as written (kind rule), with a statement naming where it appears ("The onboarding packet states: ..."),
+even if the author says it is wrong.
 For each decision:
+- kind: "rule" when it sets how things work from now on: a policy, standard, price, deadline, plan, copy, or a
+  schedule, timeout, permission or behaviour set by code or config, or a change to any of these.
+  "action" for a one-off task or event: who holds, sends, covers, books, fixes or prepares something this time.
+  "proposal" for what someone wants, suggests, requests or asks for that is not yet agreed.
 - statement: one plain sentence, self-contained (name the system or team).
 - rationale: why, from the text; "" if not given.
 - assumptions: facts the decision depends on that could change (e.g. "vendor X costs 2k/month"); may be empty.
@@ -94,12 +105,12 @@ async def prepare(src: Source, workspace: str, actor: str = "human:web") -> Prep
     for d in ex["decisions"]:
         good = [q for q in d["quotes"] if verified(q, s["text"])]
         p.rejected += len(d["quotes"]) - len(good)
-        if not good:
+        if not good or d.get("kind") == "proposal":
             continue
         p.decisions.append({
             "id": new_id("d"), "workspace": workspace, "statement": d["statement"], "rationale": d["rationale"],
             "assumptions": d["assumptions"], "owner": d["owner"] or s["author"], "ts": s["ts"],
-            "topic": d["topic"].lower(), "status": "active", "supersedes": [], "superseded_by": None,
+            "topic": d["topic"].lower(), "kind": d.get("kind") or "rule", "status": "active", "supersedes": [], "superseded_by": None,
             "quotes": [{"source_id": s["id"], "quote": reconcile.norm(q)} for q in good], "created_by": created_by,
         })
     for f in ex["facts"]:

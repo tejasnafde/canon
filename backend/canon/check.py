@@ -13,6 +13,7 @@ from canon.store import get_store, new_id, now
 
 CHECK_THINK = int(os.environ.get("CANON_CHECK_THINK", "0"))  # thinking budget for the verdict
 CHECK_MIN = 0.64  # below this no decision covers the intent: allow without asking Gemini
+CHECK_SPREAD = 0.12  # judge only decisions within this cosine of the best match
 
 
 class Judgement(BaseModel):
@@ -51,7 +52,9 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
                                                   get_store().query("alerts", workspaces, status="open"))
     # A decision flagged as contradicting the record (e.g. a rogue PR) is not authority for an action.
     rogue = {a["decision_id"] for a in open_alerts if a["kind"] == "contradiction"}
-    active = [d for d, s in decs if d["status"] == "active" and s >= CHECK_MIN and d["id"] not in rogue][:6]
+    live = [(d, s) for d, s in decs if d["status"] == "active" and s >= CHECK_MIN and d["id"] not in rogue]
+    # Only decisions near the best match go to Gemini: the tail is off-topic, costs latency and invites stray flags.
+    active = [d for d, s in live if s >= live[0][1] - CHECK_SPREAD][:5] if live else []
     verdict, why, deciding = "allow", "No decision in the record covers this action.", []
     if active:
         ctx, labels = context(active, [])
