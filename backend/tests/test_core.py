@@ -5,7 +5,7 @@ import pytest
 from canon import core, llm
 from canon.briefing import deadline_days, rank, score
 from canon.models import (AskRequest, BriefingRequest, CheckRequest, IngestRequest, ResolveRequest, Source)
-from canon.reconcile import pick, verified
+from canon.reconcile import decide, pick, verified
 
 NO_PREMISE = {"broken": []}
 NO_STALE = {"stale": []}
@@ -51,8 +51,11 @@ async def test_reconciliation_branches(relation):
     first = await ingest("Policy: deploys run on any weekday.", ts="2026-01-01T00:00:00Z")
     old_id = first.decisions[0].decision.id
 
+    flags = {"same": (True, False, False), "update": (False, True, True), "contradiction": (False, True, False),
+             "new": (False, False, False)}[relation]
     fake(Extraction=extraction(("Deploys run on any weekday except Friday.", ["deploys run on any weekday except Friday"], [])),
-         Judgement={"relation": relation, "related": "" if relation == "new" else "D1", "explanation": "x"})
+         Judgement={"assessments": [dict(zip(("restates", "conflicts", "explicit_supersede"), flags),
+                                         decision="D1", why="x")], "authority_evidence": "From today"})
     r = await ingest("From today deploys run on any weekday except Friday.", ts="2026-03-01T00:00:00Z")
     rd = r.decisions[0]
     assert rd.relation == relation
@@ -70,6 +73,48 @@ async def test_reconciliation_branches(relation):
         assert a.kind == "contradiction" and len(a.quotes) == 2
     else:
         assert rd.related_decision_id is None and old.status == "active"
+
+
+def test_relation_decided_in_code_from_flags():
+    rule = {"id": "d-rule", "owner": "Mei Tan"}
+    breach = {"id": "d-breach", "owner": "Pranav Menon"}
+    labels = {"D1": breach, "D2": rule}
+    a = lambda d, r=False, c=False, s=False: {"decision": d, "restates": r, "conflicts": c,  # noqa: E731
+                                             "explicit_supersede": s, "why": ""}
+    yes, no = (lambda d: True), (lambda d: False)
+    # Restating an earlier breach while breaking the rule: contradiction of the rule, not "same".
+    assert decide([a("D1", r=True), a("D2", c=True)], labels, no)[:2] == ("contradiction", rule)
+    # Both conflict: the known violator is the last target.
+    assert decide([a("D1", c=True), a("D2", c=True)], labels, no, {"d-breach"})[:2] == ("contradiction", rule)
+    # Change language without authority is still a contradiction; with authority it is an update.
+    assert decide([a("D2", c=True, s=True)], labels, no)[0] == "contradiction"
+    assert decide([a("D2", c=True, s=True)], labels, yes)[:2] == ("update", rule)
+    assert decide([a("D2", c=True)], labels, yes)[0] == "contradiction"  # authority alone does not supersede
+    assert decide([a("D2", s=True)], labels, yes)[0] == "update"
+    assert decide([a("D2", s=True)], labels, no)[0] == "new"
+    assert decide([a("D9", c=True)], labels, yes)[0] == "new"  # unknown label
+
+
+async def test_contradiction_flags_the_stale_doc_it_relies_on():
+    fake(Extraction=extraction(("Production release window is Friday afternoon.", ["Friday afternoon is our production release window"], [])))
+    wiki = await ingest("Release process: Friday afternoon is our production release window.", kind="wiki",
+                        ts="2025-02-01T00:00:00Z", title="Release process")
+    # Rule replaces it with authority (owner match: same author).
+    fake(Extraction=extraction(("No production release window on Friday afternoon.", ["No production deploys on Fridays"], [])),
+         Judgement={"assessments": [{"decision": "D1", "restates": False, "conflicts": True,
+                                     "explicit_supersede": True, "why": "x"}], "authority_evidence": ""})
+    rule = (await ingest("No production deploys on Fridays.", ts="2026-03-01T00:00:00Z")).decisions[0]
+    assert rule.relation == "update"
+    fake(Extraction=extraction(("Production release window refresh every Friday afternoon.", ["every Friday"], [])),
+         Judgement={"assessments": [{"decision": "D1", "restates": False, "conflicts": True,
+                                     "explicit_supersede": False, "why": "breaks the Friday ban"}],
+                    "authority_evidence": ""})
+    r = await ingest("I scheduled the refresh every Friday, using the slot from the Release process wiki.",
+                     ts="2026-10-01T00:00:00Z")
+    assert r.decisions[0].relation == "contradiction"
+    stale = [a for a in r.alerts if a.kind == "stale_doc"]
+    assert [(a.source_id, a.decision_id) for a in stale] == [(wiki.source.id, rule.decision.id)]
+    assert r.source.id in {q.source_id for q in stale[0].quotes}
 
 
 async def test_stale_doc_alert_with_both_quotes(monkeypatch):
