@@ -26,7 +26,7 @@ export const q = {
   alerts: () => queryOptions({ queryKey: ['alerts'], queryFn: api.alerts, refetchInterval: 10_000 }),
   allAlerts: () => queryOptions({ queryKey: ['alerts', 'all'], queryFn: api.allAlerts }),
   // 404 until the backend with /api/stats is deployed; the home page then counts from the lists
-  stats: () => queryOptions({ queryKey: ['stats'], queryFn: api.stats, retry: (n: number, e: unknown) => shouldRetry(n, e) }),
+  stats: () => queryOptions({ queryKey: ['stats'], queryFn: api.stats }),
   decisions: () => queryOptions({ queryKey: ['decisions'], queryFn: api.decisions }),
   decision: (id: string) => queryOptions({ queryKey: ['decision', id], queryFn: () => api.decision(id) }),
   briefing: (persona: Persona, since: string) =>

@@ -5,6 +5,7 @@
 
 <name>.png is the 1280x800 viewport, <name>-full.png the full page, <name>-1080.png the 1920x1080 viewport.
 """
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -14,6 +15,8 @@ OUT = Path(__file__).resolve().parent.parent / 'shots'
 OUT.mkdir(exist_ok=True)
 T = 120000
 errors = []
+# SHOTS_NO_WRITES=1 skips the paste and agent clicks, which spend Gemini calls
+NO_WRITES = os.environ.get('SHOTS_NO_WRITES') == '1'
 
 ROUTES = [
     ('home', '/', None),
@@ -25,6 +28,9 @@ ROUTES = [
     ('ask', '/ask', None),
     ('decisions', '/decisions', None),
     ('decision', '/decisions', 'decision'),
+    ('org', '/org', None),
+    ('person', '/org', 'person'),
+    ('person-left', '/org', 'person-left'),
     ('benchmark', '/benchmark', None),
     ('not-found', '/nope', None),
 ]
@@ -46,10 +52,16 @@ with sync_playwright() as p:
         for name, path, flow in ROUTES:
             pg.goto(BASE + path)
             settle(pg)
+            if flow == 'person':
+                pg.locator('.org .lvl-head > .who a').first.click()
+                settle(pg)
+            if flow == 'person-left':
+                pg.locator('.org li.left > .who a').first.click()
+                settle(pg)
             if flow == 'decision':
                 pg.locator('table.rows a').first.click()
                 settle(pg)
-            if flow == 'paste':
+            if flow == 'paste' and not NO_WRITES:
                 pg.get_by_role('button', name='Check this message').click()
                 pg.wait_for_timeout(1500)
                 if not suf:
@@ -59,7 +71,7 @@ with sync_playwright() as p:
             pg.screenshot(path=str(OUT / f'{name}{suf}.png'))
             if not suf:
                 pg.screenshot(path=str(OUT / f'{name}-full.png'), full_page=True)
-            if flow == 'agent' and not suf:
+            if flow == 'agent' and not suf and not NO_WRITES:
                 pg.get_by_role('button', name='Release a config change on Friday').click()
                 pg.get_by_text('Called check_intent').or_(pg.get_by_text('did not run')).wait_for(timeout=T)
                 pg.locator('.result').scroll_into_view_if_needed()
