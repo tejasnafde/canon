@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Agents</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .layout { grid-template-columns: 220px 1fr 380px; align-items: start; gap: 24px; }
+  .tools a { display: block; padding: 10px 12px; font-family: var(--mono); font-size: 13.5px; border-left: 3px solid transparent; }
+  .tools a small { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .tools a.on { border-left-color: var(--signal); background: var(--sheet); font-weight: 500; }
+  .field { margin-top: 12px; }
+  .field .label { display: block; margin-bottom: 5px; }
+  .resp { background: var(--ink); color: #ece6d8; font-family: var(--mono); font-size: 13px; line-height: 1.6; padding: 16px 18px; white-space: pre; overflow: hidden; }
+  .resp .k { color: #c9bfa9; }
+  .resp .s { color: #f0b39f; }
+  .resp .b { color: #fff; background: var(--signal); padding: 0 4px; }
+  .connect { border: 2px solid var(--ink); background: var(--sheet); }
+  .cmd { font-family: var(--mono); font-size: 12.5px; background: var(--paper); border: 1px solid var(--rule); padding: 10px 12px; margin-top: 8px; line-height: 1.5; word-break: break-all; }
+  .verdict-big { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: var(--signal); color: #fff; }
+  .verdict-big b { font-family: var(--serif); font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:22px">
+    <div><div class="label">Agent playground / the same MCP tools Claude Code and Codex call</div>
+    <h1 class="h1" style="font-size:36px;margin-top:8px">Agents read the record before they act.</h1></div>
+  </div>
+  <div class="grid layout">
+    <nav class="tools">
+      <div class="label" style="margin-bottom:6px">MCP tools</div>
+      <a class="on" href="#">check_intent<small>allow / warn / block</small></a>
+      <a href="#">search_decisions<small>semantic search</small></a>
+      <a href="#">ask_why<small>cited answer</small></a>
+      <a href="#">catch_me_up<small>briefing by persona</small></a>
+      <a href="#">record_decision<small>write + reconcile</small></a>
+      <a href="#">flag_conflict<small>raise an alert</small></a>
+    </nav>
+
+    <section>
+      <div class="sheet pad">
+        <div class="row" style="justify-content:space-between"><span class="h3">check_intent</span><span class="label">examples: Friday cron / launch email / pg bump</span></div>
+        <div class="field"><span class="label">intent</span><input class="input" value="Schedule the weekly release job for Friday 17:00 IST"></div>
+        <div class="field"><span class="label">actor</span><input class="input" value="codex" style="font-family:var(--mono);font-size:14px"></div>
+        <div class="row" style="margin-top:14px;justify-content:space-between"><span class="label">POST /mcp / tools/call</span><button class="btn">Call tool</button></div>
+      </div>
+      <div class="verdict-big" style="margin-top:16px"><span class="label" style="color:#fff">Verdict</span><b>Block</b><span style="font-size:14.5px">Contradicts "No production deploys on Fridays" (Priya Raman, 16 Mar 2026)</span><span class="label" style="color:#fff;margin-left:auto;white-space:nowrap">612 ms</span></div>
+      <div class="resp">{
+  <span class="k">"verdict"</span>: <span class="b">"block"</span>,
+  <span class="k">"explanation"</span>: <span class="s">"A Friday 17:00 production release breaks the</span>
+<span class="s">    active no-Friday-deploys rule. It is not a Sev1 hotfix."</span>,
+  <span class="k">"decisions"</span>: [{
+    <span class="k">"id"</span>: <span class="s">"dec_7f3a"</span>,
+    <span class="k">"statement"</span>: <span class="s">"No production deploys on Fridays."</span>,
+    <span class="k">"owner"</span>: <span class="s">"Priya Raman"</span>, <span class="k">"status"</span>: <span class="s">"active"</span>
+  }],
+  <span class="k">"citations"</span>: [{ <span class="k">"kind"</span>: <span class="s">"meeting"</span>,
+    <span class="k">"quote"</span>: <span class="s">"nothing goes to production on a Friday"</span> }],
+  <span class="k">"latency_ms"</span>: 612
+}</div>
+    </section>
+
+    <aside class="grid" style="gap:20px">
+      <section class="connect pad">
+        <div class="h3">Connect your agent</div>
+        <div class="small muted" style="margin-top:2px">Streamable HTTP, no key needed for the demo.</div>
+        <div class="label" style="margin-top:12px">Claude Code</div>
+        <div class="cmd">claude mcp add --transport http canon https://canon-tn07.web.app/mcp</div>
+        <div class="label" style="margin-top:10px">Codex</div>
+        <div class="cmd">codex mcp add canon --url https://canon-tn07.web.app/mcp</div>
+      </section>
+      <section class="sheet pad">
+        <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--ink);padding-bottom:8px"><span class="h3" style="font-size:18px">Agent calls</span><span class="live">live</span></div>
+        <div class="rows">
+          <div class="feed-item fresh"><span class="t">18:02</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">codex</span><span class="v block">block</span></div><div class="small" style="margin-top:3px">check_intent: Friday 17:00 release job</div></div></div>
+          <div class="feed-item"><span class="t">17:58</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">claude-code</span><span class="v allow">allow</span></div><div class="small" style="margin-top:3px">check_intent: bump pg driver in staging</div></div></div>
+          <div class="feed-item"><span class="t">17:51</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">pm-bot</span><span class="v warn">warn</span></div><div class="small" style="margin-top:3px">check_intent: email customers 3 Nov launch</div></div></div>
+          <div class="feed-item"><span class="t">17:40</span><div><span class="actor agent">claude-code</span><div class="small" style="margin-top:3px">ask_why: why pin Node 20 on the API?</div></div></div>
+          <div class="feed-item"><span class="t">17:22</span><div><span class="actor agent">pm-bot</span><div class="small" style="margin-top:3px">record_decision: annual plans 2 months free</div></div></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</main>
+</body></html>
