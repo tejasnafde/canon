@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: the shared memory of a company</title><link rel="stylesheet" href="v2.css">
+<style>
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: center; }
+.hero h1 { font-size: 50px; }
+.company { background: var(--sheet); border: 1px dashed #c9a35c; border-radius: 8px; padding: 22px 24px; }
+.company .stats { display: flex; gap: 22px; margin-top: 14px; }
+.company .stats div { font: 500 30px var(--serif); } .company .stats small { display: block; font: 13px var(--sans); color: var(--ink-2); }
+.door { display: block; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 24px; transition: border-color .15s, transform .15s; }
+.door:hover { border-color: var(--ink); text-decoration: none; transform: translateY(-2px); }
+.door h3 { font-size: 23px; margin: 10px 0 8px; } .door p { color: var(--ink-2); font-size: 15px; }
+.door .go { margin-top: 16px; font-weight: 500; color: var(--ink); }
+.door.red { border-top: 4px solid var(--signal); }
+.door.small { display: flex; align-items: center; gap: 18px; padding: 18px 24px; margin-top: 16px; }
+.door.small h3 { margin: 0; font-size: 19px; } .door.small .go { margin: 0 0 0 auto; }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 34px; } .door.small { flex-wrap: wrap; } }
+</style></head>
+<body data-nav="home">
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <h1>The shared memory of a company, for its people and its AI agents.</h1>
+      <p class="lede">Teams decide things in Slack threads, meetings and pull requests, then forget. Canon keeps every decision, explains why it was made, and warns you when a person, a document or an AI agent is about to break it.</p>
+    </div>
+    <div class="company">
+      <span class="kicker">The demo company</span>
+      <p style="margin-top:10px;font-size:17px"><b>Northwind Labs is a made-up 60-person logistics software company.</b> Canon has read 2 years of its Slack, meetings, wiki pages and pull requests, and found its decisions and where people and documents now break them.</p>
+      <div class="stats tnum">
+        <div>259<small>items read</small></div><div>36<small>decisions found</small></div><div>8<small>documents now out of date</small></div>
+      </div>
+      <p class="small muted" style="margin-top:12px">Jan 2025 to Oct 2026. Every name, customer and quote is invented for this demo.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="kicker">Pick a story</span>
+    <div class="grid3" style="margin-top:14px">
+      <a class="door" href="new-hire.html"><span class="badge b-plain">2 minutes</span>
+        <h3>I am new here</h3><p>The 5 things every new person at Northwind must know, which document is wrong, and who to ask.</p><div class="go">Start here &rarr;</div></a>
+      <a class="door" href="catch-up.html"><span class="badge b-plain">1 minute</span>
+        <h3>What changed while I was away?</h3><p>Pick your role. Get a short summary and a to-do list, most urgent first.</p><div class="go">Catch me up &rarr;</div></a>
+      <a class="door red" href="agent.html"><span class="badge b-block">Live replay</span>
+        <h3>Watch an AI agent get stopped</h3><p>A coding agent is asked to deploy on a Friday. It checks with Canon first, and Canon says no.</p><div class="go">Watch it &rarr;</div></a>
+    </div>
+    <a class="door small" href="paste.html"><span class="badge b-plain">Try it</span>
+      <h3>Paste a new message and see what it breaks</h3><span class="muted small">Canon reads it, checks 36 decisions, and shows any conflict in about 3 seconds.</span><span class="go">Try it &rarr;</span></a>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>
