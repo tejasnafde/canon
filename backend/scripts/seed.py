@@ -44,7 +44,10 @@ async def main():
         await st.delete_workspace(ws)
 
     people = json.loads((data / "people.json").read_text())
-    await asyncio.gather(*(st.put("people", {**p, "workspace": ws}) for p in people))
+    # Doc ids are global, so a bare person id would move that person out of another workspace (acme2 took
+    # acme's people this way). Ids are workspace-scoped except in acme; acme2 keeps its legacy bare ids.
+    pid = (lambda i: i) if ws in ("acme", "acme2") else (lambda i: f"{ws}-{i}")
+    await asyncio.gather(*(st.put("people", {**p, "id": pid(p["id"]), "workspace": ws}) for p in people))
 
     rows = load(data)
     if a.only:
