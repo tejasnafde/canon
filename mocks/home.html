@@ -1,0 +1,149 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Home</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .layout { grid-template-columns: 1fr 360px; align-items: start; }
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding-bottom: 20px; border-bottom: 1px solid var(--ink); }
+  .brief { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; }
+  .brief > div { padding: 22px 24px; }
+  .brief > div + div { border-left: 1px solid var(--rule); }
+  .hl li { list-style: none; padding: 8px 0; display: grid; grid-template-columns: 22px 1fr; font-size: 14.5px; }
+  .hl li + li { border-top: 1px dashed var(--rule); }
+  .hl li span { font-family: var(--mono); font-size: 11px; color: var(--ink-3); padding-top: 3px; }
+  .act { display: grid; grid-template-columns: 76px 1fr auto; gap: 18px; padding: 16px 0; align-items: start; }
+  .score { font-family: var(--serif); font-size: 40px; line-height: .9; font-weight: 500; letter-spacing: -.03em; }
+  .score small { display: block; margin-top: 6px; height: 4px; background: var(--rule-2); }
+  .score small b { display: block; height: 4px; background: var(--ink); }
+  .act.top .score { color: var(--signal); }
+  .act.top .score small b { background: var(--signal); }
+  .reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .alert { padding: 14px 0; display: grid; grid-template-columns: 4px 1fr; gap: 14px; }
+  .alert .bar4 { background: var(--signal); }
+  .alert.med .bar4 { background: var(--warn); }
+  .rail { position: sticky; top: 84px; }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="hero">
+    <div>
+      <div class="label">Catch me up / Friday 17 Oct 2026</div>
+      <h1 class="h1" style="margin-top:8px;font-size:38px">Good evening, Arjun. <span style="color:var(--ink-3)">Here is what changed.</span></h1>
+    </div>
+    <div class="row" style="gap:14px">
+      <div>
+        <div class="label" style="margin-bottom:6px">I am a</div>
+        <div class="seg"><a class="on" href="#">Engineer</a><a href="#">PM</a><a href="#">New hire</a></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:6px">Since</div>
+        <input class="input" type="date" value="2026-10-10" style="width:170px;padding:7px 10px;font-family:var(--mono);font-size:13px">
+      </div>
+    </div>
+  </div>
+
+  <div class="grid layout" style="margin-top:28px">
+    <div class="grid" style="gap:32px">
+      <!-- briefing -->
+      <section class="sheet brief">
+        <div>
+          <div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="label ink">Briefing / 7 days / 41 sources read</span><span class="label">2.1 s</span></div>
+          <p class="lede">Two things matter for you this week. <mark style="background:var(--signal-bg);color:var(--signal);padding:0 3px">A PR you reviewed adds a Friday release cron</mark>, which breaks the no-Friday-deploys rule set after the March outage. And the Route Optimizer Pro launch moved from 3 Nov to 17 Nov, so the feature freeze moves with it.</p>
+          <div class="row small muted" style="margin-top:14px;gap:8px">
+            <span class="chip"><span class="k">pr</span> #412</span>
+            <span class="chip"><span class="k">meeting</span> Launch sync 14 Oct</span>
+            <span class="chip"><span class="k">slack</span> #eng-release</span>
+            
+          </div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:4px">Highlights</div>
+          <ul class="hl">
+            <li><span>01</span>Pricing for Pro goes from $49 to $59 per seat. Sana Kapoor, 14 Oct.</li>
+            <li><span>02</span>The "Release process" wiki page still says deploys go out every Friday.</li>
+            <li><span>03</span>Codex was blocked twice from scheduling Friday jobs.</li>
+            <li><span>04</span>Dev Okafor now owns on-call. Marcus Lee left in May.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- actions -->
+      <section>
+        <div class="sec"><h2 class="h3">Next best actions</h2><span class="label">Ranked 0-100 / score = urgency x impact x who it blocks</span></div>
+        <div class="rows">
+          <div class="act top">
+            <div class="score tnum">94<small><b style="width:94%"></b></small></div>
+            <div>
+              <div class="h3">Request changes on PR #412 "Add weekly release cron"</div>
+              <div class="muted small" style="margin-top:4px">The cron <code style="font-family:var(--mono);font-size:12px;background:var(--rule-2);padding:1px 4px">0 17 * * 5</code> ships to production every Friday 17:00. That contradicts an active decision.</div>
+              <div class="reasons"><span class="tag redsoft">contradicts active decision</span><span class="tag amber">merge window closes today</span><span class="tag ghost">you are a reviewer</span></div>
+            </div>
+            <a class="btn sm" href="decision.html">View decision</a>
+          </div>
+          <div class="act">
+            <div class="score tnum">81<small><b style="width:81%"></b></small></div>
+            <div>
+              <div class="h3">Move the Pro feature freeze from 27 Oct to 10 Nov</div>
+              <div class="muted small" style="margin-top:4px">Launch date changed in the 14 Oct launch sync. Your sprint board still targets 27 Oct.</div>
+              <div class="reasons"><span class="tag amber">deadline in 10 days</span><span class="tag ghost">blocks marketing</span><span class="tag ghost">decision updated</span></div>
+            </div>
+            <a class="btn sm ghost" href="#">Open source</a>
+          </div>
+          <div class="act">
+            <div class="score tnum">62<small><b style="width:62%"></b></small></div>
+            <div>
+              <div class="h3">Fix the stale "Release process" wiki page</div>
+              <div class="muted small" style="margin-top:4px">New hires read it first. Its author, Marcus Lee, has left.</div>
+              <div class="reasons"><span class="tag redsoft">contradicted by decision</span><span class="tag ghost">owner left company</span></div>
+            </div>
+            <a class="btn sm ghost" href="#">Resolve alert</a>
+          </div>
+          <div class="act">
+            <div class="score tnum">38<small><b style="width:38%"></b></small></div>
+            <div>
+              <div class="h3">Ask Dev Okafor about the new rollback runbook</div>
+              <div class="muted small" style="margin-top:4px">It changes an assumption behind the Friday rule: "no automated rollback for DB migrations".</div>
+              <div class="reasons"><span class="tag amber">premise changed</span><span class="tag ghost">low effort</span></div>
+            </div>
+            <a class="btn sm ghost" href="#">Ask person</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- alerts -->
+      <section>
+        <div class="sec"><h2 class="h3">Open drift alerts <span class="tag red" style="margin-left:8px;vertical-align:4px">3</span></h2><span class="label">Docs and work that disagree with the record</span></div>
+        <div class="rows">
+          <div class="alert"><div class="bar4"></div><div>
+            <div class="row" style="gap:10px"><span class="tag red">agent check / block</span><span class="h3" style="font-size:17px">PR #412 schedules a Friday production release</span><span class="label" style="margin-left:auto">2 h ago</span></div>
+            <div class="small muted" style="margin-top:4px">Contradicted by <a href="decision.html" style="color:var(--link);text-decoration:underline">No production deploys on Fridays</a> (Priya Raman, 16 Mar 2026)</div>
+          </div></div>
+          <div class="alert"><div class="bar4"></div><div>
+            <div class="row" style="gap:10px"><span class="tag redsoft">stale doc</span><span class="h3" style="font-size:17px">Wiki: "Release process" says deploys go out every Friday at 16:00</span><span class="label" style="margin-left:auto">5 d ago</span></div>
+            <div class="small muted" style="margin-top:4px">Last edited 4 Nov 2025 by Marcus Lee (left). Contradicted by a decision 4 months newer.</div>
+          </div></div>
+          <div class="alert med"><div class="bar4"></div><div>
+            <div class="row" style="gap:10px"><span class="tag amber">premise changed</span><span class="h3" style="font-size:17px">Launch deck still says "Pro launches 3 Nov at $49"</span><span class="label" style="margin-left:auto">3 d ago</span></div>
+            <div class="small muted" style="margin-top:4px">Updated by Sana Kapoor in the 14 Oct launch sync: 17 Nov at $59 per seat.</div>
+          </div></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- rail -->
+    <aside class="rail sheet pad">
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--ink);padding-bottom:8px">
+        <span class="h3" style="font-size:18px">Agent activity</span><span class="live">live</span>
+      </div>
+      <div class="rows">
+        <div class="feed-item fresh"><span class="t">18:02</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">codex</span><span class="v block">block</span></div><div class="small" style="margin-top:3px">check: "schedule weekly release job for Friday 17:00"</div><div class="label" style="margin-top:4px">deciding: no Friday deploys</div></div></div>
+        <div class="feed-item"><span class="t">17:58</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">claude-code</span><span class="v allow">allow</span></div><div class="small" style="margin-top:3px">check: "bump pg driver to 3.2 in staging"</div></div></div>
+        <div class="feed-item"><span class="t">17:51</span><div><div class="row" style="justify-content:space-between"><span class="actor agent">pm-bot</span><span class="v warn">warn</span></div><div class="small" style="margin-top:3px">check: "email customers the 3 Nov launch date"</div><div class="label" style="margin-top:4px">deciding: launch moved to 17 Nov</div></div></div>
+        <div class="feed-item"><span class="t">17:40</span><div><span class="actor agent">claude-code</span><div class="small" style="margin-top:3px">ask_why: "why do we pin Node 20 on the API?"</div></div></div>
+        <div class="feed-item"><span class="t">17:22</span><div><span class="actor agent">pm-bot</span><div class="small" style="margin-top:3px">record: "Annual plans get 2 months free"</div><div class="label" style="margin-top:4px">reconciled: new</div></div></div>
+        <div class="feed-item"><span class="t">17:05</span><div><span class="actor">human:web</span><div class="small" style="margin-top:3px">ingest: Launch sync transcript, 3 decisions</div></div></div>
+        <div class="feed-item"><span class="t">16:47</span><div><span class="actor agent">codex</span><div class="small" style="margin-top:3px">search_decisions: "database migrations"</div></div></div>
+      </div>
+      <a href="agents.html" class="btn ghost sm" style="margin-top:12px;width:100%;justify-content:center">Open agent playground</a>
+    </aside>
+  </div>
+</main>
+</body></html>
