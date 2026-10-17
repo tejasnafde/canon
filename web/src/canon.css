@@ -262,3 +262,6 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; font-family:
   .h1 { font-size: 32px !important; }
 }
 sup.c { font-family: var(--mono); font-size: 12px; background: var(--ink); color: var(--sheet); padding: 1px 5px; margin-left: 2px; vertical-align: 6px; }
+.grid > * { min-width: 0; }
+.blockcard .hd { flex-wrap: wrap; }
+.q, .ans, .cmd { overflow-wrap: anywhere; }

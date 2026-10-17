@@ -9,8 +9,8 @@ const relTag = { new: 'ink', same: 'line', update: 'amber', contradiction: 'reds
 
 export default function Ask() {
   const [params, setParams] = useSearchParams()
-  const q = params.get('q') ?? ''
-  const [draft, setDraft] = useState(q || asks[0].question)
+  const q = params.get('q') ?? asks[0].question // judges land on a worked answer, not an empty box
+  const [draft, setDraft] = useState(q)
   const submit = (question: string) => { setDraft(question); setParams({ q: question }) }
   const onSubmit = (e: FormEvent) => { e.preventDefault(); if (draft.trim()) submit(draft.trim()) }
 
@@ -26,7 +26,7 @@ export default function Ask() {
         {asks.map(a => <button key={a.question} onClick={() => submit(a.question)}>{a.question}{'refusal' in a && <span className="label" style={{ marginLeft: 6 }}>(not on record)</span>}</button>)}
       </div>
       <div style={{ marginTop: 28 }}>
-        {q ? <Answer key={q} q={q} /> : <p className="muted">Pick a question above, or type your own.</p>}
+        <Answer key={q} q={q} />
       </div>
     </main>
   )

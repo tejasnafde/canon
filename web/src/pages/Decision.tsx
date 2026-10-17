@@ -120,6 +120,8 @@ function Conflict({ a, src, dec, reload }: { a: Alert; src: (id: string | null) 
   const [err, setErr] = useState('')
   const s = src(a.source_id)
   const theirs = a.quotes.find(q => q.source_id === a.source_id) ?? a.quotes[0]
+  // the record side: the alert's other quote, else this decision's quote when it differs
+  const record = a.quotes.find(q => q !== theirs)?.quote ?? (dec !== theirs?.quote ? dec : undefined)
   const resolve = async (action: ResolveAction) => {
     setBusy(true); setErr('')
     try { await api.resolve(a.id, action); reload() } catch (e) { setErr(String((e as Error).message)) } finally { setBusy(false) }
@@ -133,9 +135,9 @@ function Conflict({ a, src, dec, reload }: { a: Alert; src: (id: string | null) 
         <p className="small muted" style={{ marginTop: 4 }}>{a.explanation}</p>
       </div>
       {theirs && (
-        <div className="vs">
+        <div className={record ? 'vs' : ''} style={record ? undefined : { padding: '8px 16px 12px' }}>
           <div><div className="label" style={{ marginBottom: 6 }}>The source says</div><div className="q red" style={{ fontSize: 15 }}>"{theirs.quote}"</div></div>
-          <div><div className="label" style={{ marginBottom: 6 }}>The record says</div><div className="q" style={{ fontSize: 15 }}>"{dec ?? '...'}"</div></div>
+          {record && <div><div className="label" style={{ marginBottom: 6 }}>The record says</div><div className="q" style={{ fontSize: 15 }}>"{record}"</div></div>}
         </div>
       )}
       {a.status === 'open' && (
