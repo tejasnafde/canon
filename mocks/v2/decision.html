@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: No production deploys on Fridays</title><link rel="stylesheet" href="v2.css">
+<style>
+.status { margin-top: 20px; font-size: 16px; }
+.statement { font: 500 44px/1.12 var(--serif); letter-spacing: -0.015em; margin-top: 12px; max-width: 22ch; }
+.facts { display: grid; grid-template-columns: repeat(4, auto); gap: 24px 48px; margin-top: 32px; font-size: 16px; justify-content: start; }
+.facts .label { display: block; margin-bottom: 2px; }
+.why p { font-size: 18px; max-width: 58ch; }
+.breaks-list > li { padding: 24px 0; }
+.breaks-list h3 { color: var(--signal); }
+.breaks-list li.doc h3 { color: var(--ink); }
+@media (max-width: 760px) { .statement { font-size: 30px; } .facts { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }
+</style></head>
+<body data-nav="decisions">
+<main class="wrap">
+  <a href="decisions.html" class="back">&larr; All decisions</a>
+  <p class="status"><span class="dot"></span>Active, but 2 things break it</p>
+  <h1 class="statement">No production deploys on Fridays, including scheduled jobs and configuration-only releases.</h1>
+  <div class="facts">
+    <div><span class="label">Owner</span>Mei Tan, engineering manager</div>
+    <div><span class="label">Decided</span>9 March 2026</div>
+    <div><span class="label">Where</span>INC-042 review meeting</div>
+    <div><span class="label">Replaces</span>The Friday release window, January 2025</div>
+  </div>
+
+  <div class="split section">
+    <div>
+      <div class="why">
+        <h2>Why</h2>
+        <p style="margin-top:14px">A Friday rollout on 6 March 2026 stopped dispatch for 47 minutes. The rollback engineer was on a flight and the backup person was on a customer call. The job that caused it ran on its own, so the ban covers scheduled jobs too.</p>
+        <blockquote class="q" style="margin-top:18px">"The 6 March rollout at 15:10 SGT stalled dispatch acknowledgements for 47 minutes. The rollback engineer was on a flight and the secondary was in a customer call."</blockquote>
+        <p class="muted" style="margin-top:18px;font-size:16px">Exception: an emergency fix, with approval from the incident commander and two people online. Normal releases moved to Tuesday and Thursday mornings.</p>
+      </div>
+
+      <h2 style="margin-top:56px">What breaks it now</h2>
+      <ul class="list breaks-list" style="margin-top:20px">
+        <li>
+          <h3><span class="dot"></span>PR 684 deploys to production every Friday at 15:00.</h3>
+          <blockquote class="q">"The workflow uses cron "0 7 * * 5" to roll the production dispatch service at 15:00 Singapore time."</blockquote>
+          <p class="src">PR 684, unattended dispatch refresh, Pranav Menon, 14 Aug 2026</p>
+        </li>
+        <li class="doc">
+          <h3><span class="dot hollow"></span>The Release process wiki page still gives a Friday window.</h3>
+          <blockquote class="q">"Friday afternoon, 14:00 to 16:00 SGT, is our production release window."</blockquote>
+          <p class="src">Wiki, Release process, Thao Tran, 12 Feb 2025. Out of date.</p>
+        </li>
+      </ul>
+    </div>
+
+    <aside>
+      <h2>Timeline</h2>
+      <ul class="tl" style="margin-top:16px">
+        <li><span class="when">16 Jan 2025</span><span>Friday afternoon becomes the trial release slot.</span></li>
+        <li><span class="when">12 Feb 2025</span><span>The Release process wiki writes the Friday slot down.</span></li>
+        <li class="bad"><span class="when">6 Mar 2026</span><span>A Friday rollout stops dispatch for 47 minutes.</span></li>
+        <li class="key"><span class="when">9 Mar 2026</span><span>No more Friday deploys.</span></li>
+        <li class="bad"><span class="when">14 Aug 2026</span><span>PR 684 adds a Friday deploy job.</span></li>
+        <li class="bad"><span class="when">Now</span><span>The wiki page still says Friday.</span></li>
+      </ul>
+      <p class="small muted" style="margin-top:24px">When an AI agent checks an action against this decision, the check appears here. <a href="agent.html">See how agents use Canon</a>.</p>
+    </aside>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>

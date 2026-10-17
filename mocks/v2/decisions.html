@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: decisions</title><link rel="stylesheet" href="v2.css">
+<style>
+.filters { margin-top: 36px; display: grid; gap: 12px; }
+.filters .row { display: flex; gap: 24px; align-items: baseline; }
+.filters .label { width: 56px; flex: none; }
+.owner .team { display: block; font-size: 14px; color: var(--ink-3); }
+.owner .gone { color: var(--ink-3); }
+@media (max-width: 760px) { .filters .row { flex-wrap: wrap; gap: 8px 16px; } .filters .label { width: 100%; } }
+</style></head>
+<body data-nav="decisions">
+<main class="wrap">
+  <h1>Decisions.</h1>
+  <p class="lede">Every decision Canon found in Northwind's Slack, meetings, wiki pages and pull requests. The ones something now breaks come first, then the rest, newest first. Each links back to the words people actually used.</p>
+
+  <div class="filters">
+    <div class="row"><span class="label">Team</span><div class="choices"><span class="on">All</span><span>Customer</span><span>Data</span><span>Integrations</span><span>Operations</span><span>Platform</span><span>Product</span><span>Security</span></div></div>
+    <div class="row"><span class="label">Status</span><div class="choices"><span class="on">All 36</span><span>Broken</span><span>Active</span><span>Replaced</span></div></div>
+  </div>
+
+  <table class="rows" style="margin-top:28px">
+    <thead><tr><th>Decision</th><th>Owner</th><th>Decided</th><th>Status</th></tr></thead>
+    <tbody>
+<tr><td class="d"><a href="decision.html">No production deploys on Fridays, including scheduled jobs and configuration-only releases.</a></td><td class="owner">Mei Tan<span class="team">Platform</span></td><td class="s tnum">9 Mar 2026</td><td class="s breaks"><span class="dot"></span>Broken by 2</td></tr>
+<tr><td class="d">Move Route Lens general availability from 15 April to 2 June 2026.</td><td class="owner">Aisha Rahman<span class="team">Product</span></td><td class="s tnum">9 Apr 2026</td><td class="s breaks"><span class="dot"></span>Broken by 2</td></tr>
+<tr><td class="d">Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions.</td><td class="owner">Nur Aziz<span class="team">Operations</span></td><td class="s tnum">2 Apr 2026</td><td class="s breaks"><span class="dot"></span>Broken by 2</td></tr>
+<tr><td class="d">Extend booking idempotency retention from 72 hours to seven days.</td><td class="owner">Anika Rao <span class="gone">(left)</span><span class="team">Platform</span></td><td class="s tnum">21 May 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Reduce Kestrel polling concurrency to two requests per tenant, replacing the four-slot limit.</td><td class="owner">Chen Wei<span class="team">Integrations</span></td><td class="s tnum">7 May 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Extend tenant audit retention from 365 days to 730 days for all tenants.</td><td class="owner">Jiwon Park<span class="team">Security</span></td><td class="s tnum">16 Apr 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Production support sessions now expire after 30 minutes instead of 60.</td><td class="owner">Jiwon Park<span class="team">Security</span></td><td class="s tnum">24 Mar 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Reduce the webhook retry horizon from 24 hours to six hours; dead-letter handling stays unchanged.</td><td class="owner">Chen Wei<span class="team">Integrations</span></td><td class="s tnum">17 Mar 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Use the regional model while its p95 inference latency stays below 250 milliseconds.</td><td class="owner">Anika Rao <span class="gone">(left)</span><span class="team">Platform</span></td><td class="s tnum">26 Feb 2026</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Cache the fleet dashboard for five minutes while the ingestion rate stays below 2000 events per second.</td><td class="owner">Linh Nguyen<span class="team">Data</span></td><td class="s tnum">4 Dec 2025</td><td class="s breaks"><span class="dot"></span>Broken by 1</td></tr>
+<tr><td class="d">Lower the route-model timeout from 800 to 600 milliseconds, preserving the timestamped carrier fallback.</td><td class="owner">Mei Tan<span class="team">Platform</span></td><td class="s tnum">4 Jun 2026</td><td class="s">Active</td></tr>
+<tr><td class="d">For a severity-one incident, send the first customer notice within 30 minutes of confirmation.</td><td class="owner">Siti Nuraini<span class="team">Customer</span></td><td class="s tnum">19 Feb 2026</td><td class="s">Active</td></tr>
+<tr><td class="d">Keep readers compatible with the previous manifest schema for 30 days after a writer upgrade.</td><td class="owner">Anika Rao <span class="gone">(left)</span><span class="team">Platform</span></td><td class="s tnum">5 Feb 2026</td><td class="s">Active</td></tr>
+<tr><td class="d">Route Lens needs median absolute arrival error below 12 minutes for three consecutive weeks before GA.</td><td class="owner">Aisha Rahman<span class="team">Product</span></td><td class="s tnum">22 Jan 2026</td><td class="s">Active</td></tr>
+<tr><td class="d">Delete shipment payloads within 30 days of a verified tenant deletion request.</td><td class="owner">Jiwon Park<span class="team">Security</span></td><td class="s tnum">18 Dec 2025</td><td class="s">Active</td></tr>
+<tr><td class="d muted">Keep booking idempotency tokens for 72 hours and scope them to the tenant.</td><td class="owner">Anika Rao <span class="gone">(left)</span><span class="team">Platform</span></td><td class="s tnum">8 Jan 2026</td><td class="s muted">Replaced</td></tr>
+    </tbody>
+  </table>
+  <p class="small muted" style="margin-top:16px">16 of 36 shown. <a href="#">Show all</a>. "Broken by" counts the messages, pull requests and documents that go against the decision. "Replaced" means a newer decision took its place.</p>
+</main>
+<script src="chrome.js"></script>
+</body></html>

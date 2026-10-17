@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: the shared memory of a company</title><link rel="stylesheet" href="v2.css">
+<style>
+h1 { font-size: 54px; max-width: 16ch; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 64px; align-items: end; }
+.figures { display: grid; gap: 22px; border-left: 1px solid var(--rule); padding-left: 28px; }
+.figures div { font: 500 36px/1 var(--serif); font-variant-numeric: tabular-nums; }
+.figures small { display: inline; font: 16px/1.4 var(--sans); color: var(--ink-2); margin-left: 10px; }
+.demo { margin-top: 24px; font-size: 15px; color: var(--ink-2); }
+.section { margin-top: 56px; }
+.stories { list-style: none; border-top: 1px solid var(--ink); margin-top: 24px; }
+.stories li { border-bottom: 1px solid var(--rule); }
+.stories a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 48px; align-items: baseline; padding: 26px 0; text-decoration: none; }
+.stories a:hover h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.stories h3 { font-size: 28px; grid-column: 1; grid-row: 1; }
+.stories p { color: var(--ink-2); grid-column: 1; margin-top: 2px; }
+.stories .go { color: var(--ink-2); white-space: nowrap; grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.stories li.paste h3 { font-size: 22px; }
+@media (max-width: 760px) {
+  h1 { font-size: 38px; }
+  .hero { grid-template-columns: 1fr; gap: 32px; } .figures { gap: 14px; } .figures div { font-size: 30px; }
+  .stories a { grid-template-columns: 1fr; padding: 20px 0; } .stories .go { grid-column: 1; grid-row: auto; margin-top: 4px; } .stories h3 { font-size: 24px; }
+}
+</style></head>
+<body data-nav="home">
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <h1>The shared memory of a company, for its people and its AI agents.</h1>
+      <p class="lede">Teams decide things in Slack threads, meetings and pull requests, then forget. Canon keeps every decision and the reason behind it, and warns you when a person, a document or an AI agent is about to break one.</p>
+    </div>
+    <div>
+      <div class="figures">
+        <div>259<small>items read</small></div>
+        <div>36<small>decisions found</small></div>
+        <div>8<small>documents now out of date</small></div>
+      </div>
+      <p class="demo">Northwind Labs is a made-up 60-person logistics software company. Canon read two years of its Slack, meetings, wiki pages and pull requests, January 2025 to October 2026.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Pick a story</h2>
+    <ul class="stories">
+      <li><a href="new-hire.html"><h3>I am new here</h3><span class="go">Two minutes</span>
+        <p>The five things every new person at Northwind must know, which document is wrong, and who to ask.</p></a></li>
+      <li><a href="catch-up.html"><h3>What changed while I was away?</h3><span class="go">One minute</span>
+        <p>Pick your role. Get a short summary and a to-do list, most urgent first.</p></a></li>
+      <li><a href="agent.html"><h3>Watch an AI agent get stopped</h3><span class="go">Live</span>
+        <p>A coding agent is asked to deploy on a Friday. It checks with Canon first, and Canon says no.</p></a></li>
+      <li class="paste"><a href="paste.html"><h3>Paste a new message and see what it breaks</h3><span class="go">Try it</span>
+        <p>Canon reads it, checks it against all 36 decisions, and shows any conflict in a few seconds.</p></a></li>
+    </ul>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>

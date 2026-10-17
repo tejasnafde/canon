@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: ask why</title><link rel="stylesheet" href="v2.css">
+<style>
+.askrow { display: flex; gap: 24px; align-items: flex-end; margin-top: 40px; }
+.askrow .input { font-size: 24px; font-family: var(--serif); padding-bottom: 10px; }
+.answer p { font-size: 18px; line-height: 1.6; } .answer p + p { margin-top: 14px; }
+sup.c { font: 500 12px var(--sans); color: var(--ink-2); margin-left: 2px; }
+.cites { list-style: none; margin-top: 28px; border-top: 1px solid var(--rule); padding-top: 6px; }
+.cites li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 15px; padding: 12px 0; border-bottom: 1px solid var(--rule-2); }
+.cites li:last-child { border-bottom: 0; }
+.cites .n { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cites .s { color: var(--ink-2); }
+.cites q { display: block; margin-top: 2px; font-size: 16px; }
+.dk { margin-top: 48px; }
+.dk .question { font: italic 400 20px/1.4 var(--serif); margin-top: 12px; }
+.dk .ans { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 16px; }
+@media (max-width: 760px) { .askrow { flex-wrap: wrap; } .askrow .input { font-size: 20px; } }
+</style></head>
+<body data-nav="ask">
+<main class="wrap">
+  <h1>Ask why.</h1>
+  <p class="lede">Ask why something is the way it is. Canon answers only from what Northwind actually said and wrote, and shows you where.</p>
+  <div class="askrow"><input class="input" value="Why can we no longer deploy production on Fridays?"><span class="btn">Ask</span></div>
+  <div class="choices small" style="margin-top:16px"><span class="muted" style="cursor:default">Or try</span><span>What should we quote a new Route Lens customer?</span><span>When did the Route Lens launch move, and why?</span><span>Can Sakura backups live outside Japan?</span></div>
+
+  <div class="section split">
+    <div class="answer">
+      <p class="label" style="margin-bottom:14px">Answered in 1.1 seconds</p>
+      <p>Northwind used to release on Friday afternoons. That was a trial slot from January 2025, chosen because support tickets were quiet then.<sup class="c">1</sup></p>
+      <p>On 6 March 2026 a Friday rollout stopped dispatch for 47 minutes. The rollback engineer was on a flight and the backup person was on a customer call. Three days later the team banned production deploys on Fridays, including scheduled jobs and config-only changes. Mei Tan owns the rule. Normal releases moved to Tuesday and Thursday mornings.<sup class="c">2</sup></p>
+      <p>Emergency fixes are still allowed on a Friday, but only with approval from the incident commander and two people online.<sup class="c">2</sup> The Release process wiki page still shows the old Friday window.<sup class="c">3</sup></p>
+      <ol class="cites">
+        <li><span class="n">1</span><div><span class="s">Meeting, Release calendar pilot, 16 Jan 2025</span><q>For now the production release window is Friday afternoon, 14:00 to 16:00 Singapore time.</q></div></li>
+        <li><span class="n">2</span><div><span class="s">Meeting, INC-042 review, 9 Mar 2026</span><q>No production deploys on Fridays, including scheduled jobs and configuration-only releases.</q></div></li>
+        <li><span class="n">3</span><div><span class="s">Wiki, Release process, 12 Feb 2025</span><q>Friday afternoon, 14:00 to 16:00 SGT, is our production release window.</q></div></li>
+      </ol>
+    </div>
+    <aside>
+      <h2>How this decision changed</h2>
+      <ul class="tl" style="margin-top:16px">
+        <li><span class="when">16 Jan 2025</span><span>Friday afternoon becomes the trial release slot. <span class="muted">Anika Rao</span></span></li>
+        <li><span class="when">12 Feb 2025</span><span>The Release process wiki page writes it down.</span></li>
+        <li class="bad"><span class="when">6 Mar 2026</span><span>A Friday rollout stops dispatch for 47 minutes.</span></li>
+        <li class="key"><span class="when">9 Mar 2026</span><span>No more Friday deploys. <span class="muted" style="font-weight:400">Mei Tan</span></span></li>
+        <li class="bad"><span class="when">14 Aug 2026</span><span>PR 684 tries a Friday deploy job.</span></li>
+      </ul>
+      <p class="small" style="margin-top:14px"><a href="decision.html">See the full decision</a></p>
+
+      <div class="dk">
+        <h2>When Canon does not know</h2>
+        <p class="question">"What is Northwind Labs' annual revenue for 2026?"</p>
+        <p class="ans"><b style="font-weight:500">I do not know.</b> Nothing Canon has read answers this, so it will not guess. Nur Aziz, the finance lead, is the best person to ask.</p>
+        <p class="small muted" style="margin-top:12px">In our test, Canon said "I do not know" to all five questions it could not answer.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>

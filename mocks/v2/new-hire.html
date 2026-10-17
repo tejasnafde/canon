@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: I am new here</title><link rel="stylesheet" href="v2.css">
+<style>
+.must li { display: grid; grid-template-columns: 40px 1fr; gap: 16px; }
+.must .n { font: 500 26px/1.1 var(--serif); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.people { list-style: none; border-top: 1px solid var(--ink); }
+.people li { padding: 14px 0; border-bottom: 1px solid var(--rule); font-size: 16px; }
+.people b { font-weight: 500; } .people .role { color: var(--ink-2); }
+.people p { margin-top: 2px; color: var(--ink-2); font-size: 15px; }
+@media (max-width: 760px) { .must li { grid-template-columns: 30px 1fr; gap: 12px; } }
+</style></head>
+<body data-nav="home">
+<main class="wrap">
+  <a href="home.html" class="back">&larr; Stories</a>
+  <h1 style="margin-top:16px">Welcome to Northwind Labs.</h1>
+  <p class="lede">Canon read two years of company history so you do not have to. These are the five things that will get you in trouble if you do not know them, and one document you should not trust.</p>
+
+  <div class="flag" style="margin-top:40px">
+    <h3>The Release process wiki page is out of date. Do not use its Friday release window.</h3>
+    <p style="margin-top:8px">The page still says "Friday afternoon, 14:00 to 16:00 SGT, is our production release window." The team banned Friday deploys on 9 March 2026, after an outage. Release on Tuesday or Thursday mornings instead.</p>
+    <p class="src">Wiki, Release process, 12 Feb 2025. Overruled by the INC-042 review meeting, 9 Mar 2026.</p>
+  </div>
+
+  <div class="split section">
+    <div>
+      <h2>Five things you must know</h2>
+      <ol class="list must">
+        <li><span class="n">1</span><div>
+          <h3>No production deploys on Fridays. This includes scheduled jobs and config-only changes.</h3>
+          <p>A Friday rollout on 6 March 2026 stopped dispatch for 47 minutes, and nobody was free to roll it back.</p>
+          <p class="src">Meeting, INC-042 review, 9 Mar 2026</p></div></li>
+        <li><span class="n">2</span><div>
+          <h3>Route Lens costs USD 149 per workspace per month for new customers.</h3>
+          <p>Each shipment needs a second AI pass, so the old USD 99 price lost money. Signed pilots keep USD 99 for six months.</p>
+          <p class="src">Meeting, Route Lens commercial reset, 2 Apr 2026</p></div></li>
+        <li><span class="n">3</span><div>
+          <h3>Route Lens launches on 2 June 2026, not 15 April.</h3>
+          <p>The Jakarta pilot passed only one of the three good weeks it needs before launch.</p>
+          <p class="src">Meeting, Route Lens launch replan, 9 Apr 2026</p></div></li>
+        <li><span class="n">4</span><div>
+          <h3>Sakura's data and its backups stay in Japan.</h3>
+          <p>Sakura's procurement contract covers backups, not just the main copy. A backup in Singapore breaks it.</p>
+          <p class="src">Meeting, Sakura residency review, 20 Feb 2025</p></div></li>
+        <li><span class="n">5</span><div>
+          <h3>In a major outage, tell the customer within 30 minutes, even if you do not know the cause yet.</h3>
+          <p>Sakura once heard about an outage from a truck driver before they heard from us.</p>
+          <p class="src">Meeting, Customer incident comms, 19 Feb 2026</p></div></li>
+      </ol>
+    </div>
+
+    <aside>
+      <h2>People to ask</h2>
+      <ul class="people" style="margin-top:20px">
+        <li><b>Mei Tan</b>, <span class="role">engineering manager</span><p>Release rules and the Friday ban.</p></li>
+        <li><b>Nur Aziz</b>, <span class="role">finance lead</span><p>Prices, billing and invoices.</p></li>
+        <li><b>Aisha Rahman</b>, <span class="role">product lead</span><p>Route Lens: the launch date and what we promise.</p></li>
+        <li><b>Jiwon Park</b>, <span class="role">security engineer</span><p>Where data lives, who can see it, how long we keep it.</p></li>
+        <li><b>Siti Nuraini</b>, <span class="role">customer success lead</span><p>What to tell customers, and when.</p></li>
+      </ul>
+      <h2 style="margin-top:48px">People who left</h2>
+      <ul class="people" style="margin-top:20px">
+        <li><b>Anika Rao</b>, <span class="role">staff platform engineer, left June 2026</span>
+          <p>Canon kept 13 of her decisions in her own words: retries, logging, cursors, restore drills. <a href="ask.html">Ask why she chose them</a>.</p></li>
+        <li><b>Ravi Perera</b>, <span class="role">support engineer, left February 2026</span>
+          <p>His Support access handbook still says 60 minutes. It is 30 minutes now.</p></li>
+      </ul>
+    </aside>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>
