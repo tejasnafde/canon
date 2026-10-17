@@ -6,7 +6,13 @@ synthetic evaluation data, not a record of a real company. Northwind Labs is a
 through October 2026. Source metadata sets `synthetic: true` and `workspace: acme`.
 Every link uses a reserved `.example` domain and does not resolve to a real record.
 
-The corpus has 159 sources across Slack, meetings, wiki, PRs, commits and email.
+The corpus has 259 sources across Slack, meetings, wiki, PRs, commits and email.
+Pass 2 adds 100 unlabelled noise sources about lunch, hiring, hardware, customer
+workshops, small UI bugs and rota swaps. They are not new benchmark decisions.
+Slack threads have several participants and 4 to 15 replies. All 40 meetings
+have 300 to 900 words, with questions, objections and transcript crosstalk. Wiki
+pages retain their historical wording. PRs have review comments and short
+fictional diff excerpts. Emails include headers, greetings and signatures.
 Twenty named colleagues include three departed people. Anika Rao is the departed
 platform expert. Her notes explain event identity, cursors, retry behavior,
 replays, restore drills, idempotency and release safety. Mei Tan takes over her
@@ -29,7 +35,10 @@ python3 data/build_corpus.py
 python3 data/validate.py
 ```
 
-`build_corpus.py` is a deterministic serializer of authored content. It does not
+`build_corpus.py` is a deterministic serializer of authored content.
+`archive_texture.py`, `meeting_details.py` and `source_context.py` hold the
+in-world discussions and page comments. `pr_excerpts.py` holds illustrative
+review diffs, and `noise.py` holds the 100 new unrelated sources. It does not
 sample, call a model, or access the network. Commit the resulting artifacts so
 consumers do not need to run it. For ingestion, read all `corpus/*.jsonl`, combine
 the rows, and sort by `(ts, title)`. Do not ingest one kind at a time: chronology
@@ -127,3 +136,17 @@ unique titles, known authors, people and departure counts, all exact gold quotes
 decision references, stale-page chronology, minimum planted counts and example
 coverage. Mutation tests verify that broken quotes, dangling keys, malformed
 JSONL, missing minimums and future-dated stale pages fail validation.
+
+## Pass 2 integration note
+
+The requested target is 250 to 300 sources. The local validator now checks that
+range. SPEC.md still says approximately 150 to 250; only the lead can update that
+contract. No model fields, source titles, gold keys, gold quotes, label counts,
+people records or judge samples change in this pass. Source URLs remain fake
+deep links. Slack URLs now include an ordinal suffix so two sources on the same
+day have different addresses. No cloud data is changed by building or validating.
+
+The tests also check document shapes, meeting lengths, absence of emoji, and
+added speaker names against departure dates. These checks validate the archive;
+they do not measure retrieval quality or Gemini accuracy. The longer sources
+and extra noise need a fresh ingestion and benchmark run by the core owner.

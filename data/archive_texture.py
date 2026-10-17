@@ -4,6 +4,7 @@
 # inferred here: gold stays in build_corpus.py, including historical statements.
 from meeting_details import DETAILS
 from pr_excerpts import EXCERPTS
+from source_context import SLACK_CONTEXT, WIKI_TAILS
 
 DISCUSSIONS = {
 'release-window': ('Why that slot? Tokyo support is usually winding down then.', 'The ticket histogram is quiet, but that is not the same thing as having a rollback buddy. Can we try it rather than call it permanent?', 'I checked the calendar with support. The first two are covered; the travel calendar is the bit we will have to keep checking.'),
@@ -73,27 +74,52 @@ def enrich_sources(sources, items):
     """Give each medium its own shape while retaining exact evidence substrings."""
     decisions = {i['evidence'][0]['source_title']: i['key'] for i in items if i['type'] == 'decision'}
     for index, row in enumerate(sources):
-        original = row['text'].replace('\nNotes: the follow-up ticket is in the team board. Please add corrections in this thread rather than editing the customer deck.', '').replace('\nAttendees checked the migration ticket. The old handbook link is still circulating in onboarding.', '')
+        original = row['text'].removeprefix(row['author'] + ': ').replace('\nNotes: the follow-up ticket is in the team board. Please add corrections in this thread rather than editing the customer deck.', '').replace('\nAttendees checked the migration ticket. The old handbook link is still circulating in onboarding.', '')
         author = row['author']
         # Only current employees participate in added dialogue. The original
         # source author retains their historical voice and date.
         others = [p for p in ('Mei Tan', 'Kavya Iyer', 'Thao Tran', 'Chen Wei', 'Siti Nuraini', 'Yuki Mori') if p != author]
         a, b, c = others[:3]
         key = decisions.get(row['title'])
-        talk = DISCUSSIONS.get(key) or MEETING_NOTES.get(row['title'])
+        talk = DISCUSSIONS.get(key) or MEETING_NOTES.get(row['title']) or SLACK_CONTEXT.get(row['title'])
         if not talk:
             talk = ('Which attachment are you looking at? I have two tabs open and neither has the same caption.',
                     'The one in this thread, not the thumbnail in search. I tripped over that too.',
                     'Found it, thanks. Leaving my question here because the next person will probably follow the same old link.')
         q, objection, response = talk
+        if row['title'] == 'INC-042 live dispatch thread':
+            row['text'] = (
+                '#platform-incidents | INC-042 | 6 March 2026, Singapore time\n'
+                '15:14 SGT Haruto: dispatch ACK age is at 11 minutes after the 15:10 rollout. Opening INC-042.\n'
+                '\nThread replies (12):\n'
+                '15:15 Mei Tan: looking. is it one tenant or the whole dispatch queue?\n'
+                '15:16 Haruto Sato: more than one, pulling the split now. The grouped flush graph stepped up at rollout.\n'
+                '15:18 Chen Wei: partner status is green. I can check the token failures, but that does not explain every tenant.\n'
+                '15:20 Siti Nuraini: Sakura supervisor called. Drivers are seeing the old acknowledgement state. What can I tell them?\n'
+                '15:22 Mei: Pranav is on the flight to Pune. I am pulling Kavya out of the Sakura call.\n'
+                '15:25 Kavya Iyer: here now. Need the rollback ref, I only have the smoke link in the ticket.\n'
+                '15:28 Haruto Sato: pinned the previous SHA. The grouped flush can sit behind the tenant with an expired token.\n'
+                '15:32 Mei Tan: rolling back that path. Chen please keep checking the queue, not just the deployment health.\n'
+                '15:36 Siti Nuraini: first notice sent. Said dispatch acknowledgements delayed, cause still under investigation.\n'
+                '15:45 Kavya Iyer: old per-tenant path is taking traffic. Watching the oldest outstanding ACK.\n'
+                '15:57 Haruto: rollback complete, ACK age is falling. Customer impact was 47 minutes.\n'
+                '16:06 Siti: the first customer notice went at 15:36. Please keep the thread quiet until I have the depot count.')
+            continue
         if row['kind'] == 'slack':
+            side, aside = [
+                ('small tangent, the link preview is blank for me. Actual page opens fine.', 'same here lol. Search has the older thumbnail cached.'),
+                ('I have the original open now. The tiny screenshot was not helping.', 'zooming in fixed it for me. My browser was still in projector mode.'),
+                ('brb, somebody is knocking on the room door.', 'we are in the other room if that is the interview panel.'),
+                ('typo in my earlier message, meant the second attachment. Leaving it so the replies make sense.', 'got it, I had both open and was reading the wrong caption.'),
+                ('the printer copy is on my desk if anyone wants to compare.', 'paper version is easier to mark up, oddly. Will bring it back after lunch.'),
+            ][index % 5]
             row['text'] = (f'# {row["title"]}\n09:28 {a}: {q}\n\nThread replies (8):\n'
                 f'09:31 {b}: {objection}\n09:33 {author}: {response}\n'
                 f'09:34 {c}: hang on, pulling up the original rather than the screenshot\n'
                 f'09:38 {author}: {original}\n'
                 f'09:41 {a}: +1, that answers the bit I was stuck on.\n'
-                f'09:43 {b}: small tangent, the link preview is blank for me. Actual page opens fine.\n'
-                f'09:45 {c}: same here lol. Search has the older thumbnail cached.\n'
+                f'09:43 {b}: {side}\n'
+                f'09:45 {c}: {aside}\n'
                 f'09:49 {author}: thanks, leaving the context in-thread so it survives the next handoff.')
         elif row['kind'] == 'meeting':
             # Retain the complete original block, including the exact gold quote.
@@ -114,18 +140,7 @@ def enrich_sources(sources, items):
                 f'07:03 {author}: Thanks. Corrections can go in the notes. The transcript sometimes puts '
                 'all the crosstalk under my name, so check the speaker labels before quoting it.\n')
         elif row['kind'] == 'wiki':
-            row['text'] = (original + '\n\n## Before you start\n'
-                '- Open the tenant selector before taking screenshots.\n'
-                '- Keep the ticket link beside the working notes.\n'
-                '- If the embedded image is blank, follow its caption to the original.\n\n'
-                '## Walkthrough\nThe training recording uses a fabricated tenant. The labels in the old recording '
-                'are slightly different from the current sidebar. Start at the second chapter if you already have '
-                'the tenant open; the first chapter is mostly browser setup.\n\n'
-                '## Known rough edges\nThe diagram below was exported from the previous design file. Its arrows '
-                'are still readable, but the little grey labels are not. Source file is linked in the onboarding index.\n\n'
-                f'## Page comments\n{a}: The mobile screenshot is tiny on my laptop. Can we get the original?\n'
-                f'{author}: Added a link in the caption. The PDF export still cuts off the right edge.\n'
-                f'{b}: Found it. Leaving the older screenshot in my workshop notes for now; it has the annotations.\n')
+            row['text'] = original + '\n\n' + WIKI_TAILS[row['title']] + '\n'
         elif row['kind'] == 'email':
             handle = author.lower().replace(' ', '.')
             greeting = 'Hi Miki,' if 'Sakura' in row['title'] else 'Hi Nandini,' if 'Meridian' in row['title'] else 'Hi team,'
