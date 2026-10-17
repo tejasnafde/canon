@@ -122,7 +122,7 @@ Every tool call writes an `activity` row with `actor = agent:<actor or client na
 Company: "Northwind Labs", a 60-person B2B SaaS (logistics software), Jan 2025 to Oct 2026.
 Clearly labelled synthetic. Files are JSONL, one source per line, matching `Source`.
 
-- `data/corpus/*.jsonl`: ~150-250 sources across slack, meeting, wiki, pr, commit, email.
+- `data/corpus/*.jsonl`: 250-300 sources (about 100 are pure noise) across slack, meeting, wiki, pr, commit, email.
 - At least 25 decisions planted, 12 contradictions/updates, 8 stale wiki pages,
   5 premise changes, 3 people who left (one is the "departed expert"), and the hero
   storyline: "no Friday deploys" after an incident (the video moment).
