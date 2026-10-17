@@ -91,7 +91,9 @@ Pydantic models live in `backend/canon/models.py` (the code is the exact contrac
 | GET `/api/people` | | `[Person]` |
 | GET `/api/eval` | | `EvalReport` (from the last committed run) |
 | POST `/api/workspace/reset` | | `{ok}` |
-| GET `/health` | | `{ok, model}` |
+| GET `/health` | | `{ok, model}` (cheap, no Gemini) |
+| GET `/health/deep` | | Firestore read + one embed, manual checks only |
+| POST `/api/client-error` | `{message, stack?, url, userAgent?, release?}` | 204; logged at ERROR, source web |
 
 ## MCP tools (`/mcp`, streamable HTTP, no auth, rate limited)
 

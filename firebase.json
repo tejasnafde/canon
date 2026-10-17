@@ -71,6 +71,13 @@
         }
       },
       {
+        "source": "/health/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
