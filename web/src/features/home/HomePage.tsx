@@ -41,7 +41,7 @@ export default function HomePage() {
   return (
     <>
       <div className="border-b bg-card/70">
-        <p className="mx-auto max-w-[1440px] px-4 py-3 font-heading text-lg md:px-8 md:text-xl">
+        <p className="mx-auto max-w-[1440px] px-4 py-3 font-heading text-base md:px-8 md:text-xl">
           Canon is the shared memory of a company. People and AI agents read it, write it, and get blocked when they break a decision.
         </p>
       </div>

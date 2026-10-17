@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { PriorityScore, ToneBadge } from '@/components/badges'
-import { CitationLine, QuoteBlock } from '@/components/citation'
+import { CitationLine, QuoteBlock, SourceChip } from '@/components/citation'
 import { SectionHead } from '@/components/section-head'
 import { EmptyState } from '@/components/states'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import { SINCE, sinceIso, type Since } from './since'
 export function BriefingView({ persona, since, stale }: { persona: Persona; since: Since; stale: boolean }) {
   const { data: br } = useSuspenseQuery(q.briefing(persona, sinceIso(since)))
   const actions = [...br.actions].sort((x, y) => y.priority - x.priority)
+  const sources = [...new Map(actions.flatMap(a => a.citations).map(c => [c.source_id, c])).values()].slice(0, 4)
   return (
     <div className={cn('flex flex-col gap-10 transition-opacity duration-200', stale && 'opacity-60')} aria-busy={stale}>
       <Card className="py-0">
@@ -26,6 +27,15 @@ export function BriefingView({ persona, since, stale }: { persona: Persona; sinc
               <span className="label tnum">{stale ? 'updating' : secs(br.latency_ms)}</span>
             </div>
             <p className="font-heading text-[22px] leading-snug text-pretty">{br.summary}</p>
+            {sources.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Sources behind this briefing">
+                {sources.map(c => (
+                  <li key={c.source_id} className="max-w-full">
+                    <SourceChip kind={c.kind} title={c.title} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="p-6">
             <p className="label mb-2">Highlights</p>

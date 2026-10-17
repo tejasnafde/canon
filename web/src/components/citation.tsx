@@ -1,4 +1,4 @@
-import { BadgeCheck } from 'lucide-react'
+import { BadgeCheck, BookOpen, Bot, ClipboardPaste, FileText, GitCommitHorizontal, GitPullRequest, Hash, Mail, Users, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { fmtDate } from '@/lib/format'
 import type { Citation, SourceKind } from '@/lib/schemas'
@@ -12,9 +12,23 @@ export function Verified() {
   )
 }
 
+const KIND_ICON: Record<SourceKind, LucideIcon> = {
+  slack: Hash,
+  meeting: Users,
+  wiki: BookOpen,
+  pr: GitPullRequest,
+  commit: GitCommitHorizontal,
+  email: Mail,
+  doc: FileText,
+  paste: ClipboardPaste,
+  agent: Bot,
+}
+
 export function SourceChip({ kind, title, date }: { kind: SourceKind; title: string; date?: string }) {
+  const Icon = KIND_ICON[kind]
   return (
     <span className="inline-flex max-w-full items-center gap-2 rounded-sm border bg-background/60 px-2 py-0.5 text-xs">
+      <Icon className="size-3.5 shrink-0" aria-hidden />
       <span className="font-mono font-medium tracking-wide uppercase">{kind}</span>
       <span className="truncate text-muted-foreground">
         {title}

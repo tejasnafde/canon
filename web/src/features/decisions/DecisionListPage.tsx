@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useDeferredValue, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { fmtDate } from '@/lib/format'
+import { fmtDate, plural } from '@/lib/format'
 import { q } from '@/lib/query'
 import type { Decision } from '@/lib/schemas'
 
@@ -20,7 +20,7 @@ export default function DecisionListPage() {
   const [text, setText] = useState('')
   return (
     <main className="mx-auto max-w-[1100px] px-4 pt-8 pb-12 md:px-8">
-      <PageHeader eyebrow="Decisions / the record, newest first" title="What the company decided.">
+      <PageHeader eyebrow="Decisions / open alerts first, then newest" title="What the company decided.">
         <Tabs value={filter} onValueChange={v => setFilter(v as Filter)}>
           <TabsList aria-label="Filter by status">
             <TabsTrigger value="active" className="px-3 text-[15px]">
@@ -55,7 +55,14 @@ const matches = (d: Decision, t: string) => `${d.statement} ${d.owner} ${d.topic
 
 function List({ filter, text }: { filter: Filter; text: string }) {
   const { data } = useSuspenseQuery(q.decisions())
-  const ds = data.filter(d => (filter === 'all' || d.status === 'active') && matches(d, text.trim())).sort((a, b) => b.ts.localeCompare(a.ts))
+  const alerts = useQuery(q.alerts()).data ?? []
+  const open = new Map<string, number>()
+  for (const a of alerts)
+    if (a.status === 'open') for (const id of new Set([a.decision_id, a.related_decision_id])) if (id) open.set(id, (open.get(id) ?? 0) + 1)
+  // Decisions with open alerts first (most alerts first), then newest.
+  const ds = data
+    .filter(d => (filter === 'all' || d.status === 'active') && matches(d, text.trim()))
+    .sort((a, b) => (open.get(b.id) ?? 0) - (open.get(a.id) ?? 0) || b.ts.localeCompare(a.ts))
   if (data.length === 0)
     return (
       <EmptyState
@@ -86,9 +93,10 @@ function List({ filter, text }: { filter: Filter; text: string }) {
                 {d.version > 1 && ` / v${d.version}`}
               </span>
             </span>
-            <Badge variant={d.status === 'active' ? 'ok' : 'outline'} className="justify-self-start">
-              {d.status}
-            </Badge>
+            <span className="flex flex-wrap gap-2 justify-self-start">
+              {open.has(d.id) && <Badge variant="signal-soft">{plural(open.get(d.id) ?? 0, 'open alert')}</Badge>}
+              <Badge variant={d.status === 'active' ? 'ok' : 'outline'}>{d.status}</Badge>
+            </span>
           </Link>
         </li>
       ))}

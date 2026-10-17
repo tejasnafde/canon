@@ -1,17 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ToneBadge } from '@/components/badges'
 import { SectionHead } from '@/components/section-head'
 import { EmptyState, ErrorState, RowsSkeleton } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ago, alertTone } from '@/lib/format'
+import { ago, alertTone, fmtDate } from '@/lib/format'
 import { q } from '@/lib/query'
 import type { Alert } from '@/lib/schemas'
 import { cn } from '@/lib/utils'
 
 export function AlertsList() {
   const alerts = useQuery(q.alerts())
+  const [all, setAll] = useState(false)
   const list = alerts.data && [...alerts.data].sort((x, y) => y.created_at.localeCompare(x.created_at))
   return (
     <section aria-labelledby="alerts-h">
@@ -32,15 +34,28 @@ export function AlertsList() {
           Nothing on record disagrees right now.
         </EmptyState>
       ) : (
-        <ul className="divide-y">
-          {list.map(a => (
-            <AlertRow key={a.id} a={a} />
-          ))}
-        </ul>
+        <>
+          <ul className="divide-y">
+            {(all ? list : list.slice(0, CAP)).map(a => (
+              <AlertRow key={a.id} a={a} />
+            ))}
+          </ul>
+          {list.length > CAP && (
+            <Button size="sm" variant="outline" className="mt-2" onClick={() => setAll(v => !v)} aria-expanded={all}>
+              {all ? 'Show fewer' : `Show all ${list.length}`}
+            </Button>
+          )}
+        </>
       )}
     </section>
   )
 }
+
+const CAP = 5
+const HOUR = 3_600_000
+
+/** Relative only inside the last hour; older alerts get a date so equal stamps do not look like a bug. */
+const stamp = (iso: string) => (Date.now() - new Date(iso).getTime() < HOUR ? ago(iso) : fmtDate(iso))
 
 const BAR = { high: 'bg-signal', medium: 'bg-signal/50', low: 'bg-warn-ink/60' } as const
 
@@ -52,7 +67,7 @@ function AlertRow({ a }: { a: Alert }) {
         <div className="flex flex-wrap items-center gap-2">
           <ToneBadge tone={alertTone(a.kind)}>{a.kind}</ToneBadge>
           <Badge variant="outline">{a.severity}</Badge>
-          <span className="label ml-auto">{ago(a.created_at)}</span>
+          <span className="label ml-auto">{stamp(a.created_at)}</span>
         </div>
         <p className="mt-2">{a.explanation}</p>
         <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm">

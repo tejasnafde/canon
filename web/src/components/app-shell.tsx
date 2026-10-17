@@ -113,8 +113,10 @@ function Health() {
       <TooltipTrigger asChild>
         <button
           type="button"
+          onClick={() => void health.refetch()}
+          aria-label={`Canon is ${state}. Check again`}
           className={cn(
-            'hidden items-center gap-1.5 rounded-md px-2 py-1 font-mono text-xs tracking-wide uppercase sm:inline-flex',
+            'hidden items-center gap-1.5 rounded-md px-2 py-1 hover:bg-muted font-mono text-xs tracking-wide uppercase sm:inline-flex',
             state === 'online' ? 'text-ok-ink' : state === 'offline' ? 'text-signal-ink' : 'text-warn-ink',
           )}
         >
@@ -128,6 +130,7 @@ function Health() {
           : state === 'offline'
             ? 'Canon is not answering'
             : 'Canon is starting'}
+        . Click to check again.
       </TooltipContent>
     </Tooltip>
   )

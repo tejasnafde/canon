@@ -22,9 +22,10 @@ export default function AgentsPage() {
           </CardTitle>
           <CardDescription className="text-[15px]">Streamable HTTP. No key needed for the demo.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 md:grid-cols-3">
           <CopyLine label="MCP URL" value={MCP_URL} />
           <CopyLine label="Claude Code" value={`claude mcp add --transport http canon ${MCP_URL}`} />
+          <CopyLine label="Codex" value={`codex mcp add canon --url ${MCP_URL}`} />
         </CardContent>
       </Card>
 
