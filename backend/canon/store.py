@@ -278,7 +278,7 @@ async def list_activity(workspaces, since_iso=None):
 
 
 async def _titles(ids: list[str]) -> list[str]:
-    """Display text per ref id: decision statement, source title, or alert kind. Unknown ids are skipped."""
+    """Display text per ref id: decision statement, source title, or alert kind + explanation. Unknown ids skipped."""
     st = get_store()
     decs, srcs, alerts = await asyncio.gather(*(st.get_many(c, ids) for c in ("decisions", "sources", "alerts")))
     out = []
@@ -288,7 +288,7 @@ async def _titles(ids: list[str]) -> list[str]:
         elif i in srcs:
             out.append(srcs[i]["title"])
         elif i in alerts:
-            out.append(f"{alerts[i]['kind'].replace('_', ' ')} alert")
+            out.append(f"{alerts[i]['kind'].replace('_', ' ')}: {alerts[i]['explanation']}"[:160])
     return out
 
 
