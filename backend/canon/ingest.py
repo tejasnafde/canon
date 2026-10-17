@@ -157,7 +157,10 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         if p.decisions else set()
 
     async def judge(d):
-        return await reconcile.judge(d, await reconcile.candidates(d["embedding"], scope), p.source, violators)
+        # Superseded decisions are shown too, so a repeat of a replaced rule is caught (see reconcile.judge).
+        cands = await reconcile.candidates(d["embedding"], scope, 6, active_only=False)
+        cands.sort(key=lambda x: x[0]["status"] != "active")  # active first, so D1.. are the live rules
+        return await reconcile.judge(d, cands, p.source, violators)
 
     judged, broken, stales = await asyncio.gather(
         asyncio.gather(*(judge(d) for d in p.decisions)),

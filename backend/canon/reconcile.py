@@ -113,7 +113,7 @@ def _dline(label: str, d: dict) -> str:
 async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: float = RELATED_MIN,
                      active_only: bool = True) -> list[tuple[dict, float]]:
     hits = await get_store().nearest("decisions", scope, emb, k * 2)
-    return [(d, s) for d, s in hits if s >= min_score and (not active_only or d["status"] == "active")][:k]
+    return [(d, s) for d, s in hits if s >= min_score and (not active_only or d.get("status", "active") == "active")][:k]
 
 
 # Wording that announces a revision. With a conflict and authority it counts as explicit_supersede even when the
@@ -136,13 +136,13 @@ def decide(assessments: list[dict], labels: dict[str, dict], authorised,
     seen = [(a, pick(labels, a["decision"])) for a in assessments]
     seen = [(a, d) for a, d in seen if d is not None]
     for a, d in seen:
-        if a["conflicts"] and d.get("kind", "rule") == "rule" and d["id"] not in violators:
+        if a["conflicts"] and d.get("status", "active") == "active" and d.get("kind", "rule") == "rule" and d["id"] not in violators:
             return ("update" if (a["explicit_supersede"] or revises) and authorised(d) else "contradiction"), d, a
-    for a, d in seen:
+    for a, d in sorted(seen, key=lambda x: x[1].get("status", "active") != "active"):
         if a["restates"]:
             return "same", d, a
     for a, d in seen:
-        if a["explicit_supersede"] and authorised(d):
+        if a["explicit_supersede"] and authorised(d) and d.get("status", "active") == "active":
             return "update", d, a  # narrows or extends it without a conflict
     return "new", None, None
 
@@ -194,11 +194,18 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     rel, old, a = decide(r["assessments"], labels, authorised, violators, revises)
     if a is None:
         return "new", None, "No existing decision covers the same subject."
+    if rel == "same" and old["status"] == "superseded" and old.get("superseded_by") and not revises:
+        # Repeating a rule after it was replaced (a copied checklist, an old page pasted into a packet) contradicts
+        # the decision that replaced it.
+        nxt = (await get_store().get_many("decisions", [old["superseded_by"]])).get(old["superseded_by"])
+        if nxt and nxt["status"] == "active" and utc(nxt["ts"]) <= utc(dec["ts"]) and nxt["id"] not in violators:
+            return "contradiction", nxt, (f"It repeats the replaced rule \"{_short(old['statement'])}\"; the current "
+                                          f"decision is \"{_short(nxt['statement'])}\" ({nxt['owner']}, {utc(nxt['ts']).date()}).")
     if rel == "update":
         # The same old rule often lives in several decisions (the thread and a wiki copy); revise every copy.
         dec["_also"] = [d for x in r["assessments"] if (d := pick(labels, x["decision"])) and d["id"] != old["id"]
                         and x["conflicts"] and (x["explicit_supersede"] or revises) and authorised(d)
-                        and d["id"] not in violators and d.get("kind", "rule") == "rule"]
+                        and d["id"] not in violators and d.get("kind", "rule") == "rule" and d.get("status", "active") == "active"]
     return rel, old, unlabel(a["why"], labels, old)
 
 

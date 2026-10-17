@@ -248,7 +248,8 @@ def rank(decs: list[dict], alerts: list[dict], kinds: dict[str, str], persona: s
         others = max(0, links.get(a.get("related_decision_id") or a.get("decision_id") or "", 0) - 1)
         s, r = score(text, persona, a["kind"], (d or a)["ts"] if d else a["created_at"], today,
                      source_kind=kinds.get(a.get("source_id") or ""), teams=teams, links=others,
-                     severity=a.get("severity"), owner_team=team_of.get(d["id"]) if d else None)
+                     severity=a.get("severity"), owner_team=team_of.get(d["id"]) if d else None,
+                     changed=bool(rel and rel.get("supersedes")))  # breaks a rule that was itself a revision
         cands.append((s, r, "alert", a))
     cands.sort(key=lambda c: (c[0], utc(c[3].get("ts") or c[3]["created_at"]), c[3]["id"]), reverse=True)
     return cands

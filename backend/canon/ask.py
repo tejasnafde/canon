@@ -12,6 +12,7 @@ from canon.reconcile import NO_LABELS, norm, pick, unlabel, verified
 from canon.store import get_store, utc
 
 ASK_MIN = 0.66  # query-to-record cosine below this means "I do not know" without calling Gemini
+ASK_SPREAD = 0.12  # cosine below the best match beyond which a record item is left out of the prompt
 REFUSAL = "I do not know. The record has no decision or document that answers this."
 
 
@@ -99,8 +100,9 @@ async def ask(req: AskRequest, workspaces: list[str]) -> AskResult:
     top = max([s for _, s in decs + chunks], default=0.0)
     res = AskResult(answer=REFUSAL, citations=[], refused=True, latency_ms=0)
     if top >= ASK_MIN:
-        ctx, labels = context([d for d, s in decs if s >= ASK_MIN - 0.06],
-                              [c for c, s in chunks if s >= ASK_MIN - 0.06])
+        # Near-top items only: a smaller record answers as well and returns faster.
+        floor = max(ASK_MIN - 0.06, top - ASK_SPREAD)
+        ctx, labels = context([d for d, s in decs if s >= floor][:6], [c for c, s in chunks if s >= floor][:4])
         prompt = (f"QUESTION: {req.question}\n\nRECORD:\n{ctx}\n\n"
                   "Answer the question in 2 to 4 sentences using ONLY the record. Prefer active decisions; when a "
                   "decision was superseded, say what changed and when. Cite every claim with refs (D1, C2) and a "
