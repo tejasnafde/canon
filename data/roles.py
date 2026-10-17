@@ -123,7 +123,12 @@ def add_roles(source, people, gold):
     decisions = {i['key']: i for i in gold['items'] if i['type'] == 'decision'}
     for item in gold['items']:
         owner = decisions[item['decision_key']]['owner']
-        item['teams'] = sorted({owner_teams[owner], 'new_hire'})
+        relevant = {owner_teams[owner], 'new_hire'}
+        if item['decision_key'] in {'pricing-v1', 'pricing-v2'}:
+            relevant.update({'sales', 'marketing', 'finance', 'pm'})
+        if item['decision_key'] in {'route-launch', 'launch-june', 'pilot-gate'}:
+            relevant.update({'sales', 'marketing', 'support', 'pm', 'leadership'})
+        item['teams'] = sorted(relevant)
     for section in ('check_intent','answerable_questions'):
         for case in gold[section]:
             refs = case.get('expected_decision_keys', [case.get('decision_key')])

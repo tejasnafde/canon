@@ -290,8 +290,12 @@
       "owner": "Aisha Rahman",
       "statement": "Route Lens general availability is scheduled for 15 April 2026.",
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -308,7 +312,10 @@
       "statement": "Route Lens will cost USD 99 per workspace per month at general availability.",
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -443,8 +450,12 @@
       "owner": "Aisha Rahman",
       "statement": "Route Lens needs median absolute arrival error below 12 minutes for three consecutive weeks before GA.",
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -570,7 +581,10 @@
       ],
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -588,8 +602,12 @@
         }
       ],
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -775,7 +793,10 @@
       "statement": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions.",
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -795,7 +816,10 @@
       "related_decision_key": "pricing-v1",
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -811,8 +835,12 @@
       "owner": "Aisha Rahman",
       "statement": "Move Route Lens general availability from 15 April to 2 June 2026.",
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -831,8 +859,12 @@
       ],
       "related_decision_key": "route-launch",
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -1018,7 +1050,10 @@
       ],
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -1036,8 +1071,12 @@
         }
       ],
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -1170,7 +1209,10 @@
       ],
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -2681,7 +2723,10 @@
       "reason": "New subscriptions use USD 149.",
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -2692,7 +2737,10 @@
       "reason": "The signed-pilot exception is explicit.",
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -2702,8 +2750,12 @@
       "decision_key": "launch-june",
       "reason": "GA moved to 2 June.",
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {
@@ -3059,7 +3111,10 @@
       ],
       "teams": [
         "finance",
-        "new_hire"
+        "marketing",
+        "new_hire",
+        "pm",
+        "sales"
       ]
     },
     {
@@ -3071,8 +3126,12 @@
         "launch-june"
       ],
       "teams": [
+        "leadership",
+        "marketing",
         "new_hire",
-        "pm"
+        "pm",
+        "sales",
+        "support"
       ]
     },
     {

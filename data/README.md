@@ -6,14 +6,14 @@ synthetic evaluation data, not a record of a real company. Northwind Labs is a
 through October 2026. Source metadata sets `synthetic: true` and `workspace: acme`.
 Every link uses a reserved `.example` domain and does not resolve to a real record.
 
-The corpus has 259 sources across Slack, meetings, wiki, PRs, commits and email.
+The corpus has 380 sources across Slack, meetings, wiki, PRs, commits and email.
 Pass 2 adds 100 unlabelled noise sources about lunch, hiring, hardware, customer
 workshops, small UI bugs and rota swaps. They are not new benchmark decisions.
 Slack threads have several participants and 4 to 15 replies. All 40 meetings
 have 300 to 900 words, with questions, objections and transcript crosstalk. Wiki
 pages retain their historical wording. PRs have review comments and short
 fictional diff excerpts. Emails include headers, greetings and signatures.
-Twenty named colleagues include three departed people. Anika Rao is the departed
+Twenty-three named colleagues include three departed people. Anika Rao is the departed
 platform expert. Her notes explain event identity, cursors, retry behavior,
 replays, restore drills, idempotency and release safety. Mei Tan takes over her
 platform responsibilities. Use `anika-rao` for the expert persona.
@@ -38,7 +38,7 @@ python3 data/validate.py
 `build_corpus.py` is a deterministic serializer of authored content.
 `archive_texture.py`, `meeting_details.py` and `source_context.py` hold the
 in-world discussions and page comments. `pr_excerpts.py` holds illustrative
-review diffs, and `noise.py` holds the 100 new unrelated sources. It does not
+review diffs, and `noise.py` holds the 100 unrelated sources. `roles.py` holds 121 department sources and their gold labels. It does not
 sample, call a model, or access the network. Commit the resulting artifacts so
 consumers do not need to run it. For ingestion, read all `corpus/*.jsonl`, combine
 the rows, and sort by `(ts, title)`. Do not ingest one kind at a time: chronology
@@ -95,10 +95,10 @@ Their authored sources predate their departures.
   old wiki; the second is its newer correction. Updates use
   `related_decision_key` for the prior decision and `decision_key` for its
   replacement. New statements in updates also have their own decision items.
-- `check_intent`: 15 cases with `intent`, `expected_verdict`, `decision_key` and
+- `check_intent`: 37 cases with `intent`, `expected_verdict`, `decision_key` and
   a short `reason`. These cover blocks, allowed actions, scope exceptions and
   warnings when assumptions fail without an approved replacement.
-- `answerable_questions`: ten questions and their `expected_decision_keys`.
+- `answerable_questions`: 21 questions and their `expected_decision_keys`.
   These are required supporting decisions, not a required verbatim answer.
 - `unanswerable_questions`: five questions with `expected_refused: true`.
   Some mention known topics but ask for facts absent from the archive.
@@ -109,7 +109,7 @@ evidence and meaning. Gold deliberately does not preseed extracted decisions or
 claims about actual model performance. `premise_change` is the gold label; the
 API alert enum spells the corresponding kind `premise_changed`.
 
-The label counts are 38 decision statements, 17 contradictions/updates, eight
+The label counts are 82 decision statements, 39 contradictions/updates, 19
 stale wiki snapshots and five premise changes. Historical statements remain in
 gold even when superseded. Ambient sources supply observational context and
 negative examples. For example, a Friday team discussion, a staging dry run, or
@@ -137,16 +137,52 @@ decision references, stale-page chronology, minimum planted counts and example
 coverage. Mutation tests verify that broken quotes, dangling keys, malformed
 JSONL, missing minimums and future-dated stale pages fail validation.
 
-## Pass 2 integration note
+## Role coverage
 
-The requested target is 250 to 300 sources. The local validator now checks that
-range. SPEC.md still says approximately 150 to 250; only the lead can update that
-contract. No model fields, source titles, gold keys, gold quotes, label counts,
-people records or judge samples change in this pass. Source URLs remain fake
-deep links. Slack URLs now include an ordinal suffix so two sources on the same
-day have different addresses. No cloud data is changed by building or validating.
+The October role pass adds 121 sources: 99 Slack threads, 11 email threads, and
+11 historical wiki pages. Each requested department has four new decision
+statements: a January baseline, a September replacement, and two further
+agreements. Each has one update, one stale page, one contradictory copied
+packet, two intent cases, and one answerable question. Historical decisions
+remain in gold. The five original refusal questions remain unchanged. No source
+specifies parental leave, revenue, an acquisition, partner passwords, or an
+approved replacement for the broken cache/model assumptions.
 
-The tests also check document shapes, meeting lengths, absence of emoji, and
-added speaker names against departure dates. These checks validate the archive;
-they do not measure retrieval quality or Gemini accuracy. The longer sources
-and extra noise need a fresh ingestion and benchmark run by the core owner.
+| Persona | Owned decision statements, including history | Example question |
+|---|---:|---|
+| design | 5 | How must design mark delayed shipments now? |
+| data | 5 | What counts as an active workspace in the weekly dashboard? |
+| security | 11 | How long may a vendor troubleshooting session remain open? |
+| sales | 4 | Who approves a Route Lens discount above 10 percent? |
+| support | 5 | Where does support send a priority-one incident first? |
+| marketing | 4 | Which product name belongs in new campaign headlines? |
+| finance | 8 | What payment terms apply to new customer invoices? |
+| operations | 4 | When must operations reorder depot scanner kits? |
+| people | 4 | How many interview rounds do permanent hires have now? |
+| legal | 4 | Which customer contracts require Legal review before signature? |
+| leadership | 4 | Which roles are exempt from the permanent hiring freeze now? |
+
+Engineer and Product keep their original release, platform, launch, and pricing
+histories. Every gold item and question now has `teams`, containing persona keys.
+All department decisions also matter to `new_hire`. Commercial pricing and launch
+items list their affected teams. Metadata describes benchmark relevance; ingestion
+still consumes only Source fields. For recent role briefings, use
+`since=2026-09-01T00:00:00Z`. For the full decision history, use January 2025.
+
+People adds Devika Fernando (Operations), Nandini Wijaya (Legal), and Hana Okafor
+(Leadership). Existing owners now use explicit Design, Finance, Support, and
+People team names. Three historical departures remain unchanged.
+
+## Integration and verification
+
+The validator requires 380 to 460 sources, three owned decisions per requested
+role, an update and stale page per role, and role-specific intent and question
+coverage. Tests also check deterministic rebuilding, exact quotes, missing team
+labels, stale-page chronology, document shapes, and departed speakers. The checks
+run offline and do not measure Gemini accuracy or retrieval quality.
+
+The lead must update SPEC.md's 250 to 300 source range to 380 to 460, expand F6's
+persona list to match models.py, and document the additive gold `teams` field.
+The runtime Source and Person schemas remain unchanged. Re-ingestion and a fresh
+model benchmark are required before the deployed product uses this corpus.
+This workstream makes no cloud changes.

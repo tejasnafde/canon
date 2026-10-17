@@ -55,6 +55,25 @@ class CorpusValidationTests(unittest.TestCase):
                     if row['ts'] > person['left_at']:
                         self.assertNotRegex(row['text'], re.escape(person['name']) + r':')
 
+    def test_rebuild_is_deterministic(self):
+        import subprocess
+        import sys
+        paths = [*self.root.joinpath('corpus').glob('*.jsonl'),
+                 self.root / 'people.json', self.root / 'gold' / 'gold.json',
+                 *self.root.joinpath('samples').glob('*.json')]
+        before = {p: p.read_bytes() for p in paths}
+        subprocess.run([sys.executable, str(self.root / 'build_corpus.py')],
+                       check=True, capture_output=True)
+        self.assertEqual(before, {p: p.read_bytes() for p in paths})
+
+    def test_role_stale_page_and_cases_are_required(self):
+        self.mutate_gold(lambda g: g.update(
+            items=[i for i in g['items'] if i['key'] != 'legal-stale-page'],
+            check_intent=[c for c in g['check_intent'] if 'legal' not in c.get('teams', [])]))
+        errors, _ = validate(self.root)
+        self.assertIn('legal: missing stale_doc', errors)
+        self.assertIn('legal: missing check_intent case', errors)
+
     def test_role_decision_minimum_fails(self):
         self.mutate_gold(lambda g: g.update(items=[
             i for i in g['items'] if 'legal' not in i.get('teams', [])]))
