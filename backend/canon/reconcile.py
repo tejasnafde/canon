@@ -1,5 +1,6 @@
 """F3 reconciliation, F4 stale docs, F13 premise watch. Gemini judges, code decides what to write."""
 import asyncio
+import re
 from typing import Literal
 
 from pydantic import BaseModel
@@ -19,6 +20,19 @@ def norm(s: str) -> str:
 def verified(quote: str, text: str) -> bool:
     q = norm(quote)
     return bool(q) and q in norm(text)
+
+
+def pick(labels: dict[str, dict], ref: str) -> dict | None:
+    """Resolve a model's reference: "D1", "[D1]", "D1: ...", or the referenced statement echoed back."""
+    m = re.match(r"\W*([A-Z]\d+)\b", ref or "")
+    if m and m.group(1) in labels:
+        return labels[m.group(1)]
+    r = norm(ref).lower()
+    for x in labels.values():
+        t = norm(x.get("statement") or x.get("text") or "").lower()
+        if r and t and (t.startswith(r[:60]) or r.startswith(t[:60])):
+            return x
+    return None
 
 
 class Judgement(BaseModel):
@@ -80,7 +94,7 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[
         "Set related to the label (e.g. D1), or \"\" for new. One sentence of explanation."
     )
     r = await llm.generate_json(prompt, Judgement, system=SYSTEM)
-    rel = labels.get(r["related"].strip("[] "))
+    rel = pick(labels, r["related"])
     if r["relation"] != "new" and rel is None:
         return "new", None, r["explanation"]
     return r["relation"], (rel if r["relation"] != "new" else None), r["explanation"]
@@ -89,29 +103,31 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[
 async def premise_check(source_text: str, items: list[dict], emb_list: list[list[float]],
                         scope: list[str]) -> list[tuple[dict, Broken]]:
     """F13: does new info break an assumption behind an active decision?"""
-    found = await asyncio.gather(*(candidates(e, scope, 4, PREMISE_MIN) for e in emb_list))
+    found = await asyncio.gather(*(candidates(e, scope, 6, PREMISE_MIN) for e in emb_list))
     pool: dict[str, dict] = {}
     for hits in found:
         for d, _ in hits:
             pool[d["id"]] = d
     if not pool:
         return []
-    labels = {f"D{i + 1}": d for i, d in enumerate(list(pool.values())[:8])}
+    labels = {f"D{i + 1}": d for i, d in enumerate(list(pool.values())[:10])}
     prompt = (
         "NEW information:\n" + "\n".join(f"- {i['statement']}" for i in items) +
         "\n\nACTIVE decisions:\n" +
         "\n".join(f"[{l}] {d['statement']} Why: {d['rationale']}\n  stated assumptions: "
                   + ("; ".join(d.get("assumptions") or []) or "none") for l, d in labels.items()) +
-        "\n\nA decision rests on assumptions, stated or implicit (the facts that made it a sensible choice). "
-        "List only cases where the NEW information clearly makes such an assumption false, so the decision "
-        "may no longer work as intended. Do not list a decision just because it is on the same topic. "
+        "\n\nA decision rests on premises: conditions in its own wording (\"while X stays below N\"), stated "
+        "assumptions, and implicit facts that made it sensible (e.g. a 24 hour retry assumes requests stay "
+        "valid for 24 hours; a price assumes a cost). For each decision ask: does the NEW information make one "
+        "of its premises false (a number crossed a stated limit, a cost or duration changed, a vendor behaves "
+        "differently)? List those. Do not list a decision just because it is on the same topic. "
         "evidence_quote must be copied word for word from the SOURCE below. Return an empty list if none.\n\n"
         f"SOURCE:\n{source_text[:6000]}"
     )
     r = await llm.generate_json(prompt, PremiseCheck, system=SYSTEM)
     out = []
     for b in r["broken"]:
-        d = labels.get(b["decision"].strip("[] "))
+        d = pick(labels, b["decision"])
         if d and verified(b["evidence_quote"], source_text):
             out.append((d, Broken(**b)))
     return out
@@ -135,7 +151,7 @@ async def stale_check(dec: dict, emb: list[float], scope: list[str], source_id: 
     r = await llm.generate_json(prompt, StaleCheck, system=SYSTEM)
     out = []
     for h in r["stale"]:
-        c = labels.get(h["excerpt"].strip("[] "))
+        c = pick(labels, h["excerpt"])
         if c and verified(h["quote"], c["text"]):
             out.append((c, StaleHit(**h)))
     return out

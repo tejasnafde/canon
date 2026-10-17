@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from canon import llm
 from canon.models import AskRequest, AskResult, Citation, Decision, TimelineEntry
-from canon.reconcile import norm, verified
+from canon.reconcile import norm, pick, verified
 from canon.store import get_store, utc
 
 ASK_MIN = 0.66  # query-to-record cosine below this means "I do not know" without calling Gemini
@@ -81,7 +81,7 @@ def context(decs: list[dict], chunks: list[dict]) -> tuple[str, dict[str, dict]]
 async def map_citations(cited: list[dict], labels: dict[str, dict]) -> list[Citation]:
     pairs = []
     for c in cited:
-        x = labels.get(c["ref"].strip("[] "))
+        x = pick(labels, c["ref"])
         if not x:
             continue
         if "statement" in x:  # decision: cite the verified quote that best matches
@@ -109,8 +109,7 @@ async def ask(req: AskRequest, workspaces: list[str]) -> AskResult:
         r = await llm.generate_json(prompt, Answer, system="You are Canon, the company's decision record. Never guess.")
         cites = await map_citations(r["cited"], labels) if r["answerable"] else []
         if r["answerable"] and cites:
-            cited_decs = [labels[c["ref"].strip("[] ")] for c in r["cited"]
-                          if c["ref"].strip("[] ") in labels and "statement" in labels[c["ref"].strip("[] ")]]
+            cited_decs = [x for x in (pick(labels, c["ref"]) for c in r["cited"]) if x and "statement" in x]
             res = AskResult(answer=r["answer"], citations=cites, timeline=await timeline(cited_decs, workspaces),
                             refused=False, latency_ms=0)
     res.latency_ms = int((time.perf_counter() - t) * 1000)

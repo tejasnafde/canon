@@ -1,4 +1,5 @@
 """F7 agent guard: an intended action against the record -> allow / warn / block."""
+import asyncio
 import time
 from typing import Literal
 
@@ -7,6 +8,7 @@ from pydantic import BaseModel
 from canon import llm
 from canon.ask import citations, context, retrieve
 from canon.models import CheckRequest, CheckResult, Decision
+from canon.reconcile import pick
 from canon.store import get_store, new_id, now
 
 CHECK_MIN = 0.64  # below this no decision covers the intent: allow without asking Gemini
@@ -20,21 +22,28 @@ class Guard(BaseModel):
 
 async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
     t = time.perf_counter()
-    decs, _ = await retrieve(req.intent, workspaces, k_dec=10, k_chunk=0)
+    (decs, _), open_alerts = await asyncio.gather(retrieve(req.intent, workspaces, k_dec=10, k_chunk=0),
+                                                  get_store().query("alerts", workspaces, status="open"))
     active = [d for d, s in decs if d["status"] == "active" and s >= CHECK_MIN][:6]
     verdict, why, deciding = "allow", "No decision in the record covers this action.", []
     if active:
         ctx, labels = context(active, [])
+        ids = {d["id"]: l for l, d in labels.items()}
+        flags = [f"[{ids[a['decision_id']]}] {a['kind']}: {a['explanation'][:200]}" for a in open_alerts
+                 if a.get("decision_id") in ids and a["kind"] in ("premise_changed", "contradiction")]
         prompt = (f"INTENDED ACTION by {req.actor}: {req.intent}\n\nACTIVE decisions:\n{ctx}\n\n"
-                  "Verdict:\n- block: the action directly violates an active decision\n"
-                  "- warn: the action touches a decision and needs care or sign-off (partial conflict, an exception, "
-                  "or a related constraint), but does not clearly violate it\n"
-                  "- allow: consistent with the record, or no decision is relevant\n"
+                  + (("OPEN ALERTS on these decisions:\n" + "\n".join(flags) + "\n\n") if flags else "") +
+                  "Read each decision's conditions and exceptions closely. Verdict:\n"
+                  "- block: the action violates an active decision and meets none of its documented exceptions\n"
+                  "- warn: the action relies on a decision whose premise has changed or that has an open alert, "
+                  "or it partly conflicts and needs sign-off\n"
+                  "- allow: consistent with the record, including when it satisfies a documented exception, "
+                  "or no decision is relevant\n"
                   "deciding = labels of the decisions behind the verdict ([] for allow when none is relevant). "
                   "explanation: 1 or 2 sentences naming the decision and owner.")
         r = await llm.generate_json(prompt, Guard, system="You are Canon, a guard that checks actions against the company's decisions.")
         verdict, why = r["verdict"], r["explanation"]
-        deciding = [labels[x.strip("[] ")] for x in r["deciding"] if x.strip("[] ") in labels]
+        deciding = [d for d in (pick(labels, x) for x in r["deciding"]) if d]
         if verdict != "allow" and not deciding:
             deciding = active[:1]
     cites = await citations([(q["source_id"], q["quote"], d["id"]) for d in deciding for q in d["quotes"][:1]])

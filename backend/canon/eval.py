@@ -13,7 +13,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from canon import core, llm
+from canon import llm
 from canon.models import AskRequest, CheckRequest, EvalReport, IngestRequest, Source
 from canon.store import get_store
 
@@ -44,6 +44,7 @@ def _pct(xs: list[int], p: float) -> int:
 
 
 async def run(gold_path: Path, workspace: str = "acme", samples_path: Path | None = None) -> EvalReport:
+    from canon import core
     gold = json.loads(gold_path.read_text())
     st = get_store()
     ws = [workspace]
@@ -122,7 +123,7 @@ async def run(gold_path: Path, workspace: str = "acme", samples_path: Path | Non
         f"answerable questions answered {answered}/{len(gold['answerable_questions'])}, "
         f"citing an expected decision {cited_right}",
         f"{sum(len(d['quotes']) for d in decs)} stored quotes, every one verified word for word against its source",
-        f"latency over {len(lat)} ask and check calls, sequential, Cloud Run region asia-south1",
+        f"latency over {len(lat)} ask and check calls, sequential, client to Vertex AI and Firestore in asia-south1",
     ] + [f"check miss {m}" for m in misses]
 
     if samples_path and samples_path.exists():

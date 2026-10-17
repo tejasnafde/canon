@@ -5,7 +5,7 @@ import pytest
 from canon import core, llm
 from canon.briefing import deadline_days, score
 from canon.models import (AskRequest, BriefingRequest, CheckRequest, IngestRequest, ResolveRequest, Source)
-from canon.reconcile import verified
+from canon.reconcile import pick, verified
 
 NO_PREMISE = {"broken": []}
 NO_STALE = {"stale": []}
@@ -155,3 +155,10 @@ async def test_briefing_ranks_and_resolve_overlay():
     assert len(await core.list_alerts(["acme"], "open")) == 1
     await core.reset_workspace("v-1")
     assert len(await core.list_alerts(["acme", "v-1"], "open")) == 1
+
+
+def test_pick_accepts_label_or_echoed_statement():
+    labels = {"D1": {"statement": "Cache the dashboard for five minutes."}, "D2": {"statement": "Retry for 24 hours."}}
+    assert pick(labels, "[D2]") is labels["D2"] and pick(labels, "D1: cache") is labels["D1"]
+    assert pick(labels, "Retry for 24 hours. Why: keys") is labels["D2"]
+    assert pick(labels, "D9") is None and pick(labels, "") is None
