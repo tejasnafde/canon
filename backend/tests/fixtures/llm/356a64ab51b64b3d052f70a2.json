@@ -1,1 +1,0 @@
-{"verdict": "block", "explanation": "Deploying the dispatch service to production on Friday violates the decision 'The team will not perform any production deploys on Fridays, including scheduled jobs and configuration-only releases' owned by Mei.", "deciding": ["D1"]}

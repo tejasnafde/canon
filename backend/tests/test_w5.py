@@ -39,8 +39,7 @@ async def test_activity_reads_agents_and_visitor_only():
 
 async def test_check_logs_titles_and_explanation_without_labels():
     await get_store().put("decisions", {**FRIDAY, "embedding": llm._fake_vec(FRIDAY["statement"])})
-    llm.FAKE_RESPONSES["Guard"] = {"verdict": "block", "explanation": "D1 bans production deploys on Fridays.",
-                                   "deciding": ["D1"]}
+    llm.FAKE_RESPONSES["Guard"] = {"judgements": [{"decision": "D1", "applies": True, "violates": True, "exception_met": False, "note": "D1 bans production deploys on Fridays."}]}
     res = await core.check(CheckRequest(intent="production deploys on Fridays", actor="agent:claude-code"),
                            ["acme", "agents"])
     assert res.verdict == "block" and "D1" not in res.explanation

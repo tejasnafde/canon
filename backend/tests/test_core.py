@@ -119,7 +119,7 @@ async def test_check_verdicts_and_agent_violation():
     assert r.verdict == "allow" and not r.decisions
     fake(Extraction=extraction(("No deploys on Friday.", ["no deploys on Friday"], [])))
     await ingest("Incident review: no deploys on Friday.")
-    llm.FAKE_RESPONSES["Guard"] = {"verdict": "block", "explanation": "Friday freeze.", "deciding": ["D1"]}
+    llm.FAKE_RESPONSES["Guard"] = {"judgements": [{"decision": "D1", "applies": True, "violates": True, "exception_met": False, "note": "Friday freeze."}]}
     r = await core.check(CheckRequest(intent="deploys on Friday evening", actor="agent:claude-code"), ["acme", "agents"])
     assert r.verdict == "block" and r.decisions and r.citations
     assert [a.kind for a in await core.list_alerts(["agents"])] == ["agent_violation"]
@@ -211,6 +211,23 @@ async def test_check_block_becomes_warn_when_premise_broken():
     await get_store().put("alerts", {"id": "a-p", "workspace": "acme", "kind": "premise_changed", "severity": "medium",
                                      "decision_id": r.decisions[0].decision.id, "explanation": "load grew",
                                      "quotes": [], "status": "open", "created_at": datetime.now(timezone.utc)})
-    llm.FAKE_RESPONSES["Guard"] = {"verdict": "block", "explanation": "Over the limit.", "deciding": ["D1"]}
+    llm.FAKE_RESPONSES["Guard"] = {"judgements": [{"decision": "D1", "applies": True, "violates": True, "exception_met": False, "note": "Over the limit."}]}
     res = await core.check(CheckRequest(intent="keep cache dashboard five minutes"), ["acme"])
     assert res.verdict == "warn"
+
+
+def test_check_verdict_is_decided_in_code():
+    from canon.check import verdict_of
+    a, b = {"id": "a"}, {"id": "b"}
+
+    def j(applies=True, violates=False, exc=False):
+        return {"applies": applies, "violates": violates, "exception_met": exc, "note": ""}
+    assert verdict_of([], set()) == ("allow", [])
+    assert verdict_of([(a, j(violates=True))], set())[0] == "block"
+    assert verdict_of([(a, j(violates=True, exc=True))], set())[0] == "allow"  # documented exception
+    assert verdict_of([(a, j(applies=False, violates=True))], set())[0] == "allow"  # not relevant
+    assert verdict_of([(a, j(exc=True)), (b, j(violates=True))], set())[0] == "allow"  # exception is its own decision
+    assert verdict_of([(a, j(violates=True))], {"a"})[0] == "warn"  # premise changed: review, not block
+    assert verdict_of([(a, j())], {"a"})[0] == "warn"  # relies on a broken premise
+    v, deciding = verdict_of([(a, j(violates=True)), (b, j(violates=True))], {"a"})
+    assert v == "block" and [d for d, _ in deciding] == [b]

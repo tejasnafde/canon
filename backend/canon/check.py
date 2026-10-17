@@ -2,7 +2,6 @@
 import asyncio
 import os
 import time
-from typing import Literal
 
 from pydantic import BaseModel
 
@@ -16,10 +15,34 @@ CHECK_THINK = int(os.environ.get("CANON_CHECK_THINK", "0"))  # thinking budget f
 CHECK_MIN = 0.64  # below this no decision covers the intent: allow without asking Gemini
 
 
+class Judgement(BaseModel):
+    decision: str  # the bracketed label only, e.g. D1
+    applies: bool  # the decision governs this kind of action
+    violates: bool  # the action does what the decision forbids, or skips what it requires
+    exception_met: bool  # the action satisfies an exception the record documents
+    note: str  # one sentence naming the decision and owner, true for the facts above
+
+
 class Guard(BaseModel):
-    verdict: Literal["allow", "warn", "block"]
-    explanation: str
-    deciding: list[str]  # labels
+    judgements: list[Judgement]
+
+
+def verdict_of(judged: list[tuple[dict, dict]], broken: set[str]) -> tuple[str, list[tuple[dict, dict]]]:
+    """Decide in code from the model's per-decision judgements; (verdict, deciding (decision, judgement) pairs).
+
+    block: an active decision is violated with no documented exception, and its premise still holds.
+    warn: the only violated decisions have a changed premise, or the action relies on one that does.
+    allow: everything else (no relevant decision, or a documented exception is met, here or in its own decision).
+    """
+    hit = [(d, j) for d, j in judged if j["applies"]]
+    # An exception recorded as its own decision (e.g. the emergency rule) that the action satisfies excuses the rest.
+    excused = any(j["exception_met"] and not j["violates"] for _, j in hit)
+    bad = [(d, j) for d, j in hit if j["violates"] and not j["exception_met"] and not excused]
+    if hard := [(d, j) for d, j in bad if d["id"] not in broken]:
+        return "block", hard
+    if shaky := bad or [(d, j) for d, j in hit if d["id"] in broken and not j["exception_met"]]:
+        return "warn", shaky
+    return "allow", hit
 
 
 async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
@@ -33,29 +56,32 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
     if active:
         ctx, labels = context(active, [])
         ids = {d["id"]: l for l, d in labels.items()}
+        broken = {a["decision_id"] for a in open_alerts if a["kind"] == "premise_changed"}
         flags = [f"[{ids[a['decision_id']]}] {a['kind']}: {a['explanation'][:200]}" for a in open_alerts
                  if a.get("decision_id") in ids and a["kind"] == "premise_changed"]
         prompt = (f"INTENDED ACTION by {req.actor}: {req.intent}\n\nACTIVE decisions:\n{ctx}\n\n"
                   + (("OPEN ALERTS on these decisions:\n" + "\n".join(flags) + "\n\n") if flags else "") +
-                  "Read each decision's conditions and exceptions closely; an exception may be recorded as a "
-                  "separate decision. Verdict:\n"
-                  "- block: the action violates an active decision and meets none of its documented exceptions\n"
-                  "- warn: the action does not violate any decision, but it keeps relying on a decision whose "
-                  "premise has changed (see OPEN ALERTS), so a human must review it first\n"
-                  "- allow: consistent with the record, including when it satisfies a documented exception, "
-                  "or no decision is relevant\n"
-                  "deciding = labels of the decisions behind the verdict ([] for allow when none is relevant). "
-                  "explanation: 1 or 2 sentences naming the decision and owner.")
-        r = await llm.generate_json(prompt, Guard, think=CHECK_THINK,
+                  "Judge every decision above, one judgement each, in the order given (decision = its label, e.g. D1). Read its conditions and exceptions "
+                  "closely; an exception may be recorded as a separate decision.\n"
+                  "- applies: true if the decision governs this kind of action (same system, time, customer or process)\n"
+                  "- violates: true if the action does what the decision forbids or skips what it requires\n"
+                  "- exception_met: true only if the action itself states the conditions of a documented exception to this "
+                  "decision, whether written in it or recorded as another decision above (for example an emergency rule)\n"
+                  "- note: one sentence on how the action relates to the decision, naming the decision and owner")
+        r = await llm.generate_json(prompt, Guard, think=CHECK_THINK, temperature=0.0,
                                     system="You are Canon, a guard that checks actions against the company's decisions. " + NO_LABELS)
-        deciding = [d for d in (pick(labels, x) for x in r["deciding"]) if d]
-        verdict, why = r["verdict"], unlabel(r["explanation"], labels, deciding[0] if deciding else None)
-        if verdict != "allow" and not deciding:
-            deciding = active[:1]
-        broken = {a["decision_id"] for a in open_alerts if a["kind"] == "premise_changed"}
-        if verdict == "block" and all(d["id"] in broken for d in deciding):
-            # A decision whose premise no longer holds cannot hard-block; a human reviews it first.
-            verdict, why = "warn", f"{why} The premise behind this decision has changed, so it needs review."
+        js = r["judgements"]
+        # The model often echoes a paraphrased statement instead of the label, so map by position when it judged
+        # every decision in order; fall back to the label otherwise.
+        judged = list(zip(active, js)) if len(js) == len(active) else \
+            [(d, j) for d, j in ((pick(labels, j["decision"]), j) for j in js) if d]
+        judged = list({d["id"]: (d, j) for d, j in judged}.values())  # one judgement per decision
+        verdict, top = verdict_of(judged, broken)
+        deciding = [d for d, _ in top]
+        if top:
+            why = " ".join(unlabel(j["note"], labels, d) for d, j in top[:2])
+        if verdict == "warn" and any(d["id"] in broken for d in deciding):
+            why = f"{why} The premise behind this decision has changed, so it needs review."
     cites = await citations([(q["source_id"], q["quote"], d["id"]) for d in deciding for q in d["quotes"][:1]])
     ws = workspaces[-1]
     if verdict == "block" and req.actor.startswith("agent:"):
