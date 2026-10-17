@@ -210,7 +210,9 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
         "assumptions, and implicit facts that made it sensible (e.g. a 24 hour retry assumes requests stay "
         "valid for 24 hours; a price assumes a cost). For each decision ask: does the NEW information make one "
         "of its premises false (a number crossed a stated limit, a cost or duration changed, a vendor behaves "
-        "differently)? List those. Do not list a decision just because it is on the same topic. "
+        "differently)? List those. Do not list a decision just because it is on the same topic. An action, PR, "
+        "plan or copy that disobeys a decision does not break its premise (that is a violation, reported "
+        "elsewhere); only facts about the world do. "
         "evidence_quote must be copied word for word from the SOURCE below. Return an empty list if none.\n\n"
         f"SOURCE:\n{source_text[:6000]}"
     )
