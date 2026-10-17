@@ -1,19 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { FileText, MessageCircleQuestion, Moon, Sun } from 'lucide-react'
-import { useTheme } from '@/lib/theme'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { short } from '@/lib/format'
 import { q } from '@/lib/query'
 import asks from '@/samples/asks.json'
-import { NAV } from './nav'
-import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from './ui/command'
+import { PAGES } from './nav'
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command'
+
+const short = (s: string, n = 70) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '...' : s)
 
 /** Cmd+K / Ctrl+K: jump to a page or decision, or ask a question. */
 export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const { theme, toggle } = useTheme()
   const decisions = useQuery({ ...q.decisions(), enabled: open })
 
   useEffect(() => {
@@ -42,27 +40,27 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
       className="sm:max-w-xl"
     >
       <Command>
-        <CommandInput placeholder="Search decisions, pages, or type a question" value={search} onValueChange={setSearch} />
-        <CommandList>
-          <CommandEmpty>Nothing matches. Press Enter on "Ask Canon" to ask instead.</CommandEmpty>
+        <CommandInput placeholder="Search, or ask a question" value={search} onValueChange={setSearch} />
+        <CommandList className="max-h-96 p-2">
+          <CommandEmpty>Nothing matches. Choose "Ask Canon" to ask instead.</CommandEmpty>
           {search.trim() && (
-            <CommandGroup heading="Ask" forceMount>
+            <CommandGroup forceMount>
               <CommandItem forceMount value={`ask ${search}`} onSelect={() => go(`/ask?q=${encodeURIComponent(search.trim())}`)}>
-                <MessageCircleQuestion aria-hidden /> Ask Canon: {short(search.trim(), 60)}
+                Ask Canon: {short(search.trim(), 60)}
               </CommandItem>
             </CommandGroup>
           )}
           <CommandGroup heading="Pages">
-            {NAV.map(({ to, label, Icon }) => (
+            {PAGES.map(({ to, label }) => (
               <CommandItem key={to} value={`page ${label}`} onSelect={() => go(to)}>
-                <Icon aria-hidden /> {label}
+                {label}
               </CommandItem>
             ))}
           </CommandGroup>
-          <CommandGroup heading="Sample questions">
+          <CommandGroup heading="Questions">
             {asks.map(a => (
               <CommandItem key={a.question} value={`question ${a.question}`} onSelect={() => go(`/ask?q=${encodeURIComponent(a.question)}`)}>
-                <MessageCircleQuestion aria-hidden /> {a.question}
+                {a.question}
               </CommandItem>
             ))}
           </CommandGroup>
@@ -70,24 +68,11 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
             <CommandGroup heading="Decisions">
               {decisions.data.map(d => (
                 <CommandItem key={d.id} value={`decision ${d.statement} ${d.topic} ${d.owner}`} onSelect={() => go(`/decisions/${d.id}`)}>
-                  <FileText aria-hidden /> <span className="truncate">{d.statement}</span>
+                  <span className="truncate">{d.statement}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
           )}
-          <CommandSeparator />
-          <CommandGroup heading="Settings">
-            <CommandItem
-              value="theme toggle dark light"
-              onSelect={() => {
-                toggle()
-                onOpenChange(false)
-              }}
-            >
-              {theme === 'dark' ? <Sun aria-hidden /> : <Moon aria-hidden />}
-              Switch to {theme === 'dark' ? 'light' : 'dark'} theme
-            </CommandItem>
-          </CommandGroup>
         </CommandList>
       </Command>
     </CommandDialog>

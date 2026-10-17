@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/components/app-shell'
 import { ErrorBoundary, ErrorPage, RootFallback, RouteError } from '@/components/error-boundary'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -23,14 +23,19 @@ const router = createBrowserRouter([
       {
         errorElement: <RouteError />,
         children: [
-          { path: '/', lazy: page(() => import('@/features/home/HomePage')) },
-          { path: '/decisions', lazy: page(() => import('@/features/decisions/DecisionListPage')) },
-          { path: '/decisions/:id', lazy: page(() => import('@/features/decisions/DecisionPage')) },
-          { path: '/ask', lazy: page(() => import('@/features/ask/AskPage')) },
-          { path: '/ingest', lazy: page(() => import('@/features/ingest/IngestPage')) },
-          { path: '/agents', lazy: page(() => import('@/features/agents/AgentsPage')) },
-          { path: '/benchmark', lazy: page(() => import('@/features/benchmark/BenchmarkPage')) },
-          { path: '/about', lazy: page(() => import('@/features/about/AboutPage')) },
+          { path: '/', lazy: page(() => import('@/pages/HomePage')) },
+          { path: '/new-hire', lazy: page(() => import('@/pages/NewHirePage')) },
+          { path: '/catch-up', lazy: page(() => import('@/pages/CatchUpPage')) },
+          { path: '/agent', lazy: page(() => import('@/pages/AgentPage')) },
+          { path: '/paste', lazy: page(() => import('@/pages/PastePage')) },
+          { path: '/ask', lazy: page(() => import('@/pages/AskPage')) },
+          { path: '/decisions', lazy: page(() => import('@/pages/DecisionListPage')) },
+          { path: '/decisions/:id', lazy: page(() => import('@/pages/DecisionPage')) },
+          { path: '/benchmark', lazy: page(() => import('@/pages/BenchmarkPage')) },
+          // old addresses from the first build
+          { path: '/agents', element: <Navigate to="/agent" replace /> },
+          { path: '/ingest', element: <Navigate to="/paste" replace /> },
+          { path: '/about', element: <Navigate to="/" replace /> },
           { path: '*', element: <ErrorPage notFound /> },
         ],
       },

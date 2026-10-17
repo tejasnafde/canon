@@ -2,7 +2,6 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import { Component, Suspense, useEffect, type ReactNode } from 'react'
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom'
 import { reportError } from '@/lib/report'
-import { Button } from './ui/button'
 import { ErrorState } from './states'
 
 interface Props {
@@ -58,17 +57,16 @@ export function RouteError() {
 
 export function ErrorPage({ notFound }: { notFound: boolean }) {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-20">
-      <p className="label">{notFound ? 'Error 404' : 'Something broke'}</p>
-      <h1 className="mt-3 text-4xl font-medium">{notFound ? 'Not on record.' : 'This page did not load.'}</h1>
-      <p className="mt-4 text-muted-foreground">
-        {notFound ? 'There is no page at this address.' : 'The error was reported. Try again, or go back home.'}
-      </p>
-      <div className="mt-8 flex gap-3">
-        {!notFound && <Button onClick={() => location.reload()}>Try again</Button>}
-        <Button variant="outline" asChild>
-          <Link to="/">Go home</Link>
-        </Button>
+    <main className="wrap">
+      <h1>{notFound ? 'Not on record.' : 'This page did not load.'}</h1>
+      <p className="lede">{notFound ? 'There is no page at this address.' : 'The error was reported. Try again, or go back home.'}</p>
+      <div style={{ marginTop: 32, display: 'flex', gap: 20, alignItems: 'center' }}>
+        {!notFound && (
+          <button type="button" className="btn" onClick={() => location.reload()}>
+            Try again
+          </button>
+        )}
+        <Link to="/">Go home</Link>
       </div>
     </main>
   )
@@ -77,12 +75,12 @@ export function ErrorPage({ notFound }: { notFound: boolean }) {
 /** Last line of defence, outside the router. */
 export function RootFallback() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-20">
-      <h1 className="text-4xl font-medium">Canon hit an error.</h1>
-      <p className="mt-4 text-muted-foreground">The error was reported. Reload to start again.</p>
-      <Button className="mt-8" onClick={() => location.reload()}>
+    <main className="wrap">
+      <h1>Canon hit an error.</h1>
+      <p className="lede">The error was reported. Reload to start again.</p>
+      <button type="button" className="btn" style={{ marginTop: 32 }} onClick={() => location.reload()}>
         Reload
-      </Button>
+      </button>
     </main>
   )
 }

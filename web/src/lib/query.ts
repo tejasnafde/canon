@@ -29,6 +29,9 @@ export const q = {
   briefing: (persona: Persona, since: string) =>
     queryOptions({ queryKey: ['briefing', persona, since], queryFn: () => api.briefing(persona, since), ...llm }),
   ask: (question: string) => queryOptions({ queryKey: ['ask', question], queryFn: () => api.ask(question), ...llm }),
+  source: (id: string) => queryOptions({ queryKey: ['source', id], queryFn: () => api.source(id), staleTime: 30 * 60_000 }),
+  people: () => queryOptions({ queryKey: ['people'], queryFn: api.people, staleTime: 10 * 60_000 }),
+  check: (intent: string) => queryOptions({ queryKey: ['check', intent], queryFn: () => api.check(intent), ...llm }),
   evalReport: () => queryOptions({ queryKey: ['eval'], queryFn: api.evalReport, staleTime: 10 * 60_000 }),
 }
 

@@ -1,10 +1,6 @@
-import { CircleAlert, Inbox, RotateCw } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { ApiError, ContractError } from '@/lib/api'
-import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from './ui/alert'
-import { Button } from './ui/button'
-import { Skeleton } from './ui/skeleton'
+import { avatar } from '@/lib/record'
 
 /** Plain words for what went wrong. */
 export function friendly(error: unknown): string {
@@ -19,44 +15,59 @@ export function friendly(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error.'
 }
 
-export function ErrorState({ error, retry, title = 'Canon did not answer' }: { error: unknown; retry?: () => void; title?: string }) {
+export function ErrorState({ error, retry, title = 'Canon did not answer.' }: { error: unknown; retry?: () => void; title?: string }) {
   return (
-    <Alert variant="destructive" className="border-signal/40 bg-signal-soft/40">
-      <CircleAlert aria-hidden />
-      <AlertTitle className="text-foreground">{title}</AlertTitle>
-      <AlertDescription className="text-muted-foreground">
-        <p>{friendly(error)}</p>
-        {retry && (
-          <Button variant="outline" size="sm" className="mt-3" onClick={retry}>
-            <RotateCw aria-hidden /> Try again
-          </Button>
-        )}
-      </AlertDescription>
-    </Alert>
-  )
-}
-
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
-  return (
-    <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed bg-card/60 p-6">
-      <Inbox className="size-5 text-muted-foreground" aria-hidden />
-      <p className="font-medium">{title}</p>
-      {children && <div className="text-[15px] text-muted-foreground">{children}</div>}
-      {action && <div className="mt-2">{action}</div>}
+    <div className="flag plain" role="alert" style={{ marginTop: 24 }}>
+      <h3>{title}</h3>
+      <p className="muted" style={{ marginTop: 6 }}>
+        {friendly(error)}
+      </p>
+      {retry && (
+        <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={retry}>
+          Try again
+        </button>
+      )}
     </div>
   )
 }
 
-/** Rows of grey bars shaped like the content that is coming. */
-export function RowsSkeleton({ rows = 4, className }: { rows?: number; className?: string }) {
+export function Empty({ children }: { children: ReactNode }) {
   return (
-    <div className={cn('flex flex-col gap-4', className)} role="status" aria-label="Loading">
+    <p className="muted" style={{ marginTop: 16 }}>
+      {children}
+    </p>
+  )
+}
+
+/** A grey bar the size of a line of text. */
+export function Bar({ w = '100%', h = 18, style }: { w?: string | number; h?: number; style?: CSSProperties }) {
+  return <span className="sk" style={{ width: w, height: h, ...style }} />
+}
+
+/** Hairline list rows shaped like the content that is coming. */
+export function ListSkeleton({ rows = 4, label = 'Loading' }: { rows?: number; label?: string }) {
+  return (
+    <ul className="list" role="status" aria-label={label} aria-busy="true">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
+        <li key={i}>
+          <Bar w={`${70 - (i % 3) * 12}%`} h={22} />
+          <Bar w="52%" h={15} style={{ marginTop: 12 }} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function TextSkeleton({ lines = 3, h = 18, label = 'Loading' }: { lines?: number; h?: number; label?: string }) {
+  return (
+    <div role="status" aria-label={label} aria-busy="true" style={{ display: 'grid', gap: 12 }}>
+      {Array.from({ length: lines }, (_, i) => (
+        <Bar key={i} w={i === lines - 1 ? '60%' : '100%'} h={h} />
       ))}
     </div>
   )
+}
+
+export function Avatar({ name, small }: { name: string; small?: boolean }) {
+  return <img className={small ? 'avatar sm' : 'avatar'} src={avatar(name)} alt="" loading="lazy" width={small ? 22 : 28} height={small ? 22 : 28} />
 }
