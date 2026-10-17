@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;font-family:-apple-system,Segoe UI,Helvetica,sans-serif;color:#172b4d;background:#fff}
+.nav{height:48px;background:#fafbfc;border-bottom:1px solid #dfe1e6;display:flex;align-items:center;padding:0 20px;font-size:14px;gap:20px}
+.wrap{display:flex;padding:24px 40px;gap:40px}.main{flex:1}.side{width:330px}
+.crumb{font-size:13px;color:#5e6c84}h1{font-size:24px;font-weight:500;margin:8px 0 18px}
+.lbl{font-size:12px;font-weight:600;color:#5e6c84;margin:18px 0 6px}
+p,li{font-size:14px;line-height:1.5}
+.st{display:inline-block;background:#e3fcef;color:#006644;font-weight:700;font-size:12px;padding:4px 8px;border-radius:3px}
+.row{display:flex;font-size:14px;margin:10px 0}.row span:first-child{width:120px;color:#5e6c84}
+.sev{background:#ffebe6;color:#bf2600;font-weight:700;font-size:12px;padding:2px 6px;border-radius:3px}
+.c{border-top:1px solid #dfe1e6;padding:12px 0;font-size:14px}.c b{margin-right:8px}.c small{color:#5e6c84}
+input{width:100%;border:1px solid #dfe1e6;border-radius:3px;padding:8px;font-size:14px}
+</style></head><body>
+<div class="nav"><b style="color:#0052cc">Northwind Jira</b><span>Projects</span><span>Filters</span><span>Dashboards</span></div>
+<div class="wrap"><div class="main">
+<div class="crumb">Projects / Platform Incidents / INC-042</div>
+<h1>Dispatch acknowledgements delayed after Friday 15:10 rollout</h1>
+<div class="lbl">Description</div>
+<p>Friday 6 March 2026. The 15:10 SGT release of dispatch-svc moved acknowledgements onto the grouped flush path. The flush sat behind a tenant with an expired carrier token, so ACK age reached 11 minutes. Primary responder was on a flight, secondary was on a customer call. Rollback to the previous SHA completed 15:57. Customer impact 47 minutes.</p>
+<div class="lbl">Action items (from INC-042 review, 9 Mar)</div>
+<ul><li>No production deploys on Fridays, including scheduled jobs and configuration-only releases. Owner: Anika Rao</li>
+<li>Paste the rollback SHA on the ticket before release, not only the smoke link. Owner: Haruto Sato</li>
+<li>Every production change needs a primary and a secondary responder online for the next two hours. Owner: Mei Tan</li></ul>
+<div class="lbl">Activity</div>
+<div class="c"><b>Siti Nuraini</b><small>6 Mar 2026, 15:36</small><br>First customer notice sent: dispatch acknowledgements delayed, cause under investigation.</div>
+<div class="c"><b>Haruto Sato</b><small>6 Mar 2026, 15:57</small><br>rollback complete, ACK age falling</div>
+<div class="c"><b>Anika Rao</b><small>9 Mar 2026, 12:40</small><br>Review done. Release process wiki still says Friday 14:00 window, someone pls update it.</div>
+<input placeholder="Add a comment..."></div>
+<div class="side"><span class="st">RESOLVED</span>
+<div class="row" style="margin-top:20px"><span>Severity</span><span class="sev">SEV-1</span></div>
+<div class="row"><span>Assignee</span><span>Haruto Sato</span></div>
+<div class="row"><span>Reporter</span><span>Haruto Sato</span></div>
+<div class="row"><span>Incident lead</span><span>Mei Tan</span></div>
+<div class="row"><span>Customer impact</span><span>47 min</span></div>
+<div class="row"><span>Components</span><span>dispatch-svc</span></div>
+<div class="row"><span>Labels</span><span>friday-release, rollback</span></div>
+<div class="row"><span>Created</span><span>6 Mar 2026, 15:14</span></div>
+<div class="row"><span>Resolved</span><span>6 Mar 2026, 15:57</span></div>
+</div></div></body></html>

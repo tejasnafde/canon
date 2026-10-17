@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#e9ecef;font-family:Roboto,-apple-system,Helvetica,sans-serif;color:#3c4043}
+.cal{position:absolute;inset:0;background:#fff;opacity:.55}
+.grid{position:absolute;left:0;right:0;top:0;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);padding:60px 30px}
+.day{border-left:1px solid #dadce0;font-size:13px;padding:6px}.ev{background:#7986cb;color:#fff;border-radius:4px;padding:4px 6px;margin-top:220px;font-size:12px}
+.card{position:absolute;left:330px;top:90px;width:560px;background:#fff;border-radius:8px;box-shadow:0 24px 38px 3px #0000002a,0 9px 46px 8px #0000001f;padding:22px 26px}
+.sq{width:16px;height:16px;border-radius:4px;background:#7986cb;display:inline-block;margin-right:16px;vertical-align:middle}
+h2{display:inline;font-weight:400;font-size:24px;color:#202124;vertical-align:middle}
+.line{margin:14px 0 0 34px;font-size:14px}.muted{color:#5f6368}
+.ppl{margin-left:34px}.p{display:flex;align-items:center;margin:8px 0;font-size:14px}
+.av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;margin-right:10px}
+.top{position:absolute;top:0;left:0;right:0;height:52px;background:#fff;border-bottom:1px solid #dadce0;display:flex;align-items:center;padding:0 20px;font-size:20px;color:#3c4043;gap:16px}
+</style></head><body>
+<div class="top"><b style="color:#1a73e8">Calendar</b><span style="font-size:15px">Today</span><span>October 2026</span></div>
+<div class="grid"><div class="day">MON 12</div><div class="day">TUE 13</div><div class="day">WED 14</div><div class="day">THU 15</div><div class="day">FRI 16<div class="ev">Production release window<br>14:00 to 16:00</div></div></div>
+<div class="card">
+<div><span class="sq"></span><h2>Production release window</h2></div>
+<div class="line">Friday, 16 October &middot; 14:00 to 16:00 SGT<br><span class="muted">Weekly on Friday &middot; since 17 January 2025</span></div>
+<div class="line">Release buddy on call. Tag the build, paste the smoke link and the rollback SHA in #engineering before you start.</div>
+<div class="line"><span class="muted">Meet:</span> meet.example/nw-release-window</div>
+<div class="line"><b>7 guests</b> <span class="muted">5 yes, 2 awaiting</span></div>
+<div class="ppl">
+<div class="p"><div class="av" style="background:#e37400">AR</div>Anika Rao <span class="muted">&nbsp;Organizer</span></div>
+<div class="p"><div class="av" style="background:#188038">MT</div>Mei Tan</div>
+<div class="p"><div class="av" style="background:#a142f4">KI</div>Kavya Iyer</div>
+<div class="p"><div class="av" style="background:#1a73e8">HS</div>Haruto Sato</div>
+<div class="p"><div class="av" style="background:#d93025">TT</div>Thao Tran</div>
+</div>
+<div class="line muted">Going? &nbsp; <b style="color:#1a73e8">Yes</b> &nbsp; No &nbsp; Maybe</div>
+</div></body></html>
