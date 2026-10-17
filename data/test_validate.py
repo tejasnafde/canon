@@ -25,7 +25,7 @@ class CorpusValidationTests(unittest.TestCase):
     def test_committed_corpus_passes(self):
         errors, summary = validate(self.root)
         self.assertEqual(errors, [])
-        self.assertEqual(summary['sources'], 259)
+        self.assertEqual(summary['sources'], 380)
 
     def test_archive_has_real_document_shapes(self):
         rows = [json.loads(line) for path in (self.root / 'corpus').glob('*.jsonl')
@@ -54,6 +54,24 @@ class CorpusValidationTests(unittest.TestCase):
                 for person in departed:
                     if row['ts'] > person['left_at']:
                         self.assertNotRegex(row['text'], re.escape(person['name']) + r':')
+
+    def test_role_decision_minimum_fails(self):
+        self.mutate_gold(lambda g: g.update(items=[
+            i for i in g['items'] if 'legal' not in i.get('teams', [])]))
+        errors, _ = validate(self.root)
+        self.assertTrue(any('legal: expected at least 3 owned decisions' in e for e in errors))
+
+    def test_missing_persona_fails(self):
+        self.mutate_gold(lambda g: g['items'][0].pop('teams'))
+        errors, _ = validate(self.root)
+        self.assertTrue(any('missing or invalid teams' in e for e in errors))
+
+    def test_refusal_questions_are_preserved(self):
+        gold = json.loads((self.root / 'gold' / 'gold.json').read_text())
+        self.assertEqual(len(gold['unanswerable_questions']), 5)
+        rows = [json.loads(line) for path in (self.root / 'corpus').glob('*.jsonl')
+                for line in path.read_text().splitlines()]
+        self.assertFalse(any('parental leave' in r['text'].lower() for r in rows))
 
     def test_nonexact_quote_fails(self):
         self.mutate_gold(lambda g: g['items'][0]['evidence'][0].update(quote='A quote never spoken here.'))

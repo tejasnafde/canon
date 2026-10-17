@@ -8,6 +8,11 @@ from pathlib import Path
 import sys
 
 KINDS = {'slack', 'meeting', 'wiki', 'pr', 'commit', 'email', 'doc', 'paste', 'agent'}
+ROLE_MINIMUMS = {role: 3 for role in (
+    'design', 'data', 'security', 'sales', 'support', 'marketing', 'finance',
+    'operations', 'people', 'legal', 'leadership')}
+PERSONAS = set(ROLE_MINIMUMS) | {'engineer', 'pm', 'new_hire'}
+
 MINIMUMS = {'decision': 25, 'stale_doc': 8, 'premise_change': 5}
 
 
@@ -61,7 +66,7 @@ def validate(root):
             if dt:
                 require(datetime(2025, 1, 1, tzinfo=timezone.utc) <= dt < datetime(2026, 11, 1, tzinfo=timezone.utc),
                         f'{label}: timestamp outside corpus range')
-    require(250 <= len(rows) <= 300, f'Expected 250-300 sources, got {len(rows)}')
+    require(380 <= len(rows) <= 460, f'Expected 380-460 sources, got {len(rows)}')
     titles = [r.get('title') for r in rows]
     require(len(titles) == len(set(titles)), 'Source titles must be unique')
     require(len({r.get('url') for r in rows}) == len(rows), 'Source URLs must be unique')
@@ -70,7 +75,7 @@ def validate(root):
     indexed = {r.get('title'): r for r in rows}
     people = read(root / 'people.json')
     if isinstance(people, list):
-        require(18 <= len(people) <= 22, 'Expected about 20 people')
+        require(23 <= len(people) <= 60, 'Expected 23-60 people')
         require(len({p['id'] for p in people}) == len(people), 'Duplicate person IDs')
         require(sum(p.get('status') == 'left' for p in people) == 3, 'Expected exactly three departed people')
         names = {p['name'] for p in people}
@@ -94,6 +99,9 @@ def validate(root):
         require(len(keys) == len(set(keys)), 'Gold keys must be unique')
         decisions = {i['key']: i for i in items if i.get('type') == 'decision'}
         for item in items:
+            teams = item.get('teams', [])
+            require(isinstance(teams, list) and bool(teams) and
+                    all(t in PERSONAS for t in teams), f'{item["key"]}: missing or invalid teams')
             typ = item.get('type')
             counts[typ] += 1
             require(typ in {'decision', 'update', 'contradiction', 'stale_doc', 'premise_change'}, f'Invalid gold type: {typ}')
@@ -118,7 +126,8 @@ def validate(root):
         require(sum(i.get('owner') == 'Anika Rao' for i in decisions.values()) >= 8, 'Departed expert needs many recorded decisions')
         for section, number in [('check_intent', 15), ('answerable_questions', 10), ('unanswerable_questions', 5)]:
             cases = gold.get(section, [])
-            require(len(cases) == number, f'{section}: expected {number} cases')
+            require(len(cases) == number if section == 'unanswerable_questions' else len(cases) >= number,
+                    f'{section}: expected {number} cases minimum (exact for refusals)')
             require(len({c['key'] for c in cases}) == len(cases), f'{section}: duplicate keys')
             for case in cases:
                 refs = case.get('expected_decision_keys', [case['decision_key']] if 'decision_key' in case else [])
@@ -131,6 +140,25 @@ def validate(root):
     else:
         errors.append('gold.json must be an object')
         decisions = {}
+    role_counts = {}
+    owner_teams = {p['name']: p['team'].lower() for p in people} if isinstance(people, list) else {}
+    for role, minimum in ROLE_MINIMUMS.items():
+        owned = [d for d in decisions.values() if role in d.get('teams', [])
+                 and owner_teams.get(d.get('owner')) == role]
+        role_counts[role] = len(owned)
+        require(len(owned) >= minimum, f'{role}: expected at least {minimum} owned decisions')
+        for typ in ('stale_doc', 'update'):
+            require(any(i.get('type') == typ and role in i.get('teams', [])
+                        for i in (gold or {}).get('items', [])), f'{role}: missing {typ}')
+        for section in ('check_intent', 'answerable_questions'):
+            require(any(role in c.get('teams', []) for c in (gold or {}).get(section, [])),
+                    f'{role}: missing {section} case')
+    if isinstance(gold, dict):
+        for section in ('check_intent', 'answerable_questions', 'unanswerable_questions'):
+            for case in gold.get(section, []):
+                teams = case.get('teams', [])
+                require(isinstance(teams, list) and bool(teams) and all(t in PERSONAS for t in teams),
+                        f'{case["key"]}: missing or invalid teams')
     samples = read(root / 'samples' / 'live_paste.json')
     if isinstance(samples, list):
         require(len(samples) == 3, 'Expected three paste samples')
@@ -148,7 +176,7 @@ def validate(root):
     for path in root.rglob('*'):
         if path.is_file() and path.suffix in {'.py', '.md', '.json', '.jsonl'}:
             require('\u2014' not in path.read_text(encoding='utf-8'), f'{path}: forbidden em dash')
-    return errors, dict(sources=len(rows), people=len(people) if isinstance(people, list) else 0, planted=dict(counts))
+    return errors, dict(sources=len(rows), people=len(people) if isinstance(people, list) else 0, planted=dict(counts), role_decisions=role_counts)
 
 
 def main():

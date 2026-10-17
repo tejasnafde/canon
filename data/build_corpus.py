@@ -326,6 +326,10 @@ gold=dict(schema_version=1, synthetic=True, company='Northwind Labs', workspace=
               'What password unlocks the Kestrel partner portal?',
               'Which model replaces the regional model after the July latency regression?'],1)])
 
+from roles import add_roles
+
+add_roles(source, PEOPLE, gold)
+
 def write_json(path,obj):
     path.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
 

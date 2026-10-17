@@ -59,7 +59,7 @@
     "id": "siti-nuraini",
     "name": "Siti Nuraini",
     "role": "Customer success lead",
-    "team": "Customer",
+    "team": "Support",
     "status": "active",
     "left_at": null
   },
@@ -75,7 +75,7 @@
     "id": "yuki-mori",
     "name": "Yuki Mori",
     "role": "Product designer",
-    "team": "Product",
+    "team": "Design",
     "status": "active",
     "left_at": null
   },
@@ -83,7 +83,7 @@
     "id": "nur-aziz",
     "name": "Nur Aziz",
     "role": "Finance lead",
-    "team": "Operations",
+    "team": "Finance",
     "status": "active",
     "left_at": null
   },
@@ -131,7 +131,7 @@
     "id": "amina-yusuf",
     "name": "Amina Yusuf",
     "role": "People operations partner",
-    "team": "Operations",
+    "team": "People",
     "status": "active",
     "left_at": null
   },
@@ -156,6 +156,30 @@
     "name": "Budi Santoso",
     "role": "Frontend engineer",
     "team": "Product",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "devika-fernando",
+    "name": "Devika Fernando",
+    "role": "Business operations lead",
+    "team": "Operations",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "nandini-wijaya",
+    "name": "Nandini Wijaya",
+    "role": "Legal counsel",
+    "team": "Legal",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "hana-okafor",
+    "name": "Hana Okafor",
+    "role": "Chief executive officer",
+    "team": "Leadership",
     "status": "active",
     "left_at": null
   }
