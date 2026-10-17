@@ -84,3 +84,19 @@ FROM `teejayproject.billing.gcp_billing_export_resource_v1_014156_885762_D612A7`
 WHERE EXISTS (SELECT 1 FROM UNNEST(labels) WHERE key='app' AND value='canon')
 GROUP BY 1,2 ORDER BY 1 DESC, 3 DESC
 ```
+
+## Demo video plan (decided 2026-10-18)
+
+- Tejas narrates (his own voice) and stitches the final cut.
+- The lead (Claude) produces the clips after the new UI is built: one screen-capture
+  clip per flow (home, new hire, catch-up by role, agent blocked, paste drift, ask why,
+  Discord live ingest, benchmark), recorded with Playwright at 1920x1080, plus short
+  motion clips (title card, architecture, the agent-blocked moment) built with
+  Claude motion/HyperFrames. Script: docs/video-script.md. Length 3 to 4 minutes.
+
+## Secrets
+
+One Secret Manager secret, `canon-config` (JSON), holds every Canon secret (Discord app,
+bot token, sync token, alert relay token, alert webhook). Cloud Run mounts it as env
+`CANON_CONFIG`; `canon/__init__.py` expands it into `CANON_*` env vars at import.
+Do not create more Canon secrets: add a key to `canon-config` instead (cost: one secret).
