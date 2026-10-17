@@ -5,7 +5,22 @@ const ts = z.string()
 const nul = <T extends z.ZodType>(t: T) => t.nullable().default(null)
 
 export const SourceKind = z.enum(['slack', 'meeting', 'wiki', 'pr', 'commit', 'email', 'doc', 'paste', 'agent'])
-export const Persona = z.enum(['engineer', 'pm', 'new_hire'])
+export const Persona = z.enum([
+  'engineer',
+  'pm',
+  'design',
+  'data',
+  'security',
+  'sales',
+  'support',
+  'marketing',
+  'finance',
+  'operations',
+  'people',
+  'legal',
+  'leadership',
+  'new_hire',
+])
 export const Verdict = z.enum(['allow', 'warn', 'block'])
 export const AlertKind = z.enum(['contradiction', 'stale_doc', 'premise_changed', 'agent_violation', 'pr_deviation'])
 export const Reconciliation = z.enum(['new', 'same', 'update', 'contradiction'])

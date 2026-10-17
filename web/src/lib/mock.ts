@@ -509,6 +509,12 @@ export async function mockApi(method: string, path: string, raw: unknown): Promi
     }
     return detail
   }
+  if (p.startsWith('/api/sources/')) {
+    const id = decodeURIComponent(p.split('/').pop() ?? '')
+    const s = sources.find(x => x.id === id)
+    if (!s) throw new Error('404 not_found: ' + id)
+    return s
+  }
   if (p === '/api/ask') return ask(body.question ?? '')
   if (p === '/api/check') return check(body.intent ?? '')
   if (p === '/api/briefing') return briefing(body.persona ?? 'engineer', body.since ?? '')

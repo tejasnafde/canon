@@ -1,66 +1,83 @@
-"""Screenshot every route at 1280x800 into web/shots/ and exercise the main flows.
+"""Screenshot every route at 1280x800 and 1920x1080 into web/shots/, after the data has loaded.
 
-  /tmp/pwvenv/bin/python web/scripts/shots.py [base_url] [suffix]
+  VITE_API_TARGET=https://canon.tn07.dev npx vite --port 5181 &
+  /tmp/pwvenv/bin/python web/scripts/shots.py [base_url]
+
+<name>.png is the 1280x800 viewport, <name>-full.png the full page, <name>-1080.png the 1920x1080 viewport.
 """
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:5173'
-SUF = sys.argv[2] if len(sys.argv) > 2 else ''
+BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:5181'
 OUT = Path(__file__).resolve().parent.parent / 'shots'
 OUT.mkdir(exist_ok=True)
-T = 90000
+T = 120000
 errors = []
+
+ROUTES = [
+    ('home', '/', None),
+    ('new-hire', '/new-hire', None),
+    ('catch-up', '/catch-up', None),
+    ('catch-up-sales', '/catch-up?role=sales', None),
+    ('agent', '/agent', 'agent'),
+    ('paste', '/paste', 'paste'),
+    ('ask', '/ask', None),
+    ('decisions', '/decisions', None),
+    ('decision', '/decisions', 'decision'),
+    ('benchmark', '/benchmark', None),
+    ('not-found', '/nope', None),
+]
+
+
+def settle(pg):
+    pg.wait_for_function("!document.querySelector('[aria-busy=true]')", timeout=T)
+    pg.wait_for_load_state('networkidle', timeout=T)
+    pg.wait_for_timeout(400)
+
 
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path='/Applications/Chromium.app/Contents/MacOS/Chromium')
-    ctx = b.new_context(viewport={'width': 1280, 'height': 800}, reduced_motion='reduce')
-    pg = ctx.new_page()
-    pg.on('console', lambda m: m.type == 'error' and errors.append(f'{pg.url}: {m.text}'))
-    pg.on('pageerror', lambda e: errors.append(f'{pg.url}: {e}'))
-
-    def shot(name, full=False):
-        pg.wait_for_timeout(300)
-        pg.screenshot(path=str(OUT / f'{name}{SUF}.png'), full_page=full)
-
-    def settle():
-        pg.wait_for_function("!document.querySelector('[aria-busy=true], [role=status][aria-label]')", timeout=T)
-
-    pg.goto(BASE + '/'); pg.get_by_text('Next best actions').wait_for(timeout=T); settle(); shot('home'); shot('home-full', True)
-    pg.get_by_role('radio', name='New hire').click(); pg.get_by_text('Since day one').first.wait_for(timeout=T)
-    settle(); shot('home-newhire', True)
-
-    pg.goto(BASE + '/ask'); pg.get_by_text('Decision timeline').wait_for(timeout=T); shot('ask')
-    pg.get_by_role('button', name='annual recurring revenue').click()
-    pg.get_by_text('Refused /').wait_for(timeout=T); shot('ask-refused')
-
-    pg.goto(BASE + '/ingest'); pg.get_by_role('button', name='Ingest and reconcile').wait_for(); shot('ingest')
-    pg.get_by_role('button', name='Ingest and reconcile').click()
-    pg.get_by_label('Ingest progress').wait_for(); pg.wait_for_timeout(1500); shot('ingest-working')
-    pg.get_by_text('Extracted and reconciled').or_(pg.get_by_text('Ingest failed')).wait_for(timeout=T); shot('ingest-result')
-
-    pg.goto(BASE + '/agents'); pg.get_by_role('button', name='Call tool').click()
-    pg.get_by_label('Raw tool response').or_(pg.get_by_text('The tool call failed')).wait_for(timeout=T); pg.wait_for_timeout(2500); shot('agents')
-    pg.goto(BASE + '/'); pg.get_by_label('Latest agent block').wait_for(timeout=T); pg.get_by_text('Next best actions').wait_for(timeout=T); settle(); shot('home-block')
-
-    pg.goto(BASE + '/decisions'); pg.get_by_role('link', name='Fridays').first.wait_for(timeout=T); shot('decisions')
-    pg.get_by_role('link', name='Fridays').first.click(); pg.get_by_text('Verified quotes').wait_for(timeout=T); shot('decision')
-
-    pg.goto(BASE + '/benchmark'); pg.get_by_text('By task').wait_for(timeout=T); shot('benchmark')
-    pg.goto(BASE + '/about'); pg.get_by_text('The stack').wait_for(); shot('about')
-    pg.goto(BASE + '/nope'); pg.get_by_text('Not on record.').wait_for(); shot('not-found')
-
-    pg.goto(BASE + '/'); pg.get_by_text('Next best actions').wait_for(timeout=T); pg.keyboard.press('Control+k'); pg.get_by_placeholder('Search decisions').wait_for(); pg.keyboard.type('friday'); shot('command')
-
-    dark = b.new_context(viewport={'width': 1280, 'height': 800}, reduced_motion='reduce')
-    dark.add_init_script("localStorage.setItem('theme', 'dark')")
-    pg = dark.new_page()
-    pg.goto(BASE + '/'); pg.get_by_text('Next best actions').wait_for(timeout=T); settle(); shot('home-dark')
-
+    for w, h, suf in ((1280, 800, ''), (1920, 1080, '-1080')):
+        ctx = b.new_context(viewport={'width': w, 'height': h}, reduced_motion='reduce')
+        pg = ctx.new_page()
+        pg.on('console', lambda m: m.type == 'error' and errors.append(f'{pg.url}: {m.text}'))
+        pg.on('pageerror', lambda e: errors.append(f'{pg.url}: {e}'))
+        for name, path, flow in ROUTES:
+            pg.goto(BASE + path)
+            settle(pg)
+            if flow == 'decision':
+                pg.locator('table.rows a').first.click()
+                settle(pg)
+            if flow == 'paste':
+                pg.get_by_role('button', name='Check this message').click()
+                pg.wait_for_timeout(1500)
+                if not suf:
+                    pg.screenshot(path=str(OUT / 'paste-working.png'))
+                pg.get_by_text('Done in').or_(pg.get_by_role('alert')).wait_for(timeout=T)
+                settle(pg)
+            pg.screenshot(path=str(OUT / f'{name}{suf}.png'))
+            if not suf:
+                pg.screenshot(path=str(OUT / f'{name}-full.png'), full_page=True)
+            if flow == 'agent' and not suf:
+                pg.get_by_role('button', name='Release a config change on Friday').click()
+                pg.get_by_text('Called check_intent').or_(pg.get_by_text('did not run')).wait_for(timeout=T)
+                pg.locator('.result').scroll_into_view_if_needed()
+                pg.screenshot(path=str(OUT / 'agent-try.png'))
+        if not suf:
+            pg.goto(BASE + '/')
+            settle(pg)
+            pg.keyboard.press('Control+k')
+            pg.get_by_placeholder('Search, or ask').wait_for()
+            pg.keyboard.type('friday')
+            pg.wait_for_timeout(400)
+            pg.screenshot(path=str(OUT / 'command.png'))
+        ctx.close()
     phone = b.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
     pg = phone.new_page()
-    pg.goto(BASE + '/'); pg.get_by_text('Next best actions').wait_for(timeout=T); settle(); shot('phone-home')
+    pg.goto(BASE + '/')
+    settle(pg)
+    pg.screenshot(path=str(OUT / 'home-phone.png'), full_page=True)
     b.close()
 
 print('\n'.join(errors) or 'no console errors')
