@@ -17,7 +17,7 @@ P0 = must ship and be in the video. P1 = ship if P0 is green by 2026-10-18 10:00
 | F3 | Reconciliation: new decision is `same`, `update` (supersedes), or `contradiction` of an existing one | P0 | Decision Ledger |
 | F4 | Drift: docs/wiki pages contradicted by a newer decision get a "contradicted by" alert with both quotes | P0 | Mnemo |
 | F5 | Ask why: cited answer with a decision timeline; says "I do not know" when the record has no answer | P0 | Mnemo |
-| F6 | Catch me up: persona (engineer, pm, new_hire) + since date gives a briefing and a ranked next-best-action list (score 0-100 with reasons) | P0 | SyncStream, WorkWeave |
+| F6 | Catch me up: persona (any of the 14 roles in models.Persona) + since date gives a briefing and a ranked next-best-action list (score 0-100 with reasons) | P0 | SyncStream, WorkWeave |
 | F7 | Agent guard: `check` an intended action against the record, verdict allow/warn/block with the deciding decisions | P0 | nobody |
 | F8 | MCP server at `/mcp` (streamable HTTP) exposing the tools below; works from Claude Code and Codex | P0 | nobody |
 | F9 | Agent activity feed: every agent read/write/check shows live in the web app | P0 | nobody |
@@ -124,7 +124,7 @@ Every tool call writes an `activity` row with `actor = agent:<actor or client na
 Company: "Northwind Labs", a 60-person B2B SaaS (logistics software), Jan 2025 to Oct 2026.
 Clearly labelled synthetic. Files are JSONL, one source per line, matching `Source`.
 
-- `data/corpus/*.jsonl`: 250-300 sources (about 100 are pure noise) across slack, meeting, wiki, pr, commit, email.
+- `data/corpus/*.jsonl`: 380-460 sources (about 100 are pure noise), covering all 14 personas across slack, meeting, wiki, pr, commit, email.
 - At least 25 decisions planted, 12 contradictions/updates, 8 stale wiki pages,
   5 premise changes, 3 people who left (one is the "departed expert"), and the hero
   storyline: "no Friday deploys" after an incident (the video moment).
