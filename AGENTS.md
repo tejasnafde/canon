@@ -70,3 +70,17 @@ same commit as the code.
 - Commit small and often. End commit messages with the co-author line you were given.
 - Every non-trivial logic path leaves one runnable test (`pytest` for backend).
 - Gemini calls in tests use the recorded-fixture fake (see SPEC.md), never the network.
+
+## Cost attribution (label `app=canon`)
+
+Labelled: Cloud Run service, Gemini generate calls (core and ADK agent), Artifact
+Registry repo `canon` (keeps the last 3 images), Hosting site, secret, monitoring.
+Not labellable: embeddings (`EmbedContentConfig` has no labels; attribute by SKU),
+Firestore database (free tier so far), Cloud Build minutes.
+
+```sql
+SELECT DATE(usage_start_time) d, service.description svc, ROUND(SUM(cost),2) cost
+FROM `teejayproject.billing.gcp_billing_export_resource_v1_014156_885762_D612A7`
+WHERE EXISTS (SELECT 1 FROM UNNEST(labels) WHERE key='app' AND value='canon')
+GROUP BY 1,2 ORDER BY 1 DESC, 3 DESC
+```

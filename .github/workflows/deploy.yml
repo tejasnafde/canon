@@ -51,6 +51,7 @@ jobs:
       - name: Deploy API
         run: |
           gcloud run deploy canon --source backend --project "$PROJECT" --region "$REGION" \
+            --image "$REGION-docker.pkg.dev/$PROJECT/canon/api:$GITHUB_SHA" \
             --service-account canon-run@teejayproject.iam.gserviceaccount.com \
             --allow-unauthenticated --min-instances=0 --max-instances=3 \
             --cpu=1 --memory=1Gi --timeout=300 --concurrency=40 \
