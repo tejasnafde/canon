@@ -42,28 +42,31 @@ Writing style, short form: no em dashes (U+2014) anywhere, no emoji in UI or cod
 - Label every GCP resource `app=canon` (Vertex calls too).
 - Keep it boring: one Cloud Run service, Firestore, Firebase Hosting in front.
 
-## Product: Canon (draft scope, Future of Work track)
+## Product and build contract
 
-Canon is the company brain that knows what the company actually decided, not what
-the wiki still says.
+See `SPEC.md`. It is the single source of truth for the data model, API, MCP tools,
+and who owns which directory. Change the contract only by editing SPEC.md in the
+same commit as the code.
 
-- Core: knowledge drift. On ingest, Gemini extracts decisions and flags older docs
-  that a newer decision contradicts ("contradicted by" banner with source link).
-- Live paste box: judge pastes a new message/doc, Canon ingests it and flags what it
-  contradicts in seconds. Three sample pastes ship next to the box.
-- Supporting: "Catch me up" (persona + last-seen date gives briefing and ranked next
-  actions; onboarding = last-seen at company day one) and "Ask why" (cited answers,
-  says "I do not know" when the corpus has no answer).
-- Data: synthetic company corpus (clearly labelled) with planted decisions and
-  contradictions, plus this repo's own README/PRs/commits as real data.
-- Benchmark: planted vs found contradictions, false positives, median latency.
-- Stretch: Discord slash command over HTTP for a video clip only.
+## GCP resources (all new, isolated from the live apps in teejayproject)
 
-## GCP isolation (teejayproject is shared with live apps)
+- Firestore database `canon` (asia-south1). Never touch `(default)` or `hinge`.
+- Service account `canon-run@teejayproject.iam.gserviceaccount.com`: Vertex user,
+  and datastore.user conditioned to the `canon` database only.
+  Local dev key: `.secrets/sa-canon.json` (gitignored). Use it via
+  `GOOGLE_APPLICATION_CREDENTIALS`, never ADC (ADC on this Mac is the work identity).
+- Firebase Hosting site `canon-tn07` (https://canon-tn07.web.app).
+- Cloud Run service `canon` (asia-south1), runs as `canon-run`, label `app=canon`,
+  min instances 0.
+- Public hostname `canon.tn07.dev` via a Cloudflare Worker (see CLAUDE.local.md).
+- Models: `gemini-3.5-flash-lite` (location asia-south1) for everything; embeddings
+  `gemini-embedding-001` at 768 dims. Every call carries `labels={"app": "canon"}`.
+- No per-hour resources. No project-wide toggles without asking Tejas.
 
-- New named Firestore database `canon`. Never write to `(default)` or `hinge`.
-- New Firebase Hosting site, not the default `teejayproject` site.
-- New Cloud Run service `canon`, label `app=canon`, scale to zero, no min instances.
-- Model: Gemini Flash-Lite on Vertex, label `app=canon` on every call.
-- No per-hour resources (no Vertex Vector Search endpoints, AlloyDB, min instances).
-- Ask Tejas before any project-wide toggle (for example Firebase Anonymous Auth).
+## Working rules for agents
+
+- Work only inside the directories SPEC.md assigns to you, in your own git worktree
+  and branch. Do not edit another workstream's files; leave a note in your report.
+- Commit small and often. End commit messages with the co-author line you were given.
+- Every non-trivial logic path leaves one runnable test (`pytest` for backend).
+- Gemini calls in tests use the recorded-fixture fake (see SPEC.md), never the network.
