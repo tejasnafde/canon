@@ -117,6 +117,19 @@ async def test_contradiction_flags_the_stale_doc_it_relies_on():
     assert r.source.id in {q.source_id for q in stale[0].quotes}
 
 
+async def test_sibling_of_a_revision_is_not_a_contradiction():
+    fake(Extraction=extraction(("Production release window is Friday afternoon.", ["Friday afternoon"], [])))
+    await ingest("Release window: Friday afternoon.", ts="2025-01-01T00:00:00Z")
+    fake(Extraction=extraction(("No production release window on Friday afternoon.", ["No Friday releases"], []),
+                               ("Friday afternoon production release window needs two responders.", ["two responders"], [])),
+         Judgement=lambda prompt: {"assessments": [{"decision": "D1", "restates": False, "conflicts": True,
+                                                    "explicit_supersede": "two responders" not in prompt.split("Rationale")[0],
+                                                    "why": "x"}], "authority_evidence": ""})
+    r = await ingest("Review outcome: No Friday releases. Emergency fixes need two responders.", ts="2026-03-01T00:00:00Z")
+    assert [d.relation for d in r.decisions] == ["update", "update"]
+    assert not [a for a in r.alerts if a.kind == "contradiction"]
+
+
 async def test_stale_doc_alert_with_both_quotes(monkeypatch):
     monkeypatch.setattr("canon.reconcile.DOC_MIN", 0.3)  # bag-of-words fake vectors score lower than real ones
     fake(Extraction=extraction())

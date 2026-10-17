@@ -154,6 +154,8 @@ Assess the NEW decision against EVERY existing decision, one entry each, with th
 - conflicts: the NEW decision and the existing one cannot both be followed, or doing what the NEW one says
   breaks the existing rule. An operational action, schedule, job, PR, promise or plan that violates an active
   rule conflicts with it, even if it is phrased as routine work and never mentions the rule.
+  Both must be about the same thing (the same system, policy, product, event or resource); two different
+  meetings, rooms, lunches or tickets do not conflict just because they look alike.
 - explicit_supersede: the SOURCE deliberately changes THIS existing decision: it says to replace, revise, lift,
   move or narrow it, or it is the outcome of a review, meeting or approval that sets new terms on its subject.
   Simply doing something different, or following an older document, is NOT explicit_supersede.

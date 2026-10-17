@@ -145,6 +145,9 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
                                 [i["embedding"] for i in p.facts + p.decisions], scope),
         asyncio.gather(*(reconcile.stale_check(d, d["embedding"], scope, sid) for d in p.decisions)),
     )
+    # A sibling that conflicts with a decision this same source deliberately revises is part of the revision.
+    revised = {old["id"] for rel, old, _ in judged if rel == "update" and old}
+    judged = [("update" if rel == "contradiction" and old["id"] in revised else rel, old, why) for rel, old, why in judged]
     # Docs quoted by a decision this source updates are stale too, no extra Gemini call needed.
     olds = [old for rel, old, _ in judged if rel == "update" and old]
     kinds = await st.get_many("sources", [q["source_id"] for o in olds for q in o["quotes"]])
@@ -210,9 +213,8 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         writes.append(st.put("decisions", d))
         results.append(ReconciledDecision(decision=Decision(**d), relation=rel,
                                           related_decision_id=old["id"] if old else None, explanation=why))
-    contradicted = any(rel == "contradiction" for rel, _, _ in judged)
     for old, b in broken:
-        if old["id"] in touched or contradicted:  # already reported; a contradiction is the finding, not a premise
+        if old["id"] in touched or old["id"] in violators:  # already reported, or itself a known breach
             continue
         alerts.append(_alert(ws, "premise_changed", "medium", old["id"], sid,
                              f"Assumption \"{b.assumption}\" may no longer hold: {b.explanation}",
