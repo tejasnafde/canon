@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "chunks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "workspace", "order": "ASCENDING"},
+        {"fieldPath": "embedding", "vectorConfig": {"dimension": 768, "flat": {}}}
+      ]
+    },
+    {
+      "collectionGroup": "decisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "workspace", "order": "ASCENDING"},
+        {"fieldPath": "embedding", "vectorConfig": {"dimension": 768, "flat": {}}}
+      ]
+    },
+    {
+      "collectionGroup": "activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "workspace", "order": "ASCENDING"},
+        {"fieldPath": "created_at", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
