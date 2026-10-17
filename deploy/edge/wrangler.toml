@@ -1,0 +1,9 @@
+name = "canon-proxy"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+# custom_domain = true makes Cloudflare create and own the DNS record.
+routes = [
+  { pattern = "canon.tn07.dev", custom_domain = true }
+]
