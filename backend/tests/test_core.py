@@ -301,3 +301,22 @@ def test_check_verdict_is_decided_in_code():
     assert verdict_of([(a, j())], {"a"})[0] == "warn"  # relies on a broken premise
     v, deciding = verdict_of([(a, j(violates=True)), (b, j(violates=True))], {"a"})
     assert v == "block" and [d for d, _ in deciding] == [b]
+
+
+async def test_repeating_a_replaced_rule_contradicts_its_successor():
+    fake(Extraction=extraction(("Use five interview rounds for permanent hires.", ["Use five interview rounds"], [])))
+    old = (await ingest("Use five interview rounds.", ts="2026-01-01T00:00:00Z")).decisions[0]
+    j = lambda *flags: {"assessments": [{"decision": f"D{i + 1}", "restates": r, "conflicts": c,  # noqa: E731
+                                         "explicit_supersede": s, "why": "x"} for i, (r, c, s) in enumerate(flags)],
+                        "authority_evidence": ""}
+    fake(Extraction=extraction(("Use three interview rounds for permanent hires.", ["Use three interview rounds"], [])),
+         Judgement=j((False, True, True)))
+    new = (await ingest("Use three interview rounds. This replaces our January agreement.",
+                        ts="2026-09-01T00:00:00Z")).decisions[0]
+    assert new.relation == "update"
+    # D1 is the live three-round rule, D2 the replaced five-round one; the packet repeats the replaced one.
+    fake(Extraction=extraction(("Use five interview rounds for permanent hires.", ["use five interview rounds"], [])),
+         Judgement=j((False, False, False), (True, False, False)))
+    r = await ingest("The packet sent this morning says: use five interview rounds.", ts="2026-09-18T00:00:00Z")
+    assert (r.decisions[0].relation, r.decisions[0].related_decision_id) == ("contradiction", new.decision.id)
+    assert old.decision.id != new.decision.id and [a.kind for a in r.alerts] == ["contradiction"]
