@@ -127,7 +127,7 @@ async def test_text_and_image_attachments(ingested):
     img = next(s for s in ingested if s.title == "Discord #engineering / Release doc / latency.png")
     assert base64.b64decode(img.image_b64) == PNG and img.url.endswith("/300/302")
     assert img.text == "tejas: Image shared by tejas in Discord #engineering / Release doc."
-    assert ds.file_kind(att("a.csv")) == "text" and ds.file_kind(att("b.webp", 6_000_000)) is None
+    assert ds.file_kind(att("a.csv")) == "text" and ds.file_kind(att("b.webp", 11_000_000)) is None and ds.file_kind(att("Leave policy v3_final.pdf", 400_000)) is not None
 
 
 async def test_cursor_per_thread_and_idle_skip(ingested):
