@@ -1,10 +1,13 @@
-"""W14: pull sync from Discord. No gateway, so Cloud Run can scale to zero.
+"""W14/W17: pull sync from Discord. No gateway, so Cloud Run can scale to zero.
 
-A scheduler POSTs /hooks/discord/sync every minute. For each channel we fetch messages after the
-last seen id, group them (a thread is one group, a channel is split into 10-minute windows),
-ingest each group into workspace "discord", and reply to the message that breaks a decision.
+A scheduler POSTs /hooks/discord/sync every minute. For each text channel, active thread and recently
+archived public thread we fetch messages after the last seen id (one cursor per channel or thread),
+group them (a thread is one group, a channel is split into 10-minute windows), ingest each group into
+workspace "discord", and reply to the message that breaks a decision (inside the thread if it is one).
+Text attachments (.md .txt .csv) join the group text; each image goes through multimodal ingest alone.
 """
 import asyncio
+import base64
 import logging
 import os
 import time
@@ -26,6 +29,9 @@ WINDOW = timedelta(minutes=10)
 PAGE = 50  # messages per channel per sync; the rest arrive on the next run
 USER_DAILY_LIMIT = 20
 TEXT, THREADS = {0, 5}, {10, 11, 12}  # text/announcement channels, thread channels
+TEXT_FILES, TEXT_MAX = (".md", ".txt", ".csv"), 200_000
+IMAGE_FILES, IMAGE_MAX = (".png", ".jpg", ".jpeg", ".webp"), 5_000_000
+ARCHIVED_DAYS = 14  # archived threads older than this are not read again
 _lock = asyncio.Lock()  # ponytail: per instance; overlapping syncs on 2+ instances could double ingest
 
 
@@ -35,9 +41,20 @@ class DiscordClient:
 
     async def get(self, path: str, params: dict | None = None):
         async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get(API + path, params=params, headers=self.h)
+            for _ in range(3):
+                r = await c.get(API + path, params=params, headers=self.h)
+                if r.status_code != 429:
+                    break
+                await asyncio.sleep(min(float(r.json().get("retry_after", 1)), 5))
             r.raise_for_status()
             return r.json()
+
+    async def download(self, url: str, limit: int) -> bytes:
+        """Attachment bytes from the CDN (signed URL, no auth header), at most `limit` bytes."""
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as c:
+            r = await c.get(url)
+            r.raise_for_status()
+            return r.content[:limit]
 
     async def post(self, path: str, json: dict):
         async with httpx.AsyncClient(timeout=10) as c:
@@ -50,9 +67,20 @@ def ts(m: dict) -> datetime:
     return datetime.fromisoformat(m["timestamp"])
 
 
+def file_kind(a: dict) -> str | None:
+    """'text' or 'image' for an attachment we read, None for anything else or anything too big."""
+    name, size = a.get("filename", "").lower(), a.get("size", 0)
+    if name.endswith(TEXT_FILES) and size <= TEXT_MAX:
+        return "text"
+    if name.endswith(IMAGE_FILES) and size <= IMAGE_MAX:
+        return "image"
+    return None
+
+
 def eligible(m: dict) -> bool:
     return (not m["author"].get("bot") and not m.get("webhook_id") and m.get("type", 0) in (0, 19)
-            and len(m.get("content", "").strip()) >= MIN_CHARS)
+            and (len(m.get("content", "").strip()) >= MIN_CHARS
+                 or any(file_kind(a) for a in m.get("attachments", []))))
 
 
 def group(msgs: list[dict], is_thread: bool) -> list[list[dict]]:
@@ -118,16 +146,17 @@ def target(msgs: list[dict], alert) -> dict:
     return msgs[-1]
 
 
-async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
-    """Ingest one group as a Source; reply once per message that breaks a decision. Returns replies."""
-    first = msgs[0]
-    user = first["author"]["username"]
-    src = Source(workspace=WS, kind="paste", title=f"Discord #{channel['name']}"[:300], author=user,
-                 ts=ts(first), url=jump(channel["guild_id"], channel["id"], first["id"]), synthetic=False,
-                 text="\n".join(f"{m['author']['username']}: {m['content']}" for m in msgs)[:50_000])
-    llm.deadline.set(time.monotonic() + 60)  # each group gets its own model budget
+def title_of(channel: dict) -> str:
+    if channel.get("parent_name"):
+        return f"Discord #{channel['parent_name']} / {channel['name']}"[:300]
+    return f"Discord #{channel['name']}"[:300]
+
+
+async def ingest_source(src: Source, msgs: list[dict], channel: dict, client, replied: set[str]) -> list[str]:
+    """Ingest one Source; reply once per message that breaks a decision. Returns the replies sent."""
+    user = src.author
+    llm.deadline.set(time.monotonic() + 60)  # each source gets its own model budget
     r = await core.ingest(IngestRequest(source=src, actor=f"human:discord/{user}"[:100]), SCOPE)
-    replied: set[str] = set()
     sent = []
     for a in r.alerts:
         if a.kind not in ("contradiction", "agent_violation"):
@@ -136,6 +165,7 @@ async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
         if m["id"] in replied or not (line := await decision_line(a)):
             continue
         replied.add(m["id"])
+        # channel["id"] is the thread id for a thread, so the reply lands inside the thread
         await client.post(f"/channels/{channel['id']}/messages",
                           {"content": line[:2000], "message_reference": {"message_id": m["id"]},
                            "allowed_mentions": {"parse": []}})
@@ -143,35 +173,115 @@ async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
     return sent
 
 
+async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
+    """One text Source for the group (with text attachments inlined), plus one Source per image."""
+    first, title = msgs[0], title_of(channel)
+    lines, images, docs = [], [], 0
+    for m in msgs:
+        who = m["author"]["username"]
+        parts = [f"{who}: {m['content']}"] if m.get("content", "").strip() else []
+        for a in m.get("attachments", []):
+            kind = file_kind(a)
+            try:
+                if kind == "text":
+                    body = (await client.download(a["url"], TEXT_MAX)).decode("utf-8", "replace")
+                    parts.append(f"{who} attached {a['filename']}:\n{body}")
+                    docs += 1
+                elif kind == "image":
+                    images.append((m, a, await client.download(a["url"], IMAGE_MAX)))
+            except httpx.HTTPError as e:
+                log.warning("discord attachment %s unreadable: %s", a.get("filename"), e)
+        lines += parts
+    replied: set[str] = set()
+    sent = []
+    text = "\n".join(lines)
+    if any(len(m.get("content", "").strip()) >= MIN_CHARS for m in msgs) or docs:
+        src = Source(workspace=WS, kind="paste", title=title, author=first["author"]["username"], ts=ts(first),
+                     url=jump(channel["guild_id"], channel["id"], first["id"]), synthetic=False, text=text[:50_000])
+        sent += await ingest_source(src, msgs, channel, client, replied)
+    for m, a, data in images:
+        who = m["author"]["username"]
+        context = m.get("content", "").strip() or f"Image shared by {who} in {title}."
+        src = Source(workspace=WS, kind="paste", title=f"{title} / {a['filename']}"[:300], author=who, ts=ts(m),
+                     url=jump(channel["guild_id"], channel["id"], m["id"]), synthetic=False,
+                     text=f"{who}: {context}", image_b64=base64.b64encode(data).decode())
+        try:
+            sent += await ingest_source(src, [m], channel, client, replied)
+        except Exception:  # one unreadable image must not drop the rest of the group
+            log.exception("discord image ingest failed for %s", a.get("filename"))
+    return sent
+
+
+def archived_at(t: dict) -> datetime:
+    raw = (t.get("thread_metadata") or {}).get("archive_timestamp")
+    return datetime.fromisoformat(raw) if raw else datetime.now(timezone.utc)
+
+
 async def channels(client) -> list[dict]:
-    """Configured channel ids, or every text channel plus active thread in the guild."""
+    """Configured channel ids (or every text channel in the guild), then their active threads and
+    their public threads archived in the last ARCHIVED_DAYS. Threads carry `parent_name`."""
     ids = [c.strip() for c in os.environ.get("CANON_DISCORD_CHANNELS", "").split(",") if c.strip()]
-    if ids:
-        return list(await asyncio.gather(*(client.get(f"/channels/{i}") for i in ids)))
     gid = os.environ.get("CANON_DISCORD_GUILD_ID", "")
-    if not gid:
+    if ids:
+        chans = list(await asyncio.gather(*(client.get(f"/channels/{i}") for i in ids)))
+    elif gid:
+        chans = [c for c in await client.get(f"/guilds/{gid}/channels") if c["type"] in TEXT]
+    else:
         return []
-    chans = [c for c in await client.get(f"/guilds/{gid}/channels") if c["type"] in TEXT]
-    threads = (await client.get(f"/guilds/{gid}/threads/active")).get("threads", [])
-    return chans + [t for t in threads if t["type"] in THREADS]
+    names = {c["id"]: c["name"] for c in chans if c["type"] in TEXT}
+    found = (await client.get(f"/guilds/{gid}/threads/active")).get("threads", []) if gid else []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=ARCHIVED_DAYS)
+    for cid in names:
+        try:
+            old = await client.get(f"/channels/{cid}/threads/archived/public", {"limit": 50})
+        except httpx.HTTPError as e:
+            log.warning("discord archived threads of %s unreadable: %s", cid, e)
+            continue
+        if isinstance(old, dict):
+            found += [t for t in old.get("threads", []) if archived_at(t) >= cutoff]
+    out, seen = list(chans), {c["id"] for c in chans}
+    for t in found:
+        if t["type"] in THREADS and t.get("parent_id") in names and t["id"] not in seen:
+            seen.add(t["id"])
+            out.append({**t, "parent_name": names[t["parent_id"]]})
+    return out
+
+
+async def starter(thread: dict, client) -> dict | None:
+    """The channel message a thread was started from (it lives in the parent, not in the thread)."""
+    try:
+        return await client.get(f"/channels/{thread['parent_id']}/messages/{thread['id']}")
+    except httpx.HTTPError:  # thread not started from a message, or the message is gone
+        return None
 
 
 async def sync_channel(channel: dict, client) -> dict:
     key = f"discord-{channel['id']}"
     cursor = (await state.get(key)).get("last_id")
+    name = channel.get("parent_name", "") + "/" * bool(channel.get("parent_name")) + channel["name"]
+    idle = {"channel": name, "fetched": 0, "ingested": 0, "replies": 0}
+    last = channel.get("last_message_id")
+    if cursor and last and int(last) <= int(cursor):
+        return idle  # nothing new since the last run; saves one API call per idle channel
+    is_thread = channel["type"] in THREADS
     params = {"limit": PAGE, **({"after": cursor} if cursor else {})}  # first run: latest PAGE only
     msgs = sorted(await client.get(f"/channels/{channel['id']}/messages", params), key=lambda m: int(m["id"]))
+    if is_thread and not cursor and channel.get("parent_id") and (first := await starter(channel, client)):
+        msgs = [first, *[m for m in msgs if m["id"] != first["id"]]]
     if not msgs:
-        return {"channel": channel["name"], "fetched": 0, "ingested": 0, "replies": 0}
-    keep = [m for m in msgs if eligible(m) and await allow(m["author"]["username"])]
+        return idle
+    # a message that started a thread is ingested with its thread, not with the channel window
+    keep = [m for m in msgs if eligible(m) and not (not is_thread and m.get("thread"))
+            and await allow(m["author"]["username"])]
     replies = 0
-    for g in group(keep, channel["type"] in THREADS):
+    for g in group(keep, is_thread):
         try:
             replies += len(await ingest_group(g, channel, client))
         except Exception:  # one bad group must not block the channel; its cursor still advances
-            log.exception("discord ingest failed for #%s", channel.get("name"))
-    await state.merge(key, {"last_id": msgs[-1]["id"], "channel": channel.get("name"), "synced_at": store.now()})
-    return {"channel": channel["name"], "fetched": len(msgs), "ingested": len(keep), "replies": replies}
+            log.exception("discord ingest failed for #%s", name)
+    newest = max(msgs, key=lambda m: int(m["id"]))["id"]
+    await state.merge(key, {"last_id": newest, "channel": name, "synced_at": store.now()})
+    return {"channel": name, "fetched": len(msgs), "ingested": len(keep), "replies": replies}
 
 
 async def sync(client=None) -> dict:
