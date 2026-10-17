@@ -247,12 +247,13 @@ async def channels(client) -> list[dict]:
     else:
         names_to_scan = list(names)
         await state.merge("discord-archived-scan", {"at": store.now()})
-    for cid in names_to_scan:
+    async def archived(cid):
         try:
-            old = await client.get(f"/channels/{cid}/threads/archived/public", {"limit": 50})
+            return await client.get(f"/channels/{cid}/threads/archived/public", {"limit": 50})
         except httpx.HTTPError as e:
             log.warning("discord archived threads of %s unreadable: %s", cid, e)
-            continue
+            return None
+    for old in await asyncio.gather(*(archived(c) for c in names_to_scan)):
         if isinstance(old, dict):
             found += [t for t in old.get("threads", []) if archived_at(t) >= cutoff]
     out, seen = list(chans), {c["id"] for c in chans}
