@@ -180,3 +180,102 @@ def reset_store_for_tests() -> MemoryStore:
     global _store
     _store = MemoryStore()
     return _store
+
+
+# ---- record API behind canon.core (reads, alert resolution, activity) ----
+
+async def list_decisions(workspaces, status=None, topic=None):
+    from canon.models import Decision
+    eq = {k: v for k, v in (("status", status), ("topic", topic)) if v}
+    docs = await get_store().query("decisions", workspaces, **eq)
+    return [Decision(**d) for d in sorted(docs, key=lambda d: utc(d["ts"]), reverse=True)]
+
+
+async def _alerts_with_overlay(workspaces, docs):
+    """Visitors cannot write to `acme`, so resolving a base alert writes a `resolutions` row in their workspace."""
+    res = {r["alert_id"]: r for r in await get_store().query("resolutions", workspaces)}
+    for a in docs:
+        if a["id"] in res:
+            a["status"], a["resolution"] = "resolved", res[a["id"]]["resolution"]
+    return docs
+
+
+async def list_alerts(workspaces, status=None):
+    from canon.models import Alert
+    docs = await _alerts_with_overlay(workspaces, await get_store().query("alerts", workspaces))
+    return [Alert(**a) for a in docs if not status or a["status"] == status]
+
+
+async def get_decision(decision_id, workspaces):
+    from canon.ask import timeline
+    from canon.models import Alert, Decision, DecisionDetail, Source
+    st = get_store()
+    d = await st.get("decisions", decision_id)
+    if not d or d["workspace"] not in workspaces:
+        raise KeyError(decision_id)
+    tl, srcs, alerts = await asyncio.gather(
+        timeline([d], workspaces), st.get_many("sources", [q["source_id"] for q in d["quotes"]]),
+        st.query("alerts", workspaces))
+    alerts = [a for a in alerts if decision_id in (a.get("decision_id"), a.get("related_decision_id"))]
+    alerts = await _alerts_with_overlay(workspaces, alerts)
+    return DecisionDetail(decision=Decision(**d), timeline=tl, sources=[Source(**s) for s in srcs.values()],
+                          alerts=[Alert(**a) for a in alerts])
+
+
+async def resolve_alert(alert_id, req, workspaces):
+    from canon.models import Alert
+    st = get_store()
+    a = await st.get("alerts", alert_id)
+    if not a or a["workspace"] not in workspaces:
+        raise KeyError(alert_id)
+    ws = workspaces[-1]
+    resolution = f"{req.action}: {req.note}".rstrip(": ")
+    mine = a["workspace"] == ws
+    writes = []
+    new, old = a.get("decision_id"), a.get("related_decision_id")
+    decs = await st.get_many("decisions", [i for i in (new, old) if i])
+    writable = {i for i, d in decs.items() if d["workspace"] == ws}
+    if req.action == "accept_update" and old in writable and new in writable:
+        writes += [st.update("decisions", old, {"status": "superseded", "superseded_by": new}),
+                   st.update("decisions", new, {"supersedes": decs[new].get("supersedes", []) + [old]})]
+    if req.action == "retire_decision" and new in writable:
+        writes.append(st.update("decisions", new, {"status": "retired"}))
+    if mine:
+        writes.append(st.update("alerts", alert_id, {"status": "resolved", "resolution": resolution}))
+    else:
+        writes.append(st.put("resolutions", {"id": f"{ws}~{alert_id}", "workspace": ws, "alert_id": alert_id,
+                                             "resolution": resolution}))
+    await asyncio.gather(*writes)
+    await log_activity(ws, req.actor, "resolve", f"Resolved {a['kind']} alert: {resolution}", [alert_id])
+    return Alert(**{**a, "status": "resolved", "resolution": resolution})
+
+
+async def get_source(source_id, workspaces):
+    from canon.models import Source
+    s = await get_store().get("sources", source_id)
+    if not s or s["workspace"] not in workspaces:
+        raise KeyError(source_id)
+    return Source(**s)
+
+
+async def list_activity(workspaces, since_iso=None):
+    from canon.models import Activity
+    since = utc(datetime.fromisoformat(since_iso.replace("Z", "+00:00"))) if since_iso else None
+    return [Activity(**a) for a in await get_store().query("activity", workspaces, since=since, limit=100)]
+
+
+async def log_activity(workspace, actor, action, summary, ref_ids=None, verdict=None):
+    await get_store().put("activity", {"id": new_id("act"), "workspace": workspace, "actor": actor, "action": action,
+                                       "summary": summary, "ref_ids": [i for i in (ref_ids or []) if i][:20],
+                                       "verdict": verdict, "created_at": now()})
+
+
+async def list_people(workspaces):
+    from canon.models import Person
+    return [Person(**p) for p in sorted(await get_store().query("people", workspaces), key=lambda p: p["name"])]
+
+
+async def reset_workspace(workspace):
+    if workspace == "acme":
+        raise PermissionError("the base workspace is read-only")
+    await get_store().delete_workspace(workspace)
