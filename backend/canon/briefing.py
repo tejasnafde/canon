@@ -182,7 +182,13 @@ async def briefing(req: BriefingRequest, workspaces: list[str]) -> Briefing:
     prompt = (f"Write a catch-up briefing for a {req.persona.replace('_', ' ')} covering {since.date()} to {today.date()}.\n"
               "DECISIONS in the period:\n" + "\n".join(f"- {utc(d['ts']).date()} [{d['status']}] {d['statement']}" for d in recent) +
               "\n\nRANKED ACTIONS (keep this order):\n" + "\n".join(lines) +
-              f"\n\nsummary: 2 or 3 sentences. highlights: 3 to 5 short bullets. titles and whys: exactly {len(top)} "
+              "\n\nsummary: exactly two short, specific sentences, at most 35 words together, about the top-ranked "
+              "actions for this reader. Name the concrete things: what changed, what it now blocks or makes stale, with "
+              "the PR number, page title, customer or date when the facts give one. Example of the shape: \"Two things "
+              "matter this week: the Friday deploy ban now blocks PR #412, and the Release process wiki is stale. "
+              "Pricing for new Route Lens customers moved to USD 149.\" Never describe the briefing itself (no "
+              "\"This briefing covers\") and no generic filler."
+              f" highlights: 3 to 5 short bullets. titles and whys: exactly {len(top)} "
               "each, one per action in order; title is an imperative under 10 words, why is one sentence from the facts.")
     pr = await llm.generate_json(prompt, Prose, system="You are Canon. Use only the facts given.")
 
