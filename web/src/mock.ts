@@ -159,7 +159,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 export async function mockApi(method: string, path: string, body: any): Promise<unknown> {
   await sleep(method === 'POST' ? 700 : 150)
   const [p] = path.split('?')
-  if (p === '/healthz') return { ok: true, model: 'gemini-3.5-flash-lite' }
+  if (p === '/health') return { ok: true, model: 'gemini-3.5-flash-lite' }
   if (p === '/api/activity') return activity
   if (p === '/api/alerts') return alerts.filter(a => a.status === 'open')
   if (p === '/api/people') return people

@@ -34,7 +34,7 @@ async function call<T>(method: 'GET' | 'POST', path: string, body?: unknown): Pr
 }
 
 export const api = {
-  health: () => call<{ ok: boolean; model: string }>('GET', '/healthz'),
+  health: () => call<{ ok: boolean; model: string }>('GET', '/health'),
   ingest: (source: Source) => call<IngestResult>('POST', '/api/ingest', { source }),
   ask: (question: string) => call<AskResult>('POST', '/api/ask', { question }),
   briefing: (persona: Persona, since: string) => call<Briefing>('POST', '/api/briefing', { persona, since }),
