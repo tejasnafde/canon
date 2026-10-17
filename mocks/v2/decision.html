@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: No production deploys on Fridays</title><link rel="stylesheet" href="v2.css">
+<style>
+.statement { font: 500 46px/1.12 var(--serif); letter-spacing: -0.015em; margin-top: 14px; max-width: 900px; }
+.facts { display: flex; gap: 36px; margin-top: 22px; flex-wrap: wrap; }
+.facts div { font-size: 15px; } .facts span { display: block; font: 500 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.agent-row { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule-2); font-size: 15px; }
+.agent-row:first-of-type { border-top: 0; } .agent-row .when { margin-left: auto; font: 13px var(--mono); color: var(--ink-2); }
+@media (max-width: 760px) { .statement { font-size: 30px; } }
+</style></head>
+<body data-nav="decisions">
+<main class="wrap">
+  <a href="decisions.html" class="small">&larr; All decisions</a>
+  <div style="margin-top:14px"><span class="badge b-allow">Active</span> <span class="badge b-broken">Broken by 2</span></div>
+  <p class="statement">No production deploys on Fridays, including scheduled jobs and configuration-only releases.</p>
+  <div class="facts">
+    <div><span>Owner</span>Mei Tan, engineering manager</div>
+    <div><span>Decided</span>9 March 2026</div>
+    <div><span>Where</span>INC-042 review meeting</div>
+    <div><span>Replaces</span>The Friday release window (Jan 2025)</div>
+  </div>
+
+  <div class="split section">
+    <div>
+      <div class="card">
+        <h2>Why</h2>
+        <p style="margin-top:10px;font-size:17px">A Friday rollout on 6 March 2026 stopped dispatch for 47 minutes. The rollback engineer was on a flight and the backup person was on a customer call. The job that caused it ran on its own, so the ban covers scheduled jobs too.</p>
+        <blockquote>"The 6 March rollout at 15:10 SGT stalled dispatch acknowledgements for 47 minutes. The rollback engineer was on a flight and the secondary was in a customer call."</blockquote>
+        <p class="small muted" style="margin-top:12px">Exception: an emergency fix, with approval from the incident commander and two people online. Normal releases moved to Tuesday and Thursday mornings.</p>
+      </div>
+
+      <h2 style="margin:32px 0 14px">What breaks it now</h2>
+      <div class="alert">
+        <span class="badge b-block">Goes against it</span>
+        <h3 style="margin-top:10px">PR 684 deploys to production every Friday at 15:00.</h3>
+        <blockquote>"The workflow uses cron "0 7 * * 5" to roll the production dispatch service at 15:00 Singapore time."</blockquote>
+        <div class="chips"><span class="chip"><b>PR</b> PR 684: unattended dispatch refresh &middot; Pranav Menon &middot; 14 Aug 2026</span></div>
+      </div>
+      <div class="alert warn" style="margin-top:14px">
+        <span class="badge b-warn">Document out of date</span>
+        <h3 style="margin-top:10px">The Release process wiki page still gives a Friday window.</h3>
+        <blockquote>"Friday afternoon, 14:00 to 16:00 SGT, is our production release window."</blockquote>
+        <div class="chips"><span class="chip"><b>Wiki</b> Release process &middot; Thao Tran &middot; 12 Feb 2025</span></div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <span class="kicker">Timeline</span>
+        <ul class="tl" style="margin-top:16px">
+          <li><div class="when">16 Jan 2025 &middot; Proposed</div>Friday afternoon becomes the trial release slot.</li>
+          <li><div class="when">12 Feb 2025</div>The Release process wiki writes the Friday slot down.</li>
+          <li class="bad"><div class="when">6 Mar 2026 &middot; Incident</div>A Friday rollout stops dispatch for 47 minutes.</li>
+          <li class="key"><div class="when">9 Mar 2026 &middot; Decided</div><b>No more Friday deploys.</b></li>
+          <li class="bad"><div class="when">14 Aug 2026 &middot; Broken</div>PR 684 adds a Friday deploy job.</li>
+          <li class="bad"><div class="when">Now &middot; Out of date</div>The wiki page still says Friday.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <span class="kicker">Agents that checked it</span>
+        <div style="margin-top:10px">
+          <div class="agent-row"><span class="badge b-block">Block</span>Claude Code: Friday cron deploy<span class="when">today</span></div>
+          <div class="agent-row"><span class="badge b-block">Block</span>release-bot: Friday config change<span class="when">yesterday</span></div>
+          <div class="agent-row"><span class="badge b-allow">Allow</span>Codex: Tuesday morning deploy<span class="when">2 days ago</span></div>
+        </div>
+        <p class="small muted" style="margin-top:8px">Example activity for the mock.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>
