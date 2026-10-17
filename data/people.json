@@ -5,7 +5,11 @@
     "role": "Staff platform engineer",
     "team": "Platform",
     "status": "left",
-    "left_at": "2026-06-30T09:00:00Z"
+    "left_at": "2026-06-30T09:00:00Z",
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": "mei-tan",
+    "discord_username": null
   },
   {
     "id": "mei-tan",
@@ -13,7 +17,11 @@
     "role": "Engineering manager",
     "team": "Platform",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "haruto-sato",
@@ -21,7 +29,11 @@
     "role": "Site reliability engineer",
     "team": "Platform",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "aisha-rahman",
@@ -29,7 +41,11 @@
     "role": "Product lead",
     "team": "Product",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "pranav-menon",
@@ -37,7 +53,11 @@
     "role": "Backend engineer",
     "team": "Platform",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "linh-nguyen",
@@ -45,7 +65,11 @@
     "role": "Data engineer",
     "team": "Data",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "lead",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "jiwon-park",
@@ -53,7 +77,11 @@
     "role": "Security engineer",
     "team": "Security",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "lead",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "siti-nuraini",
@@ -61,7 +89,11 @@
     "role": "Customer success lead",
     "team": "Support",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "arjun-desai",
@@ -69,7 +101,11 @@
     "role": "Account executive",
     "team": "Sales",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "yuki-mori",
@@ -77,7 +113,11 @@
     "role": "Product designer",
     "team": "Design",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "aisha-rahman",
+    "level": "lead",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "nur-aziz",
@@ -85,7 +125,11 @@
     "role": "Finance lead",
     "team": "Finance",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "chen-wei",
@@ -93,7 +137,11 @@
     "role": "Integration engineer",
     "team": "Integrations",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "kavya-iyer",
@@ -101,7 +149,11 @@
     "role": "QA engineer",
     "team": "Quality",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "daniel-lim",
@@ -109,7 +161,11 @@
     "role": "Solutions architect",
     "team": "Customer",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "siti-nuraini",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "thao-tran",
@@ -117,7 +173,11 @@
     "role": "Technical writer",
     "team": "Product",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "aisha-rahman",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "ravi-perera",
@@ -125,7 +185,11 @@
     "role": "Support engineer",
     "team": "Customer",
     "status": "left",
-    "left_at": "2026-02-27T09:00:00Z"
+    "left_at": "2026-02-27T09:00:00Z",
+    "reports_to": "siti-nuraini",
+    "level": "ic",
+    "successor": "siti-nuraini",
+    "discord_username": null
   },
   {
     "id": "amina-yusuf",
@@ -133,7 +197,11 @@
     "role": "People operations partner",
     "team": "People",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "tomoko-ito",
@@ -141,7 +209,11 @@
     "role": "Analytics engineer",
     "team": "Data",
     "status": "left",
-    "left_at": "2025-12-19T09:00:00Z"
+    "left_at": "2025-12-19T09:00:00Z",
+    "reports_to": "linh-nguyen",
+    "level": "ic",
+    "successor": "linh-nguyen",
+    "discord_username": null
   },
   {
     "id": "farah-khan",
@@ -149,7 +221,11 @@
     "role": "Product marketing manager",
     "team": "Marketing",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "arjun-desai",
+    "level": "lead",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "budi-santoso",
@@ -157,7 +233,11 @@
     "role": "Frontend engineer",
     "team": "Product",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "mei-tan",
+    "level": "ic",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "devika-fernando",
@@ -165,7 +245,11 @@
     "role": "Business operations lead",
     "team": "Operations",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "nur-aziz",
+    "level": "lead",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "nandini-wijaya",
@@ -173,7 +257,11 @@
     "role": "Legal counsel",
     "team": "Legal",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": "hana-okafor",
+    "level": "head",
+    "successor": null,
+    "discord_username": null
   },
   {
     "id": "hana-okafor",
@@ -181,6 +269,10 @@
     "role": "Chief executive officer",
     "team": "Leadership",
     "status": "active",
-    "left_at": null
+    "left_at": null,
+    "reports_to": null,
+    "level": "exec",
+    "successor": null,
+    "discord_username": null
   }
 ]

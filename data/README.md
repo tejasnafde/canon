@@ -28,7 +28,8 @@ python3 -m unittest discover -s data -p 'test_*.py' -v
 ```
 
 No packages, credentials, cloud access or Gemini calls are needed. To reproduce
-the JSON artifacts from the hand-authored content:
+the corpus, gold, samples and original person fields from the hand-authored content
+in a scratch checkout:
 
 ```sh
 python3 data/build_corpus.py
@@ -183,6 +184,52 @@ run offline and do not measure Gemini accuracy or retrieval quality.
 
 The lead must update SPEC.md's 250 to 300 source range to 380 to 460, expand F6's
 persona list to match models.py, and document the additive gold `teams` field.
-The runtime Source and Person schemas remain unchanged. Re-ingestion and a fresh
+The runtime Source schema remains unchanged. Person now includes the org fields described below. Re-ingestion and a fresh
 model benchmark are required before the deployed product uses this corpus.
 This workstream makes no cloud changes.
+
+
+## Organization hierarchy
+
+`people.json` is the authoritative roster of 23 named colleagues in the fictional
+60-person company, not a full employee census. No new people are added. Existing
+names, roles, teams, corpus text and gold evidence are unchanged. `level` describes
+organizational authority without rewriting historical role titles. Hana Okafor is
+the sole CEO and root. The seven heads report to Hana:
+
+| Head | Function | Direct reports |
+|---|---|---|
+| Mei Tan | Engineering | Anika Rao, Haruto Sato, Pranav Menon, Linh Nguyen, Jiwon Park, Chen Wei, Kavya Iyer, Budi Santoso |
+| Aisha Rahman | Product | Yuki Mori, Thao Tran |
+| Arjun Desai | Sales | Farah Khan |
+| Siti Nuraini | Customer and Support | Daniel Lim, Ravi Perera |
+| Amina Yusuf | People | No other named colleagues |
+| Nur Aziz | Finance | Devika Fernando |
+| Nandini Wijaya | Legal | No other named colleagues |
+
+Linh leads Data and manages Tomoko Ito. Jiwon, Yuki, Farah and Devika lead Security,
+Design, Marketing and Operations respectively. These small functions have no
+further named reports. Departed staff retain their historical manager links:
+Anika reports to Mei, Ravi to Siti, and Tomoko to Linh. Their successors are Mei,
+Siti and Linh respectively. Only Anika's handoff is explicit in the corpus; the
+other two handoffs and the reporting structure are synthetic organization metadata.
+All `discord_username` values are null because no verified handles are provided.
+
+`org/topics.json` maps each of 14 topic areas to `teams` (existing team display
+names) and `owner` (a Person ID). Owners are current escalation contacts, not
+rewritten historical gold decision owners. `org/channels.json` maps all 14 existing
+Discord channel names, including their leading `#`, to a `weight` and topic keys.
+General is casual; all other existing channels are team channels. No official
+announcement channel exists, so none is invented.
+
+The offline validator also checks manager references, cycles, the single active
+executive root, levels, active successors, topic owners and teams, channel weights
+and topic references, and every gold decision owner's display name.
+
+Known integration gap: `build_corpus.py` still serializes the original six Person
+fields and overwrites `people.json`. Do not rebuild in the working checkout until
+the corpus owner updates that serializer to preserve the authoritative org fields.
+The deterministic rebuild test verifies all other artifacts byte-for-byte and the
+six original person fields structurally. It does not claim org rebuild support.
+The lead should add the new Person fields and org JSON shapes to SPEC.md. This
+workstream does not edit the lead-owned contract or the corpus serializer.

@@ -73,6 +73,7 @@ def validate(root):
     for kind in ('slack', 'meeting', 'wiki', 'pr', 'commit', 'email'):
         require(any(r.get('kind') == kind for r in rows), f'Missing source kind: {kind}')
     indexed = {r.get('title'): r for r in rows}
+    names = set()
     people = read(root / 'people.json')
     if isinstance(people, list):
         require(23 <= len(people) <= 60, 'Expected 23-60 people')
@@ -80,12 +81,64 @@ def validate(root):
         require(sum(p.get('status') == 'left' for p in people) == 3, 'Expected exactly three departed people')
         names = {p['name'] for p in people}
         for p in people:
-            require(set(p) == {'id', 'name', 'role', 'team', 'status', 'left_at'}, f'Invalid Person fields: {p}')
+            require({'id', 'name', 'role', 'team', 'status', 'left_at', 'reports_to', 'level', 'successor'} <= set(p) <= {'id', 'name', 'role', 'team', 'status', 'left_at', 'reports_to', 'level', 'successor', 'discord_username'}, f'Invalid Person fields: {p}')
             require(p.get('status') in {'active', 'left'}, f'Invalid Person status: {p}')
             if p.get('status') == 'left':
                 timestamp(p.get('left_at'))
             else:
                 require(p.get('left_at') is None, f'Active person has departure date: {p["name"]}')
+        by_id = {p['id']: p for p in people}
+        roots = [p for p in people if p.get('reports_to') is None]
+        execs = [p for p in people if p.get('level') == 'exec']
+        require(len(roots) == 1, 'Expected exactly one root')
+        require(len(execs) == 1 and len(roots) == 1 and execs[0] == roots[0]
+                and roots[0].get('status') == 'active', 'Expected exactly one exec at the active root')
+        for p in people:
+            manager = p.get('reports_to')
+            require(manager is None or manager in by_id, f"{p['id']}: unknown manager {manager}")
+            require(p.get('level') in {'ic', 'lead', 'head', 'exec'}, f"{p['id']}: invalid level")
+            successor = by_id.get(p.get('successor'))
+            if p.get('status') == 'left':
+                require(successor is not None and successor['id'] != p['id']
+                        and successor.get('status') == 'active', f"{p['id']}: invalid successor")
+            else:
+                require(p.get('successor') is None, f"{p['id']}: active person has successor")
+            seen = set()
+            current = p['id']
+            while current in by_id:
+                if current in seen:
+                    errors.append(f"{p['id']}: reporting cycle")
+                    break
+                seen.add(current)
+                current = by_id[current].get('reports_to')
+        topics = read(root / 'org' / 'topics.json')
+        if isinstance(topics, dict) and topics:
+            for topic, entry in topics.items():
+                if not isinstance(entry, dict):
+                    errors.append(f'{topic}: topic must be an object')
+                    continue
+                require(entry.get('owner') in by_id, f'{topic}: unknown topic owner')
+                require(isinstance(entry.get('teams'), list) and bool(entry['teams'])
+                        and all(t in {p['team'] for p in people} for t in entry['teams']),
+                        f'{topic}: invalid owning teams')
+        else:
+            errors.append('topics.json must be a nonempty object')
+        channels = read(root / 'org' / 'channels.json')
+        expected_channels = {'#' + c for c in ('general', 'engineering', 'product', 'design',
+            'data', 'security', 'sales', 'support', 'marketing', 'finance', 'operations',
+            'people', 'legal', 'leadership')}
+        if isinstance(channels, dict):
+            require(set(channels) == expected_channels, 'channels: expected the 14 existing channels')
+            for channel, entry in channels.items():
+                if not isinstance(entry, dict):
+                    errors.append(f'{channel}: channel must be an object')
+                    continue
+                require(entry.get('weight') == ('casual' if channel in {'#general', '#random', '#memes'} else 'team'),
+                        f'{channel}: invalid channel weight')
+                require(isinstance(entry.get('topics'), list) and
+                        all(t in (topics or {}) for t in entry['topics']), f'{channel}: unknown channel topic')
+        else:
+            errors.append('channels.json must be an object')
         for row in rows:
             require(row.get('author') in names, f'Unknown author: {row.get("author")}')
     else:
@@ -102,6 +155,8 @@ def validate(root):
             teams = item.get('teams', [])
             require(isinstance(teams, list) and bool(teams) and
                     all(t in PERSONAS for t in teams), f'{item["key"]}: missing or invalid teams')
+            if item.get('type') == 'decision':
+                require(item.get('owner') in names, f'{item["key"]}: unknown decision owner')
             typ = item.get('type')
             counts[typ] += 1
             require(typ in {'decision', 'update', 'contradiction', 'stale_doc', 'premise_change'}, f'Invalid gold type: {typ}')

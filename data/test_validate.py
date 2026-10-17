@@ -27,6 +27,52 @@ class CorpusValidationTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(summary['sources'], 380)
 
+    def mutate_people(self, transform):
+        path = self.root / 'people.json'
+        people = json.loads(path.read_text())
+        transform(people)
+        path.write_text(json.dumps(people))
+
+    def test_org_references_and_cycles_fail(self):
+        for change, message in [
+            (lambda p: p[0].update(reports_to='missing'), 'unknown manager'),
+            (lambda p: p[0].update(reports_to=p[0]['id']), 'reporting cycle'),
+            (lambda p: p[0].update(level='exec'), 'exactly one exec'),
+            (lambda p: p[0].update(reports_to=None), 'exactly one root'),
+            (lambda p: p[0].update(successor='missing'), 'invalid successor'),
+            (lambda p: p[0].update(level='director'), 'invalid level'),
+        ]:
+            with self.subTest(message=message):
+                original = (self.root / 'people.json').read_text()
+                self.mutate_people(change)
+                errors, _ = validate(self.root)
+                self.assertTrue(any(message in e for e in errors), errors)
+                (self.root / 'people.json').write_text(original)
+
+    def test_channel_metadata_fails(self):
+        path = self.root / 'org' / 'channels.json'
+        original = path.read_text()
+        for channel, update in [('#general', {'weight': 'official'}),
+                                ('#engineering', {'topics': ['missing']})]:
+            channels = json.loads(original)
+            channels[channel].update(update)
+            path.write_text(json.dumps(channels))
+            errors, _ = validate(self.root)
+            self.assertTrue(any('channel' in e for e in errors), errors)
+
+    def test_unknown_gold_owner_fails(self):
+        self.mutate_gold(lambda g: next(i for i in g['items'] if i['type'] == 'decision').update(owner='Unknown Person'))
+        errors, _ = validate(self.root)
+        self.assertTrue(any('unknown decision owner' in e for e in errors), errors)
+
+    def test_unknown_topic_owner_fails(self):
+        path = self.root / 'org' / 'topics.json'
+        topics = json.loads(path.read_text())
+        next(iter(topics.values()))['owner'] = 'missing'
+        path.write_text(json.dumps(topics))
+        errors, _ = validate(self.root)
+        self.assertTrue(any('unknown topic owner' in e for e in errors), errors)
+
     def test_archive_has_real_document_shapes(self):
         rows = [json.loads(line) for path in (self.root / 'corpus').glob('*.jsonl')
                 for line in path.read_text().splitlines()]
@@ -59,12 +105,16 @@ class CorpusValidationTests(unittest.TestCase):
         import subprocess
         import sys
         paths = [*self.root.joinpath('corpus').glob('*.jsonl'),
-                 self.root / 'people.json', self.root / 'gold' / 'gold.json',
+                 self.root / 'gold' / 'gold.json',
                  *self.root.joinpath('samples').glob('*.json')]
         before = {p: p.read_bytes() for p in paths}
+        people = json.loads((self.root / 'people.json').read_text())
+        legacy_fields = {'id', 'name', 'role', 'team', 'status', 'left_at'}
         subprocess.run([sys.executable, str(self.root / 'build_corpus.py')],
                        check=True, capture_output=True)
         self.assertEqual(before, {p: p.read_bytes() for p in paths})
+        self.assertEqual([{k: v for k, v in p.items() if k in legacy_fields} for p in people],
+                         json.loads((self.root / 'people.json').read_text()))
 
     def test_role_stale_page_and_cases_are_required(self):
         self.mutate_gold(lambda g: g.update(
