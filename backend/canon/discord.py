@@ -1,23 +1,26 @@
-"""F19: Discord slash command /canon ask|check|catchup over HTTP interactions.
+"""F19: Discord slash command /canon ask|check|catchup|remember over HTTP interactions.
+W14: POST /hooks/discord/sync pulls channel messages into workspace "discord" (connectors/discord_sync.py).
 
 Discord POSTs to /discord/interactions, signed with Ed25519 (env DISCORD_PUBLIC_KEY).
 Answers within 2.5 s go back inline; slower ones are deferred and sent as a follow-up.
 """
 import asyncio
+import hmac
 import json
 import os
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
 from canon import core
-from canon.models import AskRequest, BriefingRequest, CheckRequest
+from canon.connectors import discord_sync
+from canon.models import AskRequest, BriefingRequest, CheckRequest, IngestRequest, Source
 
 router = APIRouter()
-WORKSPACES = [os.environ.get("CANON_BASE_WS", "acme"), "agents"]
+WORKSPACES = discord_sync.SCOPE  # reads cover base + "discord"; writes go to "discord"
 INLINE_SECONDS = 2.5  # Discord wants a reply within 3 s
 API = "https://discord.com/api/v10"
 
@@ -33,7 +36,7 @@ def verify(public_key: str, body: bytes, signature: str | None, timestamp: str |
 
 
 async def answer(sub: str, opts: dict, user: str) -> str:
-    actor = f"agent:discord:{user}"
+    actor = f"human:discord/{user}"[:100]
     if sub == "ask":
         r = await core.ask(AskRequest(question=opts["question"], actor=actor), WORKSPACES)
         cites = "\n".join(f"- {c.title} ({c.ts:%Y-%m-%d}): \"{c.quote[:150]}\"" for c in r.citations[:3])
@@ -44,10 +47,20 @@ async def answer(sub: str, opts: dict, user: str) -> str:
         return f"**{r.verdict.upper()}**: {r.explanation}\n{decs}".strip()
     if sub == "catchup":
         since = datetime.now(timezone.utc) - timedelta(days=int(opts.get("days", 7)))
-        r = await core.briefing(BriefingRequest(persona=opts.get("persona", "engineer"), since=since, actor=actor),
+        role = opts.get("role") or opts.get("persona") or "engineer"
+        r = await core.briefing(BriefingRequest(persona=role, since=since, actor=actor),
                                 WORKSPACES)
         acts = "\n".join(f"{a.priority}. {a.title}: {a.why}" for a in r.actions[:3])
         return f"{r.summary}\n\n**Next:**\n{acts}".strip()
+    if sub == "remember":
+        if not await discord_sync.allow(user):
+            return "Canon has reached today's Discord limit. Try again tomorrow."
+        src = Source(workspace=discord_sync.WS, kind="paste", title="Discord /canon remember", author=user,
+                     ts=datetime.now(timezone.utc), text=opts["text"][:50_000], synthetic=False)
+        r = await core.ingest(IngestRequest(source=src, actor=actor), WORKSPACES)
+        lines = [line for a in r.alerts if a.kind in ("contradiction", "agent_violation")
+                 if (line := await discord_sync.decision_line(a))]
+        return "\n".join([f"Remembered: {len(r.decisions)} decisions, {len(r.alerts)} alerts.", *lines[:3]])
     return f"Unknown subcommand {sub}"
 
 
@@ -80,3 +93,11 @@ async def interactions(request: Request, background: BackgroundTasks):
     # (or keep min instances) if follow-ups stall.
     background.add_task(follow_up, i["application_id"], i["token"], task)
     return {"type": 5}
+
+
+@router.post("/hooks/discord/sync")
+async def sync(x_canon_sync_token: str | None = Header(default=None)):
+    want = os.environ.get("CANON_SYNC_TOKEN", "")
+    if not (want and x_canon_sync_token and hmac.compare_digest(want.encode(), x_canon_sync_token.encode())):
+        raise HTTPException(401, "invalid sync token")
+    return await discord_sync.sync()
