@@ -5,7 +5,10 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 SourceKind = Literal["slack", "meeting", "wiki", "pr", "commit", "email", "doc", "paste", "agent"]
-Persona = Literal["engineer", "pm", "new_hire"]
+Persona = Literal[
+    "engineer", "pm", "design", "data", "security", "sales", "support", "marketing",
+    "finance", "operations", "people", "legal", "leadership", "new_hire",
+]  # pm = Product. people = HR. Labels live in the web app.
 Verdict = Literal["allow", "warn", "block"]
 AlertKind = Literal["contradiction", "stale_doc", "premise_changed", "agent_violation", "pr_deviation"]
 Reconciliation = Literal["new", "same", "update", "contradiction"]
