@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from canon import core, llm
-from canon.briefing import deadline_days, score
+from canon.briefing import deadline_days, rank, score
 from canon.models import (AskRequest, BriefingRequest, CheckRequest, IngestRequest, ResolveRequest, Source)
 from canon.reconcile import pick, verified
 
@@ -130,12 +130,52 @@ async def test_check_verdicts_and_agent_violation():
 def test_nba_score_factors():
     today = datetime(2026, 10, 17, tzinfo=timezone.utc)
     s, reasons = score("Ship the billing migration by Oct 19, blocks marketing and sales; deploy urgent",
-                       "engineer", today - timedelta(days=1), today, {"marketing", "sales"}, None, 1)
+                       "engineer", "decision", today - timedelta(days=1), today, teams={"marketing", "sales"}, links=1)
     assert "deadline in 2 days" in reasons and any("urgent" in r for r in reasons)
     assert any("cross-team" in r for r in reasons) and "relevant to engineer" in reasons
-    low, _ = score("Lunch is at noon.", "engineer", today - timedelta(days=90), today, set(), None, 0)
-    assert 0 <= low < s <= 100
+    low, _ = score("Lunch is at noon.", "engineer", "decision", today - timedelta(days=400), today)
+    assert low == 30 < s <= 98
     assert deadline_days("due 2026-10-20", today, today) == 3
+
+
+def test_rank_puts_persona_heroes_on_top():
+    """The demo storyline: each persona sees its own hero item first, scores spread instead of clustering."""
+    today = datetime(2026, 10, 17, tzinfo=timezone.utc)
+    q = lambda sid: [{"source_id": sid, "quote": "x"}]  # noqa: E731
+
+    def dec(i, ts, statement, sid, topic="misc", **kw):
+        return {"id": i, "ts": datetime.fromisoformat(ts), "statement": statement, "rationale": "", "topic": topic,
+                "status": "active", "owner": "Mei Tan", "quotes": q(sid), "created_at": today, **kw}
+
+    decs = [
+        dec("old", "2025-01-16T00:00:00+00:00", "Release window is Friday afternoon.", "s-cal", "deploys"),
+        dec("fri", "2026-03-09T00:00:00+00:00", "There will be no production deploys on Fridays.", "s-inc",
+            "deploys", supersedes=["old"]),
+        dec("cron", "2026-08-14T00:00:00+00:00", "Run the dispatch workflow on a Friday cron.", "s-pr", "deploys"),
+        dec("price", "2026-04-02T00:00:00+00:00", "Route Lens costs USD 149 per workspace.", "s-mtg", "pricing"),
+        dec("promise", "2026-04-23T00:00:00+00:00", "Route Lens price is USD 99 per workspace.", "s-mail", "pricing"),
+        dec("chip", "2026-10-15T00:00:00+00:00", "Budi moved the route chip label down one pixel.", "s-chat", "ui"),
+    ]
+    alerts = [
+        {"id": "a-wiki", "kind": "stale_doc", "severity": "medium", "decision_id": "fri", "source_id": "s-wiki",
+         "explanation": "\"Release process\" still states the superseded decision.", "created_at": today},
+        {"id": "a-pr", "kind": "contradiction", "severity": "high", "decision_id": "cron",
+         "related_decision_id": "fri", "source_id": "s-pr", "explanation": "The PR schedules a production deploy "
+         "on Fridays.", "created_at": today},
+        {"id": "a-mail", "kind": "contradiction", "severity": "high", "decision_id": "promise",
+         "related_decision_id": "price", "source_id": "s-mail", "explanation": "The customer email promises the "
+         "old price.", "created_at": today},
+    ]
+    kinds = {"s-cal": "meeting", "s-inc": "meeting", "s-pr": "pr", "s-mtg": "meeting", "s-mail": "email",
+             "s-chat": "slack", "s-wiki": "wiki"}
+    day_one = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    top = lambda persona, since: rank(decs, alerts, kinds, persona, since, today, set())  # noqa: E731
+    nh = top("new_hire", day_one)
+    assert {o["id"] for _, _, _, o in nh[:3]} >= {"fri", "a-wiki"} and all(s > 80 for s, *_ in nh[:2])
+    assert top("engineer", today - timedelta(days=30))[0][3]["id"] == "a-pr"
+    assert top("pm", today - timedelta(days=30))[0][3]["id"] == "a-mail"
+    scores = [s for s, *_ in nh]
+    assert min(scores) <= 40 and max(scores) >= 85 and scores == [s for s, *_ in top("new_hire", day_one)]
 
 
 async def test_briefing_ranks_and_resolve_overlay():
