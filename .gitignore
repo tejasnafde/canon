@@ -7,3 +7,4 @@ __pycache__/
 *.pem
 sa-*.json
 .secrets/
+__pycache__/
