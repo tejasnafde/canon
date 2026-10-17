@@ -1,6 +1,6 @@
 # Canon over MCP and A2A
 
-Canon serves an MCP server (streamable HTTP, no auth, rate limited to 30 POST per minute
+Canon serves an MCP server (streamable HTTP, no auth, rate limited to 120 POST per minute
 per IP) at `/mcp`. Base URL in production: `https://canon-tn07.web.app`.
 Locally: `uv run uvicorn canon.app:app` and use `http://localhost:8000`.
 
