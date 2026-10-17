@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse, Response
 
-from canon import a2a, core, discord, hooks, llm
+from canon import a2a, core, discord, hooks, llm, store
 from canon.limits import TooLong, enforce
 from canon.mcp_server import AGENTS, BASE, mcp, scope
 from canon.models import (
@@ -77,7 +77,7 @@ async def _startup_check():
     try:
         import google.auth
         google.auth.default()
-        await asyncio.wait_for(core.get_store().get("people", "__startup__"), 15)
+        await asyncio.wait_for(store.get_store().get("people", "__startup__"), 15)
     except Exception as e:
         log.critical("startup check failed: cannot reach Firestore database canon with the current credentials "
                      "(%s: %s). Set GOOGLE_APPLICATION_CREDENTIALS or the Cloud Run service account.",
@@ -204,7 +204,7 @@ async def health():
 async def health_deep():
     """Manual check only (Firestore read + one tiny embed). Not for probes: it costs a Gemini call."""
     out, ok = {"model": MODEL}, True
-    for name, fn in (("firestore", lambda: core.get_store().get("people", "__health__")),
+    for name, fn in (("firestore", lambda: store.get_store().get("people", "__health__")),
                      ("embed", lambda: llm.embed(["canon health check"]))):
         t = time.perf_counter()
         try:
