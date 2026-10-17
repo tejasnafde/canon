@@ -149,3 +149,96 @@ async def run(gold_path: Path, workspace: str = "acme", samples_path: Path | Non
         p50_ms=_pct(lat, 0.5), p95_ms=_pct(lat, 0.95), notes=notes)
     REPORT.write_text(report.model_dump_json(indent=2) + "\n")
     return report
+
+
+# ---- W20 memory health: a small labelled replay (data/gold/authority_cases.json) ----
+
+def _when(s: str) -> datetime:
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
+async def health(cases_path: Path, workspace: str = "v-w20-health") -> dict:
+    """Replay the cases in time order into a fresh workspace and score (a) precision, (b) duplicates,
+    (c) state at each checkpoint, (d) lineage of every chain, (e) authority outcomes. Deletes the workspace after.
+
+    A stored decision maps to a gold item when it quotes that item's source with overlapping words. The active set
+    at a checkpoint is every active official decision. (a) counts stored decisions that map to no gold item; it does
+    not ask a model whether a decision is trivial.
+    """
+    from canon import core
+    gold = json.loads(cases_path.read_text())
+    st = get_store()
+    await st.delete_workspace(workspace)
+    people = json.loads((cases_path.parents[1] / "people.json").read_text())
+    for p in people:
+        await st.put("people", {**p, "id": f"{workspace}-{p['id']}", "workspace": workspace})
+    scope = [workspace]
+    sid: dict[str, str] = {}
+    results: dict[str, object] = {}
+    items = gold["items"]
+
+    async def mapped() -> dict[str, list[dict]]:
+        decs = await st.query("decisions", scope)
+        out: dict[str, list[dict]] = {}
+        for d in decs:
+            key = next((it["key"] for it in items for q in d["quotes"]
+                        if q["source_id"] in {sid.get(k) for k in [it["source"], *it.get("also", [])]}
+                        and _overlap(q["quote"], it["quote"]) >= 0.5), None)
+            out.setdefault(key, []).append(d)
+        return out
+
+    checks = sorted(gold["checkpoints"], key=lambda c: c["at"])
+    states = []
+    for s in sorted(gold["sources"], key=lambda s: s["ts"]):
+        while checks and _when(s["ts"]) > _when(checks[0]["at"]):
+            states.append((checks.pop(0), await mapped()))
+        src = Source(**{k: v for k, v in s.items() if k != "key"}, workspace=workspace)
+        r = await core.ingest(IngestRequest(source=src, actor="agent:eval"), scope)
+        sid[s["key"]], results[s["key"]] = r.source.id, r
+    final = await mapped()
+    states += [(c, final) for c in checks]
+
+    cases, notes = [], []
+    for it in items:
+        r, got = results[it["source"]], final.get(it["key"], [])
+        if not it["stored"]:
+            ok = not got
+            seen = "not stored" if ok else f"stored as {got[0]['authority'] if got else ''}"
+        else:
+            d = got[0] if got else None
+            rel = next((x.relation for x in r.decisions if d and x.decision.id == d["id"]), None)
+            alert = ("unverified" if any(a.explanation.startswith("Unverified:") for a in r.alerts) else
+                     "outdated" if any(a.explanation.startswith("Outdated copy:") for a in r.alerts) else None)
+            ok = bool(d) and d.get("authority", "official") == it["authority"] and rel == it["relation"] \
+                and alert == it["alert"]
+            seen = f"{d.get('authority') if d else 'missing'}/{rel}/{alert}"
+        cases.append(ok)
+        if not ok:
+            want = "not stored" if not it["stored"] else f"{it['authority']}/{it['relation']}/{it['alert']}"
+            notes.append(f"authority case {it['key']}: expected {want}, got {seen}")
+
+    ck_ok = 0
+    for c, m in states:
+        active = {k for k, ds in m.items() if k and any(d["status"] == "active" and
+                                                        d.get("authority", "official") == "official" for d in ds)}
+        ck_ok += active == set(c["active"])
+        if active != set(c["active"]):
+            notes.append(f"checkpoint {c['at'][:10]}: expected {sorted(c['active'])}, got {sorted(active)}")
+
+    by_key = {k: ds[0] for k, ds in final.items() if k}
+    ch_ok = 0
+    for chain in gold["chains"]:
+        good = all(a in by_key and b in by_key and by_key[a]["id"] in by_key[b].get("supersedes", [])
+                   and by_key[a].get("superseded_by") == by_key[b]["id"] for a, b in zip(chain, chain[1:]))
+        ch_ok += good
+        if not good:
+            notes.append(f"chain {' -> '.join(chain)} is broken")
+
+    stored = sum(len(ds) for ds in final.values())
+    untraceable = len(final.get(None, []))
+    dups = sum(1 for k, ds in final.items() if k and sum(d["status"] == "active" for d in ds) > 1)
+    await st.delete_workspace(workspace)
+    return {"health_decisions_stored": stored, "health_untraceable": untraceable, "health_duplicates": dups,
+            "health_checkpoints": len(states), "health_checkpoints_correct": ck_ok,
+            "health_chains": len(gold["chains"]), "health_chains_correct": ch_ok,
+            "authority_cases": len(cases), "authority_correct": sum(cases), "notes": notes}

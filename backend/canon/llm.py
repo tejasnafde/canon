@@ -161,7 +161,8 @@ async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | N
         if name in FAKE_RESPONSES:
             r = FAKE_RESPONSES[name]
             return r(prompt) if callable(r) else r
-        raise KeyError(f"FakeLLM: no fixture {key} and no FAKE_RESPONSES[{name!r}]")
+        if not recording():  # CANON_FAKE_LLM=1 CANON_RECORD=1: replay what exists, record only the misses
+            raise KeyError(f"FakeLLM: no fixture {key} and no FAKE_RESPONSES[{name!r}]")
 
     _charge()
     from google.genai import types
@@ -203,8 +204,16 @@ async def embed(texts: list[str], task: str = "RETRIEVAL_DOCUMENT") -> list[list
         out = []
         for t in texts:
             hit = _fixture(_key(EMBED_MODEL, task, t))
-            out.append(hit if hit is not None else _fake_vec(t))
+            out.append(hit if hit is not None else None if recording() else _fake_vec(t))
+        missing = [t for t, v in zip(texts, out) if v is None]
+        if missing:  # replay-and-record mode: embed only the misses, live
+            got = iter(await _embed_live(missing, task))
+            out = [v if v is not None else next(got) for v in out]
         return out
+    return await _embed_live(texts, task)
+
+
+async def _embed_live(texts: list[str], task: str) -> list[list[float]]:
     if task == "RETRIEVAL_QUERY" and len(texts) == 1 and texts[0] in _query_cache:
         return [_query_cache[texts[0]]]
 

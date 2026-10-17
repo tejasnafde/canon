@@ -19,7 +19,7 @@ async def test_recorded_flow():
     await core.ingest(IngestRequest(source=OLD), WS)
     r = await core.ingest(IngestRequest(source=NEW), WS)
     assert "update" in {d.relation for d in r.decisions}
-    a = await core.ask(AskRequest(question="Why can we no longer deploy production on Fridays?"), WS)
+    a = await core.ask(AskRequest(question="What changed about production deploys on Fridays?"), WS)
     assert not a.refused and a.citations and len(a.timeline) >= 2
     assert (await core.ask(AskRequest(question="What is our annual recurring revenue for 2026?"), WS)).refused
     c = await core.check(CheckRequest(intent="Deploy the dispatch service to production this Friday at 15:00."), WS)

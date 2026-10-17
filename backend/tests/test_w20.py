@@ -146,3 +146,15 @@ async def test_archived_threads_listed_at_most_every_30_minutes(monkeypatch, fre
     fake.calls.clear()
     found = await ds.channels(fake)
     assert "/channels/100/threads/archived/public" not in fake.calls and "300" not in [c["id"] for c in found]
+
+
+async def test_memory_health_replay_from_recorded_fixtures():
+    """data/gold/authority_cases.json replayed through the real pipeline with recorded Gemini answers.
+    Re-record misses only: CANON_FAKE_LLM=1 CANON_RECORD=1 uv run python scripts/eval.py --health"""
+    from canon.eval import health
+    h = await health(ROOT / "data/gold/authority_cases.json")
+    assert h["notes"] == []
+    assert h["authority_correct"] == h["authority_cases"] == 12
+    assert (h["health_untraceable"], h["health_duplicates"]) == (0, 0)
+    assert h["health_checkpoints_correct"] == h["health_checkpoints"] == 3
+    assert h["health_chains_correct"] == h["health_chains"] == 1

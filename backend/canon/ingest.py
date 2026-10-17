@@ -234,6 +234,7 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     kinds = await st.get_many("sources", [q["source_id"] for o in olds for q in o["quotes"]])
 
     results, alerts, writes, flagged = [], [], [], set()
+    claimed: set[str] = set()  # old decisions a sibling from this source already superseded
     touched = {old["id"] for _, old, _ in judged if old}
 
     def stale_alert(d, doc_sid, quote, why, related=None, extra=(), title=None):
@@ -260,6 +261,11 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
                 and len(docs[r]["title"]) >= 4 and docs[r]["title"].lower() in text]
 
     for d, (rel, old, why), stale in zip(p.decisions, judged, stales):
+        restated = d.pop("_restates", None)
+        if rel == "update" and old and old["id"] in claimed and restated:
+            # A second decision from the same revision (v4's carry-over rule) that repeats an existing rule is a
+            # restatement of that rule, not another successor of the one its sibling replaced.
+            rel, old = "same", restated
         if rel == "same" and old:
             # Corroboration: keep one decision, add the new quote to it.
             old["quotes"] = old["quotes"] + d["quotes"]
@@ -299,8 +305,9 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
             for x in also:
                 if x["workspace"] == ws and x["id"] in d["supersedes"]:
                     writes.append(st.update("decisions", x["id"], {"status": "superseded", "superseded_by": d["id"]}))
-            if old["workspace"] == ws:
+            if old["workspace"] == ws and old["id"] not in claimed:  # ponytail: first sibling is the successor
                 writes.append(st.update("decisions", old["id"], {"status": "superseded", "superseded_by": d["id"]}))
+            claimed.add(old["id"])
             for o in [old] + [x for x in also if x["id"] in d["supersedes"]]:
                 for q in o["quotes"]:
                     if kinds.get(q["source_id"], {}).get("kind") in ("wiki", "doc"):

@@ -232,8 +232,10 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     may = lambda d: authorised(d) and (mine == "official" or d.get("authority", "official") != "official")  # noqa: E731
     revises = bool(REVISION.search(src["text"]))
     rel, old, a = decide(r["assessments"], labels, may, violators, revises)
+    dec["_restates"] = next((d for x in r["assessments"] if x["restates"] and (d := pick(labels, x["decision"]))
+                             and d.get("status", "active") == "active"), None)
     if rel == "contradiction" and mine != "official" and old.get("authority", "official") == "official" and (
-            mine == "claim" or decide(r["assessments"], labels, authorised, violators, revises)[0] == "update"):
+            mine == "claim" or decide(r["assessments"], labels, lambda d: True, violators, revises)[0] == "update"):
         dec["_unverified"] = True  # a claim, or a proposal trying to revise an official rule: ask its owner
     if a is None:
         return "new", None, "No existing decision covers the same subject."

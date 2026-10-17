@@ -28,6 +28,16 @@
     "check miss check-design-old: expected block, got warn",
     "check miss check-design-current: expected allow, got warn",
     "live paste samples: relation correct 3/3, ingest p50 3567 ms",
-    "check_correct re-measured 2026-10-18 on acme4 after the premise rule change (a decision under review still blocks): 32/37."
-  ]
+    "check_correct re-measured 2026-10-18 on acme4 after the premise rule change (a decision under review still blocks): 32/37.",
+    "memory health: data/gold/authority_cases.json replayed in time order, live Gemini, in-memory store"
+  ],
+  "health_decisions_stored": 10,
+  "health_untraceable": 0,
+  "health_duplicates": 0,
+  "health_checkpoints": 3,
+  "health_checkpoints_correct": 3,
+  "health_chains": 1,
+  "health_chains_correct": 1,
+  "authority_cases": 12,
+  "authority_correct": 12
 }

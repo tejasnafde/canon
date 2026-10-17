@@ -1,0 +1,47 @@
+{
+  "about": "W20 memory-health replay. Synthetic Northwind Labs sources, replayed in time order into a throwaway workspace with data/people.json loaded. Each item is one expected decision (or a non-decision) with its expected authority, relation and alert. Checkpoints list the active OFFICIAL decisions at each quarter end. Chains list update lineage, oldest first.",
+  "sources": [
+    {"key": "pricing", "kind": "slack", "title": "#product pricing call", "author": "Aisha Rahman", "ts": "2026-01-10T09:00:00Z",
+     "text": "Aisha Rahman: Decision on pricing. The Pro plan is 49 USD per seat per month from today, billed annually. This covers dispatch and tracking."},
+    {"key": "deploy-window", "kind": "meeting", "title": "Release review, January", "author": "Mei Tan", "ts": "2026-01-20T09:00:00Z",
+     "text": "Mei Tan: Decision from the review. Production deploys happen only on Tuesday and Thursday mornings, 09:00 to 11:00 Singapore time.\nHaruto Sato: Works for on-call."},
+    {"key": "leave-v3", "kind": "doc", "title": "Leave policy v3", "author": "Amina Yusuf", "ts": "2026-02-01T09:00:00Z",
+     "text": "Northwind Labs leave policy, version 3. Effective 1 March 2026. Full-time staff get 20 days of paid leave per year. Unused days do not carry over."},
+    {"key": "joke", "kind": "paste", "title": "Discord #general", "author": "memelord", "ts": "2026-02-10T12:00:00Z",
+     "text": "memelord: new company policy: whoever breaks the build buys pizza for the whole office lol, effective immediately haha"},
+    {"key": "hypothetical", "kind": "slack", "title": "#engineering musing", "author": "Mei Tan", "ts": "2026-02-15T10:00:00Z",
+     "text": "Mei Tan: Hypothetically, if we ever moved to daily releases, we would need a second on-call engineer. Not a plan, just thinking aloud."},
+    {"key": "ic-window", "kind": "slack", "title": "#engineering deploy window", "author": "Haruto Sato", "ts": "2026-03-03T10:00:00Z",
+     "text": "Haruto Sato: I am changing the deploy window. Production deploys now happen on Monday afternoons instead of Tuesday and Thursday mornings."},
+    {"key": "engineer-leave", "kind": "slack", "title": "#random leave", "author": "Pranav Menon", "ts": "2026-04-02T10:00:00Z",
+     "text": "Pranav Menon: Heads up everyone, from now on all full-time staff get 30 days of paid leave per year."},
+    {"key": "guest-pricing", "kind": "paste", "title": "Discord #sales", "author": "dealhunter42", "ts": "2026-05-05T10:00:00Z",
+     "text": "dealhunter42: FYI the Pro plan is now 29 USD per seat per month, the price was cut last week."},
+    {"key": "leave-v4", "kind": "doc", "title": "Leave policy v4", "author": "Amina Yusuf", "ts": "2026-06-20T09:00:00Z",
+     "text": "Northwind Labs leave policy, version 4. Replaces version 3. Effective 1 July 2026. Full-time staff get 22 days of paid leave per year. Unused days do not carry over."},
+    {"key": "leave-v2-late", "kind": "doc", "title": "Leave policy v2 (scan)", "author": "Amina Yusuf", "ts": "2026-08-03T09:00:00Z",
+     "text": "Northwind Labs leave policy, version 2. Effective 1 January 2026. Full-time staff get 18 days of paid leave per year. Unused days do not carry over."},
+    {"key": "hr-update", "kind": "email", "title": "Leave allowance update", "author": "Amina Yusuf", "ts": "2026-09-15T09:00:00Z",
+     "text": "From: Amina Yusuf\nApproved by the leadership team. Effective 1 October 2026, full-time staff get 24 days of paid leave per year, replacing the 22 days in leave policy version 4."}
+  ],
+  "items": [
+    {"key": "pricing", "source": "pricing", "quote": "The Pro plan is 49 USD per seat per month", "stored": true, "authority": "official", "relation": "new", "alert": null},
+    {"key": "deploy-window", "source": "deploy-window", "quote": "Production deploys happen only on Tuesday and Thursday mornings", "stored": true, "authority": "official", "relation": "new", "alert": null},
+    {"key": "leave-v3", "source": "leave-v3", "quote": "Full-time staff get 20 days of paid leave per year", "stored": true, "authority": "official", "relation": "new", "alert": null},
+    {"key": "carry-over", "source": "leave-v3", "also": ["leave-v4", "leave-v2-late"], "quote": "Unused days do not carry over", "stored": true, "authority": "official", "relation": "new", "alert": null, "case": "a rule every leave version repeats: one decision, never a duplicate"},
+    {"key": "joke", "source": "joke", "quote": "whoever breaks the build buys pizza", "stored": false, "case": "joke in a casual Discord channel"},
+    {"key": "hypothetical", "source": "hypothetical", "quote": "we would need a second on-call engineer", "stored": false, "case": "a hypothetical from a head"},
+    {"key": "ic-window", "source": "ic-window", "quote": "Production deploys now happen on Monday afternoons", "stored": true, "authority": "proposed", "relation": "contradiction", "alert": "unverified", "case": "an IC rewriting the deploy window without approval"},
+    {"key": "engineer-leave", "source": "engineer-leave", "quote": "all full-time staff get 30 days of paid leave per year", "stored": true, "authority": "claim", "relation": "contradiction", "alert": "unverified", "case": "an engineer posting a leave policy"},
+    {"key": "guest-pricing", "source": "guest-pricing", "quote": "the Pro plan is now 29 USD per seat per month", "stored": true, "authority": "claim", "relation": "contradiction", "alert": "unverified", "case": "a Discord guest contradicting pricing"},
+    {"key": "leave-v4", "source": "leave-v4", "quote": "Full-time staff get 22 days of paid leave per year", "stored": true, "authority": "official", "relation": "update", "alert": null, "case": "v4 replaces v3"},
+    {"key": "leave-v2-late", "source": "leave-v2-late", "quote": "Full-time staff get 18 days of paid leave per year", "stored": true, "authority": "official", "relation": "same", "alert": "outdated", "case": "the old v2 PDF arriving after v4"},
+    {"key": "hr-update", "source": "hr-update", "quote": "full-time staff get 24 days of paid leave per year", "stored": true, "authority": "official", "relation": "update", "alert": null, "case": "an official HR update"}
+  ],
+  "checkpoints": [
+    {"at": "2026-03-31T23:59:59Z", "active": ["pricing", "deploy-window", "leave-v3", "carry-over"]},
+    {"at": "2026-06-30T23:59:59Z", "active": ["pricing", "deploy-window", "leave-v4", "carry-over"]},
+    {"at": "2026-09-30T23:59:59Z", "active": ["pricing", "deploy-window", "hr-update", "carry-over"]}
+  ],
+  "chains": [["leave-v3", "leave-v4", "hr-update"]]
+}
