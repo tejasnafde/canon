@@ -274,14 +274,14 @@ def test_pick_accepts_label_or_echoed_statement():
     assert pick(labels, "D9") is None and pick(labels, "") is None
 
 
-async def test_check_block_becomes_warn_when_premise_broken():
+async def test_check_warns_when_action_relies_on_broken_premise():
     fake(Extraction=extraction(("Cache dashboard five minutes.", ["cache dashboard five minutes"], [])))
     r = await ingest("We cache dashboard five minutes.")
     from canon.store import get_store
     await get_store().put("alerts", {"id": "a-p", "workspace": "acme", "kind": "premise_changed", "severity": "medium",
                                      "decision_id": r.decisions[0].decision.id, "explanation": "load grew",
                                      "quotes": [], "status": "open", "created_at": datetime.now(timezone.utc)})
-    llm.FAKE_RESPONSES["Guard"] = {"judgements": [{"decision": "D1", "applies": True, "violates": True, "exception_met": False, "note": "Over the limit."}]}
+    llm.FAKE_RESPONSES["Guard"] = {"judgements": [{"decision": "D1", "applies": True, "violates": False, "exception_met": False, "note": "Relies on it."}]}
     res = await core.check(CheckRequest(intent="keep cache dashboard five minutes"), ["acme"])
     assert res.verdict == "warn"
 
@@ -297,10 +297,10 @@ def test_check_verdict_is_decided_in_code():
     assert verdict_of([(a, j(violates=True, exc=True))], set())[0] == "allow"  # documented exception
     assert verdict_of([(a, j(applies=False, violates=True))], set())[0] == "allow"  # not relevant
     assert verdict_of([(a, j(exc=True)), (b, j(violates=True))], set())[0] == "allow"  # exception is its own decision
-    assert verdict_of([(a, j(violates=True))], {"a"})[0] == "warn"  # premise changed: review, not block
+    assert verdict_of([(a, j(violates=True))], {"a"})[0] == "block"  # under review, still in force
     assert verdict_of([(a, j())], {"a"})[0] == "warn"  # relies on a broken premise
     v, deciding = verdict_of([(a, j(violates=True)), (b, j(violates=True))], {"a"})
-    assert v == "block" and [d for d, _ in deciding] == [b]
+    assert v == "block" and [d for d, _ in deciding] == [a, b]  # both are in force
 
 
 async def test_repeating_a_replaced_rule_contradicts_its_successor():

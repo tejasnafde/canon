@@ -31,17 +31,18 @@ class Guard(BaseModel):
 def verdict_of(judged: list[tuple[dict, dict]], broken: set[str]) -> tuple[str, list[tuple[dict, dict]]]:
     """Decide in code from the model's per-decision judgements; (verdict, deciding (decision, judgement) pairs).
 
-    block: an active decision is violated with no documented exception, and its premise still holds.
-    warn: the only violated decisions have a changed premise, or the action relies on one that does.
+    block: an active decision is violated with no documented exception. An open premise alert does not
+           weaken this: a decision under review stays in force until a person changes it.
+    warn: the action relies on (does not violate) a decision whose premise has changed.
     allow: everything else (no relevant decision, or a documented exception is met, here or in its own decision).
     """
     hit = [(d, j) for d, j in judged if j["applies"]]
     # An exception recorded as its own decision (e.g. the emergency rule) that the action satisfies excuses the rest.
     excused = any(j["exception_met"] and not j["violates"] for _, j in hit)
     bad = [(d, j) for d, j in hit if j["violates"] and not j["exception_met"] and not excused]
-    if hard := [(d, j) for d, j in bad if d["id"] not in broken]:
-        return "block", hard
-    if shaky := bad or [(d, j) for d, j in hit if d["id"] in broken and not j["exception_met"]]:
+    if bad:
+        return "block", bad
+    if shaky := [(d, j) for d, j in hit if d["id"] in broken and not j["exception_met"]]:
         return "warn", shaky
     return "allow", hit
 
@@ -83,8 +84,9 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
         deciding = [d for d, _ in top]
         if top:
             why = " ".join(unlabel(j["note"], labels, d) for d, j in top[:2])
-        if verdict == "warn" and any(d["id"] in broken for d in deciding):
-            why = f"{why} The premise behind this decision has changed, so it needs review."
+        if any(d["id"] in broken for d in deciding):
+            why = f"{why} The premise behind this decision is flagged for review." if verdict == "block" else \
+                f"{why} The premise behind this decision has changed, so it needs review."
     from canon.core import log_activity
     ws = workspaces[-1]
     writes = [log_activity(ws, req.actor, "check", f"Checked: {req.intent[:120]}", [d["id"] for d in deciding],
