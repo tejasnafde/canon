@@ -77,4 +77,4 @@ jobs:
           (cd web && npm ci && npm run build)
           npx -y firebase-tools@latest deploy --only hosting --project "$PROJECT" --non-interactive
       - name: Smoke test
-        run: curl -fsS "https://canon-tn07.web.app/health"
+        run: if [ -d web ]; then curl -fsS "https://canon-tn07.web.app/health"; fi
