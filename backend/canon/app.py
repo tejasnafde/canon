@@ -114,8 +114,8 @@ Ws = Header(default=None, alias="X-Canon-Workspace")
 
 
 
-@app.get("/healthz")
-async def healthz():
+@app.get("/health")
+async def health():
     return {"ok": True, "model": MODEL}
 
 

@@ -5,7 +5,7 @@
 
 const RUN = "canon-ezvux7gqxa-el.a.run.app";
 const HOSTING = "canon-tn07.web.app";
-const RUN_PREFIXES = ["/api/", "/mcp", "/a2a", "/hooks/", "/discord/", "/.well-known/", "/healthz"];
+const RUN_PREFIXES = ["/api/", "/mcp", "/a2a", "/hooks/", "/discord/", "/.well-known/", "/health"];
 
 export default {
   async fetch(request) {

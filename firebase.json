@@ -64,7 +64,7 @@
         }
       },
       {
-        "source": "/healthz",
+        "source": "/health",
         "run": {
           "serviceId": "canon",
           "region": "asia-south1"

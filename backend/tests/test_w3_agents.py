@@ -90,8 +90,8 @@ async def client(running_app, calls):
 
 # ---- app ----
 
-async def test_healthz(client):
-    assert (await client.get("/healthz")).json()["ok"] is True
+async def test_health(client):
+    assert (await client.get("/health")).json()["ok"] is True
 
 
 async def test_workspace_scope(client, calls):

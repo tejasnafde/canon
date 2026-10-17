@@ -58,7 +58,7 @@ jobs:
             --set-env-vars="CANON_PUBLIC_URL=$PUBLIC_URL,GOOGLE_CLOUD_PROJECT=$PROJECT" \
             --quiet
       - name: Smoke test
-        run: curl -fsS "https://canon-974343814740.asia-south1.run.app/healthz"
+        run: curl -fsS "https://canon-974343814740.asia-south1.run.app/health"
 
   web:
     needs: api
@@ -77,4 +77,4 @@ jobs:
           (cd web && npm ci && npm run build)
           npx -y firebase-tools@latest deploy --only hosting --project "$PROJECT" --non-interactive
       - name: Smoke test
-        run: curl -fsS "https://canon-tn07.web.app/healthz"
+        run: curl -fsS "https://canon-tn07.web.app/health"
