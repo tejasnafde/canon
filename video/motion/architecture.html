@@ -1,0 +1,89 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<script src="vendor/gsap.min.js"></script><script src="lib.js"></script>
+<style>
+h1{position:absolute;left:120px;top:84px;font-size:64px;font-weight:500;letter-spacing:-.01em}
+.kicker{position:absolute;left:122px;top:58px}
+.col{position:absolute;top:262px}
+.card{position:absolute;border:1.5px solid #cfc6b4;background:#fbf8f1;padding:18px 24px;border-radius:3px}
+.card b{display:block;font-size:30px;font-weight:500}
+.card span{display:block;font-size:21px;color:var(--ink-2);margin-top:4px}
+.run{position:absolute;left:640px;top:250px;width:540px;height:540px;border:2.5px solid var(--ink);border-radius:4px;background:#fbf8f1}
+.run .hd{padding:26px 32px 18px;border-bottom:1px solid var(--rule)}
+.run .hd b{font-family:'Fraunces',serif;font-size:44px;font-weight:500}
+.run .hd span{display:block;font-size:20px;color:var(--ink-2);margin-top:4px}
+.row{padding:22px 32px;border-bottom:1px solid var(--rule)}
+.row:last-child{border-bottom:0}
+.row b{font-size:30px;font-weight:500}
+.row code{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--signal);margin-left:12px}
+.row span{display:block;font-size:21px;color:var(--ink-2);margin-top:4px}
+.g{border-color:var(--ink)}
+svg.wires{position:absolute;inset:0;width:1920px;height:1080px;overflow:visible}
+svg.wires path.w{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:1;stroke-dashoffset:1}
+svg.wires path.h{fill:var(--ink);opacity:0}
+.foot{position:absolute;left:120px;right:120px;top:1000px;font-size:24px;color:var(--ink-2)}
+.foot b{color:var(--ink);font-weight:500}
+</style></head><body>
+<div class="kicker label">Under the hood</div>
+<h1 class="serif">One service, one record, two ways in.</h1>
+
+<div class="label col" style="left:122px;top:224px" id="srcl">Where decisions come from</div>
+<div class="card src" style="left:120px;top:262px;width:380px"><b>Discord</b><span>Synced every minute</span></div>
+<div class="card src" style="left:120px;top:382px;width:380px"><b>Slack and meetings</b><span>Two years, imported</span></div>
+<div class="card src" style="left:120px;top:502px;width:380px"><b>Wiki, docs, PRs</b><span>Text, PDFs and images</span></div>
+<div class="card src" style="left:120px;top:622px;width:380px"><b>AI agents</b><span>Claude Code, Codex, over MCP</span></div>
+
+<div class="run">
+  <div class="hd"><b>Cloud Run</b><span>One service, asia-south1, scales to zero</span></div>
+  <div class="row r1"><b>FastAPI</b><code>/api</code><span>Web app, Discord sync, ingest</span></div>
+  <div class="row r2"><b>MCP server</b><code>/mcp</code><span>check_intent, ask_why, catch_me_up</span></div>
+  <div class="row r3"><b>ADK agent</b><code>/a2a</code><span>Agent-to-agent, for other agents</span></div>
+</div>
+
+<div class="label col" style="left:1342px;top:224px" id="gcl">Google Cloud</div>
+<div class="card g gem" style="left:1340px;top:262px;width:460px"><b>Gemini on Vertex AI</b><span>3.5 Flash-Lite: extract, reconcile, judge.<br>Structured output on every call.</span></div>
+<div class="card g fs" style="left:1340px;top:462px;width:460px"><b>Firestore vector search</b><span>Gemini embeddings, 768 dims,<br>filtered by workspace</span></div>
+
+<div class="card ppl" style="left:120px;top:842px;width:380px"><b>People</b><span>In the browser</span></div>
+<div class="card g host" style="left:640px;top:842px;width:540px"><b>Firebase Hosting</b><span>The web app, in front of Cloud Run</span></div>
+
+<svg class="wires" viewBox="0 0 1920 1080">
+  <path class="w s0" pathLength="1" d="M500 310 C 570 310, 570 420, 634 420"/>
+  <path class="w s1" pathLength="1" d="M500 430 C 570 430, 570 450, 634 450"/>
+  <path class="w s2" pathLength="1" d="M500 550 C 570 550, 570 480, 634 480"/>
+  <path class="w s3" pathLength="1" d="M500 670 C 570 670, 570 590, 634 590"/>
+  <path class="h s0" d="M634 420 l-12 -7 v14z"/><path class="h s1" d="M634 450 l-12 -7 v14z"/>
+  <path class="h s2" d="M634 480 l-12 -7 v14z"/><path class="h s3" d="M634 590 l-12 -7 v14z"/>
+  <path class="w gw" pathLength="1" d="M1186 400 C 1260 400, 1260 330, 1334 330"/>
+  <path class="h gw" d="M1334 330 l-12 -7 v14z"/>
+  <path class="w fw" pathLength="1" d="M1186 560 C 1260 560, 1260 530, 1334 530"/>
+  <path class="h fw" d="M1334 530 l-12 -7 v14z"/>
+  <path class="w pw" pathLength="1" d="M500 892 L 634 892"/>
+  <path class="h pw" d="M634 892 l-12 -7 v14z"/>
+  <path class="w hw" pathLength="1" d="M910 838 L 910 798"/>
+  <path class="h hw" d="M910 796 l-7 12 h14z"/>
+</svg>
+
+<p class="foot" id="foot">Every quote is checked word for word against its source. <b>Source text is fenced off from instructions.</b></p>
+
+<script>
+window.__duration = 15;
+const up = (sel, at, o = {}) => tl.fromTo(sel, { opacity: 0, y: 16 }, { opacity: 1, y: 0, ...o }, at);
+const wire = (cls, at, dur = 0.6) => {
+  draw(`path.w.${cls}`, at, dur);
+  tl.to(`path.h.${cls}`, { opacity: 1, duration: 0.15 }, at + dur - 0.1);
+};
+up('.kicker', 0.1); up('h1', 0.25);
+up('#srcl', 1.0);
+up('.src', 1.2, { stagger: 0.35 });
+up('.run', 2.8, { y: 0, duration: 0.7 });
+tl.fromTo('.run', { scale: 0.98 }, { scale: 1, duration: 0.7 }, 2.8);
+tl.set('.run .row', { opacity: 0 }, 0);
+['s0', 's1', 's2', 's3'].forEach((c, i) => wire(c, 3.5 + i * 0.18));
+up('.r1', 4.6); up('.r2', 5.5); up('.r3', 6.4);
+up('#gcl', 7.3);
+up('.gem', 7.5); wire('gw', 7.9);
+up('.fs', 8.7); wire('fw', 9.1);
+up('.ppl', 10.0); up('.host', 10.5); wire('pw', 10.4, 0.5); wire('hw', 11.0, 0.4);
+up('#foot', 11.9);
+tl.to({}, { duration: 0.01 }, 15);
+</script></body></html>

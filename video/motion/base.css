@@ -1,0 +1,16 @@
+/* Fonts are vendored (OFL, from @fontsource) so renders need no network. */
+@font-face{font-family:'Fraunces';src:url(vendor/fraunces-latin-wght-normal.woff2) format('woff2');font-weight:100 900;font-style:normal}
+@font-face{font-family:'Fraunces';src:url(vendor/fraunces-latin-wght-italic.woff2) format('woff2');font-weight:100 900;font-style:italic}
+@font-face{font-family:'IBM Plex Sans';src:url(vendor/ibm-plex-sans-latin-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:'IBM Plex Sans';src:url(vendor/ibm-plex-sans-latin-500-normal.woff2) format('woff2');font-weight:500}
+@font-face{font-family:'IBM Plex Sans';src:url(vendor/ibm-plex-sans-latin-600-normal.woff2) format('woff2');font-weight:600}
+@font-face{font-family:'IBM Plex Mono';src:url(vendor/ibm-plex-mono-latin-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:'IBM Plex Mono';src:url(vendor/ibm-plex-mono-latin-500-normal.woff2) format('woff2');font-weight:500}
+:root { --paper:#f6f1e7; --ink:#1c1a17; --ink-2:#6b6457; --ink-3:#8a8375; --rule:#d9d1c1; --signal:#c8361e; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { width:1920px; height:1080px; overflow:hidden; background:var(--paper); color:var(--ink);
+  font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+.serif { font-family:'Fraunces', Georgia, serif; font-optical-sizing:auto; }
+.mono { font-family:'IBM Plex Mono', monospace; }
+.label { font-size:20px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); font-weight:500; }
+.abs { position:absolute; }

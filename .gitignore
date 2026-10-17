@@ -10,3 +10,6 @@ sa-*.json
 __pycache__/
 *.tsbuildinfo
 .wrangler/
+
+# video: rendered clips are build output, not source
+video/clips/*.mp4

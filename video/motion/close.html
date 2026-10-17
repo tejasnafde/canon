@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><script src="vendor/gsap.min.js"></script><script src="lib.js"></script>
+<style>
+.stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lock{display:flex;align-items:center;gap:26px}
+.lock svg{width:96px;height:96px}
+.lock span{font-size:96px;font-weight:500}
+.links{margin-top:64px;display:grid;grid-template-columns:auto auto;gap:22px 40px;align-items:baseline}
+.links .label{text-align:right}
+.links .v{font-size:46px}
+.rule{width:820px;height:1px;background:var(--rule);margin:70px 0 36px}
+.built{font-size:32px;color:var(--ink-2)}
+.built b{color:var(--ink);font-weight:500}
+</style></head><body>
+<div class="stage">
+  <div class="lock"><svg viewBox="0 0 64 64"><path d="M12 4H52V60H12ZM18 10V54H46V10Z" fill="#1c1a17" fill-rule="evenodd"/><path class="ribbon" d="M30 4H42V42L36 36L30 42Z" fill="#c8361e"/></svg><span class="serif">Canon</span></div>
+  <div class="links">
+    <span class="label">Try it</span><span class="v mono" id="u1"></span>
+    <span class="label">Code</span><span class="v mono" id="u2"></span>
+  </div>
+  <div class="rule"></div>
+  <p class="built">Built on Google Cloud: <b>Gemini</b>, <b>Firestore</b>, <b>Cloud Run</b>, <b>Firebase</b></p>
+</div>
+<script>
+window.__duration = 6;
+tl.fromTo('.lock', {opacity:0, y:16}, {opacity:1, y:0}, .1)
+  .fromTo('.ribbon', {y:-40}, {y:0, duration:.8, ease:'power4.out'}, .3)
+  .fromTo('.links .label', {opacity:0}, {opacity:1, stagger:.25, duration:.5}, .8);
+typeOn(document.getElementById('u1'), 'canon.tn07.dev', 1.0, 30);
+typeOn(document.getElementById('u2'), 'github.com/tejasnafde/canon', 1.6, 40);
+tl.fromTo('.rule', {scaleX:0}, {scaleX:1, duration:.8, ease:'power2.inOut'}, 2.5)
+  .fromTo('.built', {opacity:0, y:12}, {opacity:1, y:0}, 2.8)
+  .to({}, {duration:.01}, 6);
+</script></body></html>
