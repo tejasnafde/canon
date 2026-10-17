@@ -25,7 +25,35 @@ class CorpusValidationTests(unittest.TestCase):
     def test_committed_corpus_passes(self):
         errors, summary = validate(self.root)
         self.assertEqual(errors, [])
-        self.assertEqual(summary['sources'], 159)
+        self.assertEqual(summary['sources'], 259)
+
+    def test_archive_has_real_document_shapes(self):
+        rows = [json.loads(line) for path in (self.root / 'corpus').glob('*.jsonl')
+                for line in path.read_text().splitlines()]
+        for row in rows:
+            text = row['text']
+            if row['kind'] == 'meeting':
+                self.assertTrue(300 <= len(text.split()) <= 900, row['title'])
+            elif row['kind'] == 'slack':
+                self.assertIn('Thread replies', text, row['title'])
+            elif row['kind'] == 'pr':
+                self.assertIn('```diff', text, row['title'])
+                self.assertIn('Review comments', text, row['title'])
+            elif row['kind'] == 'email':
+                self.assertIn('Subject:', text, row['title'])
+                self.assertIn('@northwind.example', text, row['title'])
+
+    def test_no_emoji_or_departed_speakers(self):
+        import re
+        people = json.loads((self.root / 'people.json').read_text())
+        departed = [p for p in people if p['left_at']]
+        for path in (self.root / 'corpus').glob('*.jsonl'):
+            for line in path.read_text().splitlines():
+                row = json.loads(line)
+                self.assertNotRegex(row['text'], '[\U0001f000-\U0001ffff\u2600-\u27bf]')
+                for person in departed:
+                    if row['ts'] > person['left_at']:
+                        self.assertNotRegex(row['text'], re.escape(person['name']) + r':')
 
     def test_nonexact_quote_fails(self):
         self.mutate_gold(lambda g: g['items'][0]['evidence'][0].update(quote='A quote never spoken here.'))

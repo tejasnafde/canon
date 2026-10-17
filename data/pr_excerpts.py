@@ -1,0 +1,23 @@
+"""Short fictional review excerpts. They are examples, not executable patches."""
+EXCERPTS = {
+'PR 418: tooltip hides behind drawer': ('web/Tooltip.tsx', '-  return createPortal(tip, drawer);\n+  return createPortal(tip, document.body);'),
+'PR 423: fix empty lane label': ('web/ShipmentRow.tsx', '-  <span>{lane_name}</span>\n+  <span>{lane_name || "Unassigned"}</span>'),
+'PR 447: keep filter on back navigation': ('web/ShipmentList.tsx', '-  navigate(`/shipments/${id}`);\n+  navigate(`/shipments/${id}?depot=${depot}`);'),
+'PR 451: empty search illustration alt text': ('web/EmptySearch.tsx', '-  alt="empty-search-v2.svg"\n+  alt=""'),
+'PR 466: clarify fixture directory names': ('docs/fixtures.md', '- See fixtures/response/README.md\n+ See fixtures/empty-response/README.md'),
+'PR 469: partner header casing': ('connectors/kestrel.py', '-    cursor = headers.get("X-Cursor")\n+    cursor = {k.lower(): v for k, v in headers.items()}.get("x-cursor")'),
+'PR 491: deterministic scan fixture': ('web/test/scan.ts', '-  observed_at: new Date().toISOString(),\n+  observed_at: "2025-08-25T15:00:00Z",'),
+'PR 493: keep help icon aligned': ('web/HelpLabel.css', '-  align-items: center;\n+  align-items: baseline;'),
+'PR 514: wrap long header example': ('docs/components/CodeBlock.css', '-  white-space: pre;\n+  white-space: pre-wrap;'),
+'PR 517: drawer focus return': ('web/ShipmentDrawer.tsx', '-  onClose();\n+  onClose();\n+  originRow.current?.focus();'),
+'PR 542: label holiday fixtures': ('tests/fixtures/calendar.json', '-  "label": "holiday"\n+  "label": "Tokyo public holiday"'),
+'PR 549: fix notebook link in help menu': ('web/helpLinks.ts', '-  notebooks: "/notes/recon-draft",\n+  notebooks: "/notes/reconciliation-index",'),
+'PR 571: quiet empty search state': ('web/EmptySearch.tsx', '-  <h2>Nothing found!</h2>\n+  <h2>No shipments match these filters</h2>'),
+'PR 593: spinner clips in narrow row': ('web/ShipmentRow.css', '-  gap: 2px;\n+  gap: 8px;'),
+'PR 608: retry fixture clock': ('tests/test_retry.py', '-    clock = SystemClock()\n+    clock = FixtureClock("2026-03-01T00:00:00Z")'),
+'PR 638: fix broken anchor in partner docs': ('docs/partner-index.md', '- [Headers](kestrel.md#response-headers)\n+ [Headers](kestrel.md#cursor-response-headers)'),
+'PR 665: upload badge wording': ('web/UploadBadge.tsx', '-  label: "Waiting",\n+  label: "Waiting to upload",'),
+'PR 681: export filename test': ('web/test/exportName.test.ts', '-  expect(name).toContain("shipments");\n+  expect(name).toBe("shipments-2026-07-01.csv");'),
+'PR 762: wrap depot nickname in menu': ('web/DepotMenu.css', '-  white-space: nowrap;\n+  white-space: normal;'),
+'PR 751: distinguish probe failures': ('ops/probe.py', '-    return "unhealthy"\n+    return "dns_failure" if result.dns_error else "http_failure"'),
+}
