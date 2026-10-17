@@ -1,0 +1,162 @@
+[
+  {
+    "id": "anika-rao",
+    "name": "Anika Rao",
+    "role": "Staff platform engineer",
+    "team": "Platform",
+    "status": "left",
+    "left_at": "2026-06-30T09:00:00Z"
+  },
+  {
+    "id": "mei-tan",
+    "name": "Mei Tan",
+    "role": "Engineering manager",
+    "team": "Platform",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "haruto-sato",
+    "name": "Haruto Sato",
+    "role": "Site reliability engineer",
+    "team": "Platform",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "aisha-rahman",
+    "name": "Aisha Rahman",
+    "role": "Product lead",
+    "team": "Product",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "pranav-menon",
+    "name": "Pranav Menon",
+    "role": "Backend engineer",
+    "team": "Platform",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "linh-nguyen",
+    "name": "Linh Nguyen",
+    "role": "Data engineer",
+    "team": "Data",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "jiwon-park",
+    "name": "Jiwon Park",
+    "role": "Security engineer",
+    "team": "Security",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "siti-nuraini",
+    "name": "Siti Nuraini",
+    "role": "Customer success lead",
+    "team": "Customer",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "arjun-desai",
+    "name": "Arjun Desai",
+    "role": "Account executive",
+    "team": "Sales",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "yuki-mori",
+    "name": "Yuki Mori",
+    "role": "Product designer",
+    "team": "Product",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "nur-aziz",
+    "name": "Nur Aziz",
+    "role": "Finance lead",
+    "team": "Operations",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "chen-wei",
+    "name": "Chen Wei",
+    "role": "Integration engineer",
+    "team": "Integrations",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "kavya-iyer",
+    "name": "Kavya Iyer",
+    "role": "QA engineer",
+    "team": "Quality",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "daniel-lim",
+    "name": "Daniel Lim",
+    "role": "Solutions architect",
+    "team": "Customer",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "thao-tran",
+    "name": "Thao Tran",
+    "role": "Technical writer",
+    "team": "Product",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "ravi-perera",
+    "name": "Ravi Perera",
+    "role": "Support engineer",
+    "team": "Customer",
+    "status": "left",
+    "left_at": "2026-02-27T09:00:00Z"
+  },
+  {
+    "id": "amina-yusuf",
+    "name": "Amina Yusuf",
+    "role": "People operations partner",
+    "team": "Operations",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "tomoko-ito",
+    "name": "Tomoko Ito",
+    "role": "Analytics engineer",
+    "team": "Data",
+    "status": "left",
+    "left_at": "2025-12-19T09:00:00Z"
+  },
+  {
+    "id": "farah-khan",
+    "name": "Farah Khan",
+    "role": "Product marketing manager",
+    "team": "Marketing",
+    "status": "active",
+    "left_at": null
+  },
+  {
+    "id": "budi-santoso",
+    "name": "Budi Santoso",
+    "role": "Frontend engineer",
+    "team": "Product",
+    "status": "active",
+    "left_at": null
+  }
+]
