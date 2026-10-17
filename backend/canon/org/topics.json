@@ -1,0 +1,92 @@
+{
+  "deploys/release": {
+    "teams": [
+      "Platform",
+      "Quality"
+    ],
+    "owner": "mei-tan"
+  },
+  "incidents": {
+    "teams": [
+      "Platform",
+      "Support"
+    ],
+    "owner": "mei-tan"
+  },
+  "security/access/retention/residency": {
+    "teams": [
+      "Security"
+    ],
+    "owner": "jiwon-park"
+  },
+  "pricing": {
+    "teams": [
+      "Product",
+      "Finance"
+    ],
+    "owner": "aisha-rahman"
+  },
+  "discounts": {
+    "teams": [
+      "Sales",
+      "Finance"
+    ],
+    "owner": "arjun-desai"
+  },
+  "contracts/DPA": {
+    "teams": [
+      "Legal"
+    ],
+    "owner": "nandini-wijaya"
+  },
+  "leave/notice/handbook/hiring/reviews": {
+    "teams": [
+      "People"
+    ],
+    "owner": "amina-yusuf"
+  },
+  "billing/invoices/travel": {
+    "teams": [
+      "Finance"
+    ],
+    "owner": "nur-aziz"
+  },
+  "brand/campaigns": {
+    "teams": [
+      "Marketing"
+    ],
+    "owner": "farah-khan"
+  },
+  "design system/accessibility": {
+    "teams": [
+      "Design"
+    ],
+    "owner": "yuki-mori"
+  },
+  "metrics/dashboards": {
+    "teams": [
+      "Data"
+    ],
+    "owner": "linh-nguyen"
+  },
+  "roadmap/launch dates": {
+    "teams": [
+      "Product"
+    ],
+    "owner": "aisha-rahman"
+  },
+  "SLAs/escalation": {
+    "teams": [
+      "Support",
+      "Customer"
+    ],
+    "owner": "siti-nuraini"
+  },
+  "OKRs/budget": {
+    "teams": [
+      "Leadership",
+      "Finance"
+    ],
+    "owner": "hana-okafor"
+  }
+}

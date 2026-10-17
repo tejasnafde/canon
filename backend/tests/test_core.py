@@ -162,6 +162,7 @@ async def test_premise_changed(monkeypatch):
     await ingest("Decision: use Twilio for SMS alerts.", ts="2026-01-01T00:00:00Z")
     fake(Extraction=extraction(facts=[{"statement": "Twilio SMS alerts now cost 6k per month.", "quote": "now cost 6k"}]),
          PremiseCheck={"broken": [{"decision": "D1", "assumption": "Twilio costs 2k per month",
+                                   "assumption_quote": "Twilio costs 2k per month", "contradicts": True, "trivial": False,
                                    "evidence_quote": "Twilio SMS alerts now cost 6k per month", "explanation": "tripled"}]})
     r = await ingest("FYI Twilio SMS alerts now cost 6k per month.", ts="2026-02-01T00:00:00Z")
     assert [a.kind for a in r.alerts] == ["premise_changed"]

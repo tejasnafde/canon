@@ -62,7 +62,13 @@ All docs carry `workspace: str` and `created_at: timestamp`.
 - `chunks/{id}`: `source_id`, `text`, `embedding` (Vector 768), `ts`.
 - `decisions/{id}`: `statement`, `rationale`, `assumptions: [str]`, `owner`, `ts`, `topic`,
   `status` (active|superseded|retired), `supersedes: [id]`, `superseded_by: id|null`,
-  `quotes: [{source_id, quote}]`, `embedding` (Vector 768), `created_by` (human|agent:<name>).
+  `quotes: [{source_id, quote}]`, `embedding` (Vector 768), `created_by` (human|agent:<name>),
+  `authority` (official|proposed|claim, computed in code by `canon/authority.py`; missing = official),
+  `effective_at` (the document's own "Effective <date>", or null). Reconcile orders by `effective_at`, else `ts`.
+  Only an official decision supersedes an official one. A claim (a Discord guest, or an IC outside their area),
+  or a proposal trying to revise an official rule, raises a low `contradiction` alert whose explanation starts
+  "Unverified:" and names who should confirm or dismiss. An older-dated copy arriving after a newer decision is
+  stored superseded with a low `stale_doc` alert starting "Outdated copy:". Jokes and hypotheticals are never stored.
 - `alerts/{id}`: `kind` (contradiction|stale_doc|premise_changed|agent_violation|pr_deviation),
   `severity` (high|medium|low), `decision_id`, `source_id`, `explanation`,
   `quotes: [{source_id, quote}]`, `status` (open|resolved), `resolution`, `created_by`.
@@ -70,7 +76,8 @@ All docs carry `workspace: str` and `created_at: timestamp`.
   `action` (ingest|ask|check|record|briefing|resolve), `summary`, `ref_ids: [id]`, `verdict`.
 - `connector_state/{id}`: per-channel Discord cursor, daily and per-user ingest counters.
 - `people/{id}`: `name`, `role`, `team`, `status` (active|left), `left_at`, `reports_to`, `level` (ic|lead|head|exec), `successor`, `discord_username`.
-  Org tree source: `data/people.json`. Topic owners: `data/org/topics.json`. Channel weights: `data/org/channels.json`.
+  Org tree source: `data/people.json`. Topic owners: `data/org/topics.json`. Channel weights: `data/org/channels.json`
+  (bundled into the image as `backend/canon/org/*.json`; a test keeps the copies equal).
   Note: `data/build_corpus.py` must preserve these org fields when it rewrites people.json.
 
 Vector indexes: `chunks.embedding` and `decisions.embedding`, 768 dims, COSINE, with
@@ -94,7 +101,8 @@ Pydantic models live in `backend/canon/models.py` (the code is the exact contrac
 | GET `/api/sources/{id}` | | `Source` |
 | GET `/api/activity` | `?since=` | `[Activity]` (web polls every 2 s) |
 | GET `/api/people` | | `[Person]` |
-| GET `/api/eval` | | `EvalReport` (from the last committed run) |
+| GET `/api/eval` | | `EvalReport` (from the last committed run; optional `health_*` and `authority_*` fields) |
+| GET `/api/stats` | | `{sources, decisions, decisions_official, stale_docs, open_alerts, people}` (COUNT aggregations) |
 | POST `/api/workspace/reset` | | `{ok}` |
 | GET `/health` | | `{ok, model}` (cheap, no Gemini) |
 | GET `/health/deep` | | Firestore read + one embed, manual checks only |

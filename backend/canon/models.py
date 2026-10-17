@@ -47,6 +47,8 @@ class Decision(BaseModel):
     superseded_by: str | None = None
     quotes: list[Quote]
     created_by: str = "human"
+    authority: Literal["official", "proposed", "claim"] = "official"  # rows written before W20 default to official
+    effective_at: datetime | None = None  # the document's own effective date, when it states one
 
 
 class Alert(BaseModel):
@@ -217,3 +219,13 @@ class EvalReport(BaseModel):
     p50_ms: int
     p95_ms: int
     notes: list[str] = []
+    # W20 memory health, from the labelled replay in data/gold/authority_cases.json (None when not run)
+    health_decisions_stored: int | None = None
+    health_untraceable: int | None = None   # stored decisions that match no gold item (precision misses)
+    health_duplicates: int | None = None    # gold items stored as two or more active decisions
+    health_checkpoints: int | None = None
+    health_checkpoints_correct: int | None = None  # active set equals gold at the checkpoint
+    health_chains: int | None = None
+    health_chains_correct: int | None = None
+    authority_cases: int | None = None
+    authority_correct: int | None = None

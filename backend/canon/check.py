@@ -53,7 +53,8 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
                                                   get_store().query("alerts", workspaces, status="open"))
     # A decision flagged as contradicting the record (e.g. a rogue PR) is not authority for an action.
     rogue = {a["decision_id"] for a in open_alerts if a["kind"] == "contradiction"}
-    live = [(d, s) for d, s in decs if d["status"] == "active" and s >= CHECK_MIN and d["id"] not in rogue]
+    live = [(d, s) for d, s in decs if d["status"] == "active" and s >= CHECK_MIN and d["id"] not in rogue
+            and d.get("authority", "official") != "claim"]  # a guest's or out-of-area claim is not a rule
     # Only decisions near the best match go to Gemini: the tail is off-topic, costs latency and invites stray flags.
     active = [d for d, s in live if s >= live[0][1] - CHECK_SPREAD][:4] if live else []
     verdict, why, deciding = "allow", "No decision in the record covers this action.", []

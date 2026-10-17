@@ -319,6 +319,11 @@ async def people(x: str | None = Ws):
     return await core.list_people(scope(x))
 
 
+@app.get("/api/stats")
+async def stats(x: str | None = Ws):
+    return await store.stats(view(x))
+
+
 @app.get("/api/eval", response_model=EvalReport)
 async def eval_report():
     return await core.eval_report()

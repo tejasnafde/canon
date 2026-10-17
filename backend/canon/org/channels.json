@@ -1,0 +1,89 @@
+{
+  "#general": {
+    "weight": "casual",
+    "topics": []
+  },
+  "#engineering": {
+    "weight": "team",
+    "topics": [
+      "deploys/release",
+      "incidents"
+    ]
+  },
+  "#product": {
+    "weight": "team",
+    "topics": [
+      "pricing",
+      "roadmap/launch dates"
+    ]
+  },
+  "#design": {
+    "weight": "team",
+    "topics": [
+      "design system/accessibility"
+    ]
+  },
+  "#data": {
+    "weight": "team",
+    "topics": [
+      "metrics/dashboards"
+    ]
+  },
+  "#security": {
+    "weight": "team",
+    "topics": [
+      "security/access/retention/residency"
+    ]
+  },
+  "#sales": {
+    "weight": "team",
+    "topics": [
+      "discounts",
+      "pricing"
+    ]
+  },
+  "#support": {
+    "weight": "team",
+    "topics": [
+      "SLAs/escalation",
+      "incidents"
+    ]
+  },
+  "#marketing": {
+    "weight": "team",
+    "topics": [
+      "brand/campaigns"
+    ]
+  },
+  "#finance": {
+    "weight": "team",
+    "topics": [
+      "billing/invoices/travel",
+      "OKRs/budget"
+    ]
+  },
+  "#operations": {
+    "weight": "team",
+    "topics": [
+      "billing/invoices/travel"
+    ]
+  },
+  "#people": {
+    "weight": "team",
+    "topics": [
+      "leave/notice/handbook/hiring/reviews"
+    ]
+  },
+  "#legal": {
+    "weight": "team",
+    "topics": [
+      "contracts/DPA"
+    ]
+  },
+  "#leadership": {
+    "weight": "team",
+    "topics": [
+      "OKRs/budget"
+    ]
+  }
+}

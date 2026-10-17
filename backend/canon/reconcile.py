@@ -84,8 +84,31 @@ class Judgement(BaseModel):
 class Broken(BaseModel):
     decision: str  # label
     assumption: str
+    assumption_quote: str  # copied from the decision's statement, rationale or stated assumptions
     evidence_quote: str
+    contradicts: bool  # the evidence makes the assumption false (not restates or merely mentions it)
+    trivial: bool      # logistical detail (a tag, a room, a label, who brings what), not a premise
     explanation: str
+
+
+PREMISE_RULE = (
+    "A premise change needs ALL of: (1) a stated assumption or condition of the decision, copied word for word "
+    "from its statement, rationale or stated assumptions as assumption_quote; (2) NEW information, copied word for "
+    "word as evidence_quote, that makes that assumption FALSE (a number crossed a stated limit, a cost or duration "
+    "changed, a vendor now behaves differently). Restating, confirming or mentioning the assumption is not a "
+    "change (contradicts=false). Logistical or cosmetic details (a tag, a label, a room, a colour, who brings "
+    "what, a meeting time) are trivial (trivial=true) and never count.")
+
+
+def decision_text(d: dict) -> str:
+    return " ".join([d["statement"], d.get("rationale") or "", *(d.get("assumptions") or [])])
+
+
+def premise_holds(b: dict, d: dict) -> bool:
+    """The W20 rule, in code, on one judged item (a Broken or a re-judgement of an old alert)."""
+    aq = b.get("assumption_quote") or ""
+    return (b.get("contradicts", False) and not b.get("trivial", True) and len(aq.split()) >= 3
+            and verified(aq, decision_text(d)) and norm(b.get("evidence_quote", "")).lower() not in norm(aq).lower())
 
 
 class PremiseCheck(BaseModel):
@@ -106,8 +129,13 @@ SYSTEM = ("You are Canon, a strict auditor of a company's decision record. Judge
           "Be conservative. " + NO_LABELS)
 
 
+def when(d: dict):
+    """When a decision takes effect: the document's own effective date, else its source time."""
+    return utc(d.get("effective_at") or d["ts"])
+
+
 def _dline(label: str, d: dict) -> str:
-    return f"[{label}] ({utc(d['ts']).date()}, owner {d['owner']}, status {d['status']}) {d['statement']}"
+    return f"[{label}] ({when(d).date()}, owner {d['owner']}, status {d['status']}) {d['statement']}"
 
 
 async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: float = RELATED_MIN,
@@ -190,8 +218,14 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     people = {norm(src["author"]).lower(), norm(dec["owner"]).lower()}
     # A meeting record is a decision forum: the group setting new terms there is the authority.
     authorised = lambda d: approved or src["kind"] == "meeting" or norm(d["owner"]).lower() in people  # noqa: E731
+    # W20: only an official decision can supersede an official one.
+    mine = dec.get("authority", "official")
+    may = lambda d: authorised(d) and (mine == "official" or d.get("authority", "official") != "official")  # noqa: E731
     revises = bool(REVISION.search(src["text"]))
-    rel, old, a = decide(r["assessments"], labels, authorised, violators, revises)
+    rel, old, a = decide(r["assessments"], labels, may, violators, revises)
+    if rel == "contradiction" and mine != "official" and old.get("authority", "official") == "official" and (
+            mine == "claim" or decide(r["assessments"], labels, authorised, violators, revises)[0] == "update"):
+        dec["_unverified"] = True  # a claim, or a proposal trying to revise an official rule: ask its owner
     if a is None:
         return "new", None, "No existing decision covers the same subject."
     if rel == "same" and old["status"] == "superseded" and old.get("superseded_by") and not revises:
@@ -204,7 +238,7 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     if rel == "update":
         # The same old rule often lives in several decisions (the thread and a wiki copy); revise every copy.
         dec["_also"] = [d for x in r["assessments"] if (d := pick(labels, x["decision"])) and d["id"] != old["id"]
-                        and x["conflicts"] and (x["explicit_supersede"] or revises) and authorised(d)
+                        and x["conflicts"] and (x["explicit_supersede"] or revises) and may(d)
                         and d["id"] not in violators and d.get("kind", "rule") == "rule" and d.get("status", "active") == "active"]
     return rel, old, unlabel(a["why"], labels, old)
 
@@ -231,7 +265,7 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
         "of its premises false (a number crossed a stated limit, a cost or duration changed, a vendor behaves "
         "differently)? List those. Do not list a decision just because it is on the same topic. An action, PR, "
         "plan or copy that disobeys a decision does not break its premise (that is a violation, reported "
-        "elsewhere); only facts about the world do. "
+        "elsewhere); only facts about the world do. " + PREMISE_RULE + " "
         "evidence_quote must be copied word for word from the SOURCE below. Return an empty list if none.\n\n"
         f"SOURCE:\n{source_text[:6000]}"
     )
@@ -243,7 +277,7 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
     for b in r["broken"]:
         d = pick(labels, b["decision"])
         if (d and d["id"] not in {x["id"] for x, _ in out} and len(b["assumption"].split()) >= 3
-                and verified(b["evidence_quote"], source_text)
+                and premise_holds(b, d) and verified(b["evidence_quote"], source_text)
                 and not any(verified(b["evidence_quote"], own[q["source_id"]]["text"])
                             for q in d["quotes"] if q["source_id"] in own)):
             out.append((d, Broken(**{**b, "explanation": unlabel(b["explanation"], labels, d)})))

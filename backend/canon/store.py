@@ -62,6 +62,10 @@ class MemoryStore:
         out.sort(key=lambda d: d["created_at"], reverse=True)
         return out[:limit] if limit else out
 
+    async def count(self, coll: str, workspaces: list[str], **eq) -> int:
+        return sum(1 for d in self.db[coll].values() if d["workspace"] in workspaces
+                   and all(d.get(k) == v for k, v in eq.items()))
+
     async def nearest(self, coll: str, workspaces: list[str], vector: list[float], k: int) -> list[tuple[dict, float]]:
         scored = [(_clean(d), _cos(vector, d["embedding"])) for d in self.db[coll].values()
                   if d["workspace"] in workspaces and d.get("embedding")]
@@ -138,6 +142,18 @@ class FirestoreStore:
         out = [d for p in parts for d in p]
         out.sort(key=lambda d: d["created_at"], reverse=True)
         return out[:limit] if limit else out
+
+    async def count(self, coll: str, workspaces: list[str], **eq) -> int:
+        """Server-side COUNT aggregation, one per workspace: no documents are read."""
+        F = self.fs.FieldFilter
+
+        async def one(ws):
+            q = self.client.collection(coll).where(filter=F("workspace", "==", ws))
+            for k, v in eq.items():
+                q = q.where(filter=F(k, "==", v))
+            res = await q.count().get()
+            return int(res[0][0].value)
+        return sum(await asyncio.gather(*(one(ws) for ws in workspaces)))
 
     async def _nearest_ws(self, coll, ws, vector, k):
         from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
@@ -351,3 +367,18 @@ async def reset_workspace(workspace):
     if workspace == os.environ.get("CANON_BASE_WS", "acme"):
         raise PermissionError("the base workspace is read-only")
     await get_store().delete_workspace(workspace)
+
+
+async def stats(workspaces):
+    """GET /api/stats: cheap counts for the read scope. Decisions written before W20 carry no `authority` and
+    count as official. open_alerts ignores visitor resolution overlays (a count, not a list)."""
+    st = get_store()
+    keys = ("sources", "decisions", "proposed", "claim", "stale_docs", "open_alerts", "people")
+    n = dict(zip(keys, await asyncio.gather(
+        st.count("sources", workspaces), st.count("decisions", workspaces),
+        st.count("decisions", workspaces, authority="proposed"), st.count("decisions", workspaces, authority="claim"),
+        st.count("alerts", workspaces, kind="stale_doc", status="open"), st.count("alerts", workspaces, status="open"),
+        st.count("people", workspaces))))
+    return {"sources": n["sources"], "decisions": n["decisions"],
+            "decisions_official": n["decisions"] - n["proposed"] - n["claim"], "stale_docs": n["stale_docs"],
+            "open_alerts": n["open_alerts"], "people": n["people"]}
