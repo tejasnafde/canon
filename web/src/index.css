@@ -1193,3 +1193,108 @@ table.rows td.owner {
     gap: 2px 0;
   }
 }
+
+/* authority: a quiet word, never a chip */
+.auth {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+a.plain {
+  text-decoration: none;
+}
+a.plain:hover {
+  text-decoration: underline;
+}
+
+/* org: an indented outline with hairline connectors */
+.org,
+.org ul {
+  list-style: none;
+}
+.org {
+  border-top: 1px solid var(--ink);
+  margin-top: 28px;
+  padding-top: 8px;
+}
+.org ul {
+  margin-left: 13px;
+  padding-left: 28px;
+  border-left: 1px solid var(--rule);
+}
+.org li {
+  position: relative;
+}
+.org ul > li::before {
+  content: '';
+  position: absolute;
+  left: -28px;
+  top: 27px;
+  width: 20px;
+  border-top: 1px solid var(--rule);
+}
+.org ul > li:last-child::after {
+  /* stop the vertical rule at the last report */
+  content: '';
+  position: absolute;
+  left: -29px;
+  top: 28px;
+  bottom: 0;
+  border-left: 3px solid var(--paper);
+}
+.org .who {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+}
+.org .who a {
+  text-decoration: none;
+}
+.org .who a:hover h3 {
+  text-decoration: underline;
+}
+.org .who h3 {
+  font-size: 19px;
+  line-height: 1.25;
+}
+.org .lvl-exec > .who h3 {
+  font-size: 24px;
+}
+.org .who .role {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.org .who .n {
+  font-size: 15px;
+  color: var(--ink-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.org .left > .who,
+.org .left > .who .role {
+  color: var(--ink-3);
+}
+.org .left > .who img {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.org .left > .who h3 {
+  color: var(--ink-3);
+}
+.person-head {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 20px;
+}
+.person-head .avatar {
+  width: 72px;
+  height: 72px;
+}
+.person-head.left .avatar {
+  filter: grayscale(1);
+  opacity: 0.6;
+}

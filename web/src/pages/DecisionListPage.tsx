@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { usePeople } from '@/components/people'
 import { Avatar, ErrorState, ListSkeleton } from '@/components/states'
+import { AUTHORITY_WORD } from '@/lib/org'
 import { q } from '@/lib/query'
 import { breaksByDecision, fmtDate, rankDecisions } from '@/lib/record'
 import type { Alert, Decision } from '@/lib/schemas'
@@ -14,7 +16,7 @@ export default function DecisionListPage() {
   useTitle('decisions')
   const decisions = useQuery(q.decisions())
   const alerts = useQuery(q.alerts())
-  const people = useQuery(q.people())
+  const people = usePeople()
   const [team, setTeam] = useState('all')
   const [status, setStatus] = useState<Status>('all')
   const [all, setAll] = useState(false)
@@ -94,7 +96,8 @@ export default function DecisionListPage() {
             <tbody>
               {visible.map(d => {
                 const n = d.status === 'active' ? (breaks.get(d.id)?.length ?? 0) : 0
-                const gone = person.get(d.owner)?.status === 'left'
+                const who = person.get(d.owner)
+                const gone = who?.status === 'left'
                 return (
                   <tr key={d.id}>
                     <td className={d.status === 'active' ? 'd' : 'd muted'}>
@@ -104,7 +107,13 @@ export default function DecisionListPage() {
                       <span className="person">
                         <Avatar name={d.owner} small />
                         <span>
-                          {d.owner}
+                          {who ? (
+                            <Link to={`/org/${who.id}`} className="plain">
+                              {d.owner}
+                            </Link>
+                          ) : (
+                            d.owner
+                          )}
                           {gone && <span className="gone"> (left)</span>}
                         </span>
                       </span>
@@ -115,10 +124,12 @@ export default function DecisionListPage() {
                       <td className="s breaks">
                         <span className="dot" aria-hidden />
                         Broken by {n}
+                        <span className="auth">{AUTHORITY_WORD[d.authority]}</span>
                       </td>
                     ) : (
                       <td className={d.status === 'active' ? 's' : 's muted'}>
                         {d.status === 'active' ? 'Active' : d.status === 'superseded' ? 'Replaced' : 'Retired'}
+                        <span className="auth">{AUTHORITY_WORD[d.authority]}</span>
                       </td>
                     )}
                   </tr>
@@ -137,6 +148,8 @@ export default function DecisionListPage() {
             </button>
           )}{' '}
           "Broken by" counts the messages, pull requests and documents that go against the decision. "Replaced" means a newer decision took its place.
+          "Official" means the person who owns the area decided it, "Proposed" is not agreed yet, and "Claim" is something someone said without the
+          standing to decide it.
         </p>
       )}
     </main>

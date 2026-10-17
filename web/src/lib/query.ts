@@ -24,6 +24,9 @@ export const q = {
   health: () => queryOptions({ queryKey: ['health'], queryFn: api.health, staleTime: 60_000, retry: 6 }),
   activity: () => queryOptions({ queryKey: ['activity'], queryFn: api.activity, refetchInterval: 2000, staleTime: 0 }),
   alerts: () => queryOptions({ queryKey: ['alerts'], queryFn: api.alerts, refetchInterval: 10_000 }),
+  allAlerts: () => queryOptions({ queryKey: ['alerts', 'all'], queryFn: api.allAlerts }),
+  // 404 until the backend with /api/stats is deployed; the home page then counts from the lists
+  stats: () => queryOptions({ queryKey: ['stats'], queryFn: api.stats, retry: (n: number, e: unknown) => shouldRetry(n, e) }),
   decisions: () => queryOptions({ queryKey: ['decisions'], queryFn: api.decisions }),
   decision: (id: string) => queryOptions({ queryKey: ['decision', id], queryFn: () => api.decision(id) }),
   briefing: (persona: Persona, since: string) =>
@@ -37,4 +40,6 @@ export const q = {
 
 /** After anything that writes to the record. */
 export const invalidateRecord = () =>
-  Promise.all([['alerts'], ['decisions'], ['decision'], ['activity'], ['briefing']].map(queryKey => queryClient.invalidateQueries({ queryKey })))
+  Promise.all(
+    [['alerts'], ['stats'], ['decisions'], ['decision'], ['activity'], ['briefing']].map(queryKey => queryClient.invalidateQueries({ queryKey })),
+  )

@@ -79,6 +79,8 @@ export const api = {
   decisions: () => call(z.array(S.Decision), 'GET', '/api/decisions'),
   decision: (d: string) => call(S.DecisionDetail, 'GET', `/api/decisions/${id(d)}`),
   alerts: () => call(z.array(S.Alert), 'GET', '/api/alerts?status=open'),
+  allAlerts: () => call(z.array(S.Alert), 'GET', '/api/alerts'),
+  stats: () => call(S.Stats, 'GET', '/api/stats'),
   resolve: (a: string, action: S.ResolveAction) => call(S.Alert, 'POST', `/api/alerts/${id(a)}/resolve`, { action }),
   source: (s: string) => call(S.Source, 'GET', `/api/sources/${id(s)}`),
   activity: () => call(z.array(S.Activity), 'GET', '/api/activity'),

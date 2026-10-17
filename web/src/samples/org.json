@@ -1,0 +1,117 @@
+{
+ "Anika Rao": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": "Mei Tan"
+ },
+ "Mei Tan": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Haruto Sato": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": null
+ },
+ "Aisha Rahman": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Pranav Menon": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": null
+ },
+ "Linh Nguyen": {
+  "reports_to": "Mei Tan",
+  "level": "lead",
+  "successor": null
+ },
+ "Jiwon Park": {
+  "reports_to": "Mei Tan",
+  "level": "lead",
+  "successor": null
+ },
+ "Siti Nuraini": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Arjun Desai": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Yuki Mori": {
+  "reports_to": "Aisha Rahman",
+  "level": "lead",
+  "successor": null
+ },
+ "Nur Aziz": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Chen Wei": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": null
+ },
+ "Kavya Iyer": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": null
+ },
+ "Daniel Lim": {
+  "reports_to": "Siti Nuraini",
+  "level": "ic",
+  "successor": null
+ },
+ "Thao Tran": {
+  "reports_to": "Aisha Rahman",
+  "level": "ic",
+  "successor": null
+ },
+ "Ravi Perera": {
+  "reports_to": "Siti Nuraini",
+  "level": "ic",
+  "successor": "Siti Nuraini"
+ },
+ "Amina Yusuf": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Tomoko Ito": {
+  "reports_to": "Linh Nguyen",
+  "level": "ic",
+  "successor": "Linh Nguyen"
+ },
+ "Farah Khan": {
+  "reports_to": "Arjun Desai",
+  "level": "lead",
+  "successor": null
+ },
+ "Budi Santoso": {
+  "reports_to": "Mei Tan",
+  "level": "ic",
+  "successor": null
+ },
+ "Devika Fernando": {
+  "reports_to": "Nur Aziz",
+  "level": "lead",
+  "successor": null
+ },
+ "Nandini Wijaya": {
+  "reports_to": "Hana Okafor",
+  "level": "head",
+  "successor": null
+ },
+ "Hana Okafor": {
+  "reports_to": null,
+  "level": "exec",
+  "successor": null
+ }
+}

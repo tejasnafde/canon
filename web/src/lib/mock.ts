@@ -54,6 +54,8 @@ const dec = (d: Partial<Decision> & Pick<Decision, 'id' | 'statement' | 'owner' 
   quotes: [],
   created_by: 'human',
   ...d,
+  authority: d.authority ?? 'official',
+  effective_at: d.effective_at ?? null,
 })
 
 const decisions: Decision[] = [
@@ -256,11 +258,62 @@ let activity: Activity[] = [
   },
 ]
 
+const org = { reports_to: null, level: 'ic' as const, successor: null, discord_username: null }
 const people: Person[] = [
-  { id: 'mei-tan', name: 'Mei Tan', role: 'Engineering manager', team: 'Platform', status: 'active', left_at: null },
-  { id: 'nur-aziz', name: 'Nur Aziz', role: 'Finance lead', team: 'Finance', status: 'active', left_at: null },
-  { id: 'jiwon-park', name: 'Jiwon Park', role: 'Security engineer', team: 'Security', status: 'active', left_at: null },
-  { id: 'anika-rao', name: 'Anika Rao', role: 'Staff platform engineer', team: 'Platform', status: 'left', left_at: '2026-06-30T09:00:00Z' },
+  {
+    ...org,
+    id: 'hana-okafor',
+    name: 'Hana Okafor',
+    role: 'Chief executive officer',
+    team: 'Leadership',
+    status: 'active',
+    left_at: null,
+    level: 'exec',
+  },
+  {
+    ...org,
+    id: 'mei-tan',
+    name: 'Mei Tan',
+    role: 'Engineering manager',
+    team: 'Platform',
+    status: 'active',
+    left_at: null,
+    reports_to: 'hana-okafor',
+    level: 'head',
+  },
+  {
+    ...org,
+    id: 'nur-aziz',
+    name: 'Nur Aziz',
+    role: 'Finance lead',
+    team: 'Finance',
+    status: 'active',
+    left_at: null,
+    reports_to: 'hana-okafor',
+    level: 'head',
+  },
+  {
+    ...org,
+    id: 'jiwon-park',
+    name: 'Jiwon Park',
+    role: 'Security engineer',
+    team: 'Security',
+    status: 'active',
+    left_at: null,
+    reports_to: 'mei-tan',
+    level: 'lead',
+  },
+  {
+    ...org,
+    id: 'anika-rao',
+    name: 'Anika Rao',
+    role: 'Staff platform engineer',
+    team: 'Platform',
+    status: 'left',
+    left_at: '2026-06-30T09:00:00Z',
+    reports_to: 'mei-tan',
+    successor: 'mei-tan',
+  },
 ]
 
 const cite = (s: Source, quote: string, decision_id: string | null): Citation => ({
@@ -468,6 +521,15 @@ const evalReport: EvalReport = {
   p50_ms: 1300,
   p95_ms: 3900,
   notes: ['Mock numbers. The real report comes from the last committed eval run.'],
+  health_decisions_stored: 10,
+  health_untraceable: 0,
+  health_duplicates: 0,
+  health_checkpoints: 3,
+  health_checkpoints_correct: 3,
+  health_chains: 1,
+  health_chains_correct: 1,
+  authority_cases: 12,
+  authority_correct: 12,
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -493,7 +555,16 @@ export async function mockApi(method: string, path: string, raw: unknown): Promi
   const p = path.split('?')[0] ?? ''
   if (p === '/health') return { ok: true, model: 'gemini-3.5-flash-lite' }
   if (p === '/api/activity') return activity
-  if (p === '/api/alerts') return alerts.filter(a => a.status === 'open')
+  if (p === '/api/alerts') return path.includes('status=open') ? alerts.filter(a => a.status === 'open') : alerts
+  if (p === '/api/stats')
+    return {
+      sources: sources.length,
+      decisions: decisions.length,
+      decisions_official: decisions.filter(d => d.authority === 'official').length,
+      stale_docs: alerts.filter(a => a.kind === 'stale_doc' && a.status === 'open').length,
+      open_alerts: alerts.filter(a => a.status === 'open').length,
+      people: people.length,
+    }
   if (p === '/api/people') return people
   if (p === '/api/eval') return evalReport
   if (p === '/api/decisions') return decisions

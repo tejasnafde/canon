@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
+import { Explanation, usePeople } from '@/components/people'
 import { Avatar, Bar, ErrorState, TextSkeleton } from '@/components/states'
+import { AUTHORITY_WORD } from '@/lib/org'
 import { q } from '@/lib/query'
 import { actorName, breaksByDecision, fmtDate, fmtLong, quoteFrom, srcLine } from '@/lib/record'
 import type { Alert, DecisionDetail } from '@/lib/schemas'
@@ -38,9 +40,10 @@ export default function DecisionPage() {
 
 function Detail({ d }: { d: DecisionDetail }) {
   const dec = d.decision
-  const people = useQuery(q.people())
+  const people = usePeople()
   const activity = useQuery(q.activity())
-  const role = people.data?.find(p => p.name === dec.owner)?.role.toLowerCase()
+  const owner = people.data?.find(p => p.name === dec.owner)
+  const role = owner?.role.toLowerCase()
   const where = d.sources.find(s => s.id === dec.quotes[0]?.source_id)
   const breaking = breaksByDecision(d.alerts).get(dec.id) ?? []
   const replaces = d.timeline.filter(t => dec.supersedes.includes(t.decision_id))
@@ -68,13 +71,20 @@ function Detail({ d }: { d: DecisionDetail }) {
           <span className="label">Owner</span>
           <span className="person">
             <Avatar name={dec.owner} small />
-            {dec.owner}
-            {role ? `, ${role}` : ''}
+            <span>
+              {owner ? <Link to={`/org/${owner.id}`}>{dec.owner}</Link> : dec.owner}
+              {role ? `, ${role}` : ''}
+            </span>
           </span>
+        </div>
+        <div>
+          <span className="label">Standing</span>
+          {AUTHORITY_WORD[dec.authority]}
         </div>
         <div>
           <span className="label">Decided</span>
           {fmtLong(dec.ts)}
+          {dec.effective_at && <span className="block muted">Effective {fmtLong(dec.effective_at)}</span>}
         </div>
         {where && (
           <div>
@@ -186,7 +196,9 @@ function Detail({ d }: { d: DecisionDetail }) {
 function Breaker({ a }: { a: Alert }) {
   const src = useQuery({ ...q.source(a.source_id ?? ''), enabled: !!a.source_id })
   const quote = quoteFrom(a, a.source_id)
-  const doc = a.kind === 'stale_doc'
+  const unverified = a.explanation.startsWith('Unverified:')
+  const outdated = a.explanation.startsWith('Outdated copy:')
+  const doc = a.kind === 'stale_doc' || unverified
   const title = src.data?.title
   return (
     <li className={doc ? 'doc' : undefined}>
@@ -194,6 +206,10 @@ function Breaker({ a }: { a: Alert }) {
         <span className={doc ? 'dot hollow' : 'dot'} aria-hidden />
         {src.isPending && a.source_id ? (
           <Bar w="50%" h={20} style={{ display: 'inline-block' }} />
+        ) : unverified ? (
+          `${title ?? 'A message'} makes a claim against it that nobody has confirmed.`
+        ) : outdated ? (
+          `${title ?? 'A document'} is an older copy. Canon did not apply it.`
         ) : doc ? (
           `${title ?? 'A document'} still gives the old rule.`
         ) : a.kind === 'premise_changed' ? (
@@ -205,7 +221,9 @@ function Breaker({ a }: { a: Alert }) {
         )}
       </h3>
       {quote && <blockquote className="q">"{quote}"</blockquote>}
-      <p>{a.explanation}</p>
+      <p>
+        <Explanation a={a} />
+      </p>
       {src.data && (
         <p className="src">
           {srcLine(src.data)}, {src.data.author}

@@ -56,6 +56,8 @@ export const Decision = z.object({
   superseded_by: nul(z.string()),
   quotes: z.array(Quote),
   created_by: z.string().default('human'),
+  authority: z.enum(['official', 'proposed', 'claim']).default('official'),
+  effective_at: nul(ts),
 })
 
 export const Alert = z.object({
@@ -94,6 +96,10 @@ export const Person = z.object({
   team: z.string(),
   status: z.enum(['active', 'left']).default('active'),
   left_at: nul(ts),
+  reports_to: nul(z.string()),
+  level: z.enum(['ic', 'lead', 'head', 'exec']).default('ic'),
+  successor: nul(z.string()),
+  discord_username: nul(z.string()),
 })
 
 export const Citation = z.object({
@@ -187,6 +193,24 @@ export const EvalReport = z.object({
   p50_ms: z.number(),
   p95_ms: z.number(),
   notes: z.array(z.string()).default([]),
+  health_decisions_stored: nul(z.number()),
+  health_untraceable: nul(z.number()),
+  health_duplicates: nul(z.number()),
+  health_checkpoints: nul(z.number()),
+  health_checkpoints_correct: nul(z.number()),
+  health_chains: nul(z.number()),
+  health_chains_correct: nul(z.number()),
+  authority_cases: nul(z.number()),
+  authority_correct: nul(z.number()),
+})
+
+export const Stats = z.object({
+  sources: z.number(),
+  decisions: z.number(),
+  decisions_official: z.number(),
+  stale_docs: z.number(),
+  open_alerts: z.number(),
+  people: z.number(),
 })
 
 export const Health = z.object({ ok: z.boolean(), model: z.string().default('') })
@@ -215,3 +239,6 @@ export type Briefing = z.infer<typeof Briefing>
 export type CheckResult = z.infer<typeof CheckResult>
 export type DecisionDetail = z.infer<typeof DecisionDetail>
 export type EvalReport = z.infer<typeof EvalReport>
+export type Stats = z.infer<typeof Stats>
+export type Authority = Decision['authority']
+export type Level = Person['level']

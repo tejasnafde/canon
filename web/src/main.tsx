@@ -31,6 +31,9 @@ const router = createBrowserRouter([
           { path: '/ask', lazy: page(() => import('@/pages/AskPage')) },
           { path: '/decisions', lazy: page(() => import('@/pages/DecisionListPage')) },
           { path: '/decisions/:id', lazy: page(() => import('@/pages/DecisionPage')) },
+          { path: '/org', lazy: page(() => import('@/pages/OrgPage')) },
+          { path: '/org/:id', lazy: page(() => import('@/pages/PersonPage')) },
+          { path: '/people', element: <Navigate to="/org" replace /> },
           { path: '/benchmark', lazy: page(() => import('@/pages/BenchmarkPage')) },
           // old addresses from the first build
           { path: '/agents', element: <Navigate to="/agent" replace /> },

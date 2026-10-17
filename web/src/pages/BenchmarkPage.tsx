@@ -71,6 +71,69 @@ export function rows(r: EvalReport): { key: string; fig: ReactNode; title: strin
   return out
 }
 
+/** Memory health: the labelled replay of data/gold/authority_cases.json. Rows appear only for fields the report carries. */
+export function healthRows(r: EvalReport): { key: string; fig: ReactNode; title: string; body: ReactNode }[] {
+  const out = []
+  const stored = r.health_decisions_stored
+  if (stored != null && r.health_untraceable != null) {
+    const good = stored - r.health_untraceable
+    out.push({
+      key: 'health_untraceable',
+      fig: <Frac a={good} b={stored} />,
+      title: r.health_untraceable === 0 ? `All ${stored} stored decisions are real` : `${good} of ${stored} stored decisions are real`,
+      body: `Each stored decision was traced back to one the test set planted. ${r.health_untraceable === 0 ? 'Nothing was invented' : `${r.health_untraceable} matched nothing`}.`,
+    })
+  }
+  if (r.health_duplicates != null)
+    out.push({
+      key: 'health_duplicates',
+      fig: <>{r.health_duplicates}</>,
+      title:
+        r.health_duplicates === 0
+          ? 'No decision stored twice'
+          : `${r.health_duplicates} decision${r.health_duplicates === 1 ? '' : 's'} stored twice`,
+      body: 'When the same rule came in from several places, Canon kept one decision and added the new quote to it.',
+    })
+  if (r.health_checkpoints != null && r.health_checkpoints_correct != null)
+    out.push({
+      key: 'health_checkpoints_correct',
+      fig: <Frac a={r.health_checkpoints_correct} b={r.health_checkpoints} />,
+      title: `Right set of rules at ${r.health_checkpoints_correct} of ${r.health_checkpoints} points in time`,
+      body: 'We stopped the replay at the end of each quarter and compared the decisions in force with the answer key.',
+    })
+  if (r.health_chains != null && r.health_chains_correct != null)
+    out.push({
+      key: 'health_chains_correct',
+      fig: <Frac a={r.health_chains_correct} b={r.health_chains} />,
+      title: `Kept the history of ${r.health_chains_correct} of ${r.health_chains} rules that changed over time`,
+      body: 'Each new version points back at the one it replaced, in the right order.',
+    })
+  if (r.authority_cases != null && r.authority_correct != null)
+    out.push({
+      key: 'authority_correct',
+      fig: <Frac a={r.authority_correct} b={r.authority_cases} />,
+      title: `Told official decisions from proposals and claims in ${r.authority_correct} of ${r.authority_cases} cases`,
+      body: 'A guest or someone outside the area cannot overrule an official decision. Canon flags it as unverified and names who should confirm it. An old copy of a document does not undo a newer rule.',
+    })
+  return out
+}
+
+function Results({ list }: { list: ReturnType<typeof rows> }) {
+  return (
+    <ol className="results">
+      {list.map(x => (
+        <li key={x.key} data-key={x.key}>
+          <div className="fig">{x.fig}</div>
+          <div>
+            <h3>{x.title}</h3>
+            <p>{x.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 function Frac({ a, b }: { a: number; b: number }) {
   return (
     <>
@@ -98,17 +161,17 @@ export default function BenchmarkPage() {
         </div>
       ) : (
         <>
-          <ol className="results">
-            {rows(r).map(x => (
-              <li key={x.key} data-key={x.key}>
-                <div className="fig">{x.fig}</div>
-                <div>
-                  <h3>{x.title}</h3>
-                  <p>{x.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <Results list={rows(r)} />
+          {healthRows(r).length > 0 && (
+            <div className="section">
+              <h2>Memory health</h2>
+              <p className="lede" style={{ marginTop: 12 }}>
+                A memory is only useful if it stays clean. We replayed a small labelled history in date order, with real Gemini calls, and checked
+                what Canon kept.
+              </p>
+              <Results list={healthRows(r)} />
+            </div>
+          )}
           <p className="small muted" style={{ marginTop: 24 }}>
             Model: {MODEL[r.model] ?? r.model} on Vertex AI, in Mumbai (asia-south1). The test set and the scoring script are in the GitHub repo.
           </p>

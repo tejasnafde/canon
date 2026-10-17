@@ -7,9 +7,16 @@ import { useTitle } from '@/lib/title'
 
 export default function HomePage() {
   useTitle()
+  const stats = useQuery(q.stats())
+  // until /api/stats is deployed (404), count from the lists as before
+  const fallback = stats.isError
   const decisions = useQuery(q.decisions())
-  const alerts = useQuery(q.alerts())
-  const n = decisions.data?.length
+  const alerts = useQuery({ ...q.alerts(), enabled: fallback })
+  const n = stats.data?.decisions ?? decisions.data?.length
+  const sources = stats.data?.sources ?? (fallback && decisions.data ? quotedSourceCount(decisions.data) : undefined)
+  const official = stats.data?.decisions_official ?? (fallback ? decisions.data?.filter(d => d.authority === 'official').length : undefined)
+  const stale = stats.data?.stale_docs ?? (fallback && alerts.data ? staleDocIds(alerts.data).length : undefined)
+  const failed = fallback && (decisions.isError || alerts.isError)
 
   const fig = (value: number | undefined, label: string, failed: boolean) => (
     <div>
@@ -37,11 +44,16 @@ export default function HomePage() {
           </p>
         </div>
         <div>
-          <div className="figures" aria-busy={decisions.isPending || alerts.isPending}>
-            {fig(decisions.data && quotedSourceCount(decisions.data), 'sources quoted', decisions.isError)}
-            {fig(n, 'decisions found', decisions.isError)}
-            {fig(alerts.data && staleDocIds(alerts.data).length, 'documents now out of date', alerts.isError)}
+          <div className="figures" aria-busy={sources === undefined || official === undefined || stale === undefined}>
+            {fig(sources, stats.data ? 'items read' : 'sources quoted', failed)}
+            {fig(official, 'official decisions', failed)}
+            {fig(stale, 'documents now out of date', failed)}
           </div>
+          {n !== undefined && official !== undefined && n > official && (
+            <p className="small muted" style={{ marginTop: 14 }}>
+              {n} decisions on record in all. The other {n - official} are proposals or claims nobody has confirmed yet.
+            </p>
+          )}
           <p className="demo">
             Northwind Labs is a made-up 60-person logistics software company. Canon read two years of its Slack, meetings, wiki pages and pull
             requests, January 2025 to October 2026.
