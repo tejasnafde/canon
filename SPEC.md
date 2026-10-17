@@ -69,7 +69,9 @@ All docs carry `workspace: str` and `created_at: timestamp`.
 - `activity/{id}`: `actor` (e.g. `human:web`, `agent:claude-code`, `agent:pm-bot`),
   `action` (ingest|ask|check|record|briefing|resolve), `summary`, `ref_ids: [id]`, `verdict`.
 - `connector_state/{id}`: per-channel Discord cursor, daily and per-user ingest counters.
-- `people/{id}`: `name`, `role`, `team`, `status` (active|left), `left_at`.
+- `people/{id}`: `name`, `role`, `team`, `status` (active|left), `left_at`, `reports_to`, `level` (ic|lead|head|exec), `successor`, `discord_username`.
+  Org tree source: `data/people.json`. Topic owners: `data/org/topics.json`. Channel weights: `data/org/channels.json`.
+  Note: `data/build_corpus.py` must preserve these org fields when it rewrites people.json.
 
 Vector indexes: `chunks.embedding` and `decisions.embedding`, 768 dims, COSINE, with
 `workspace` as a prefilter field.
