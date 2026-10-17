@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Ingest</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .layout { grid-template-columns: 520px 1fr; align-items: start; gap: 32px; }
+  .samples { display: grid; gap: 8px; }
+  .sample { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; border: 1px solid var(--rule); background: var(--sheet); padding: 9px 12px; font-size: 14px; }
+  .sample.on { border: 2px solid var(--ink); padding: 8px 11px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); background: var(--sheet); }
+  .stats > div { padding: 12px 16px; }
+  .stats > div + div { border-left: 1px solid var(--rule); }
+  .stats b { font-family: var(--serif); font-size: 34px; font-weight: 500; line-height: 1; display: block; margin-top: 4px; letter-spacing: -.02em; }
+  .dec { display: grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 16px 0; }
+  .rel { font-family: var(--mono); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; padding: 6px 8px; text-align: center; align-self: start; }
+  .rel.new { background: var(--ink); color: var(--sheet); }
+  .rel.same { border: 1px solid var(--rule); color: var(--ink-3); }
+  .rel.update { background: var(--warn-bg); color: var(--warn); }
+  .rel.contradiction { background: var(--signal); color: #fff; }
+  .rel small { display: block; font-size: 10px; opacity: .8; margin-top: 2px; letter-spacing: .04em; }
+  .rej { font-family: var(--serif); font-size: 15px; color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--signal); }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="grid layout">
+    <section>
+      <div class="label">Ingest / paste anything: Slack, transcript, wiki, PR, email</div>
+      <h1 class="h1" style="font-size:36px;margin-top:8px">Feed the record.</h1>
+      <div class="label" style="margin:18px 0 8px">Samples</div>
+      <div class="samples">
+        <a class="sample on" href="#"><span class="tag ink" style="text-align:center">meeting</span>Launch sync, 14 Oct: Pro moves to 17 Nov at $59</a>
+        <a class="sample" href="#"><span class="tag line" style="text-align:center">pr</span>PR #412: Add weekly release cron</a>
+        <a class="sample" href="#"><span class="tag line" style="text-align:center">wiki</span>Release process (last edited Nov 2025)</a>
+      </div>
+      <div class="row" style="margin:18px 0 8px;gap:8px"><span class="label">Source</span>
+        <span class="chip"><span class="k">kind</span> meeting</span><span class="chip"><span class="k">author</span> Sana Kapoor</span><span class="chip"><span class="k">ts</span> 2026-10-14</span></div>
+      <textarea class="input" rows="15">[14 Oct 2026, Launch sync, 11:00 IST]
+Sana Kapoor (PM): Quick one. Design partners need two
+more weeks on bulk route import, so we are moving the
+Route Optimizer Pro launch from 3 Nov to 17 Nov.
+Lena Fischer (Marketing): That pushes the press embargo.
+Sana: Yes. And after the partner interviews we are
+pricing Pro at $59 per seat, not $49. Annual plans get
+two months free.
+Arjun Mehta (Eng): So feature freeze moves to 10 Nov?
+Sana: Correct, feature freeze is 10 Nov.
+Lena: I will update the launch deck by Friday.</textarea>
+      <div class="row" style="margin-top:12px;justify-content:space-between"><span class="label">Writes to your private workspace only</span><button class="btn">Ingest and reconcile</button></div>
+    </section>
+
+    <section>
+      <div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="label ink">Result / Launch sync, 14 Oct</span><span class="label">gemini-3.5-flash-lite / structured output</span></div>
+      <div class="stats">
+        <div><span class="label">Decisions</span><b class="tnum">4</b></div>
+        <div><span class="label">Quotes verified</span><b class="tnum">5<span style="font-size:20px;color:var(--ink-3)"> / 6</span></b></div>
+        <div><span class="label">Alerts raised</span><b class="tnum" style="color:var(--signal)">2</b></div>
+        <div><span class="label">Latency</span><b class="tnum">3.8<span style="font-size:20px"> s</span></b></div>
+      </div>
+
+      <div class="sec" style="margin-top:22px"><h2 class="h3">Extracted and reconciled</h2><span class="label">against 212 decisions on record</span></div>
+      <div class="rows">
+        <div class="dec"><div class="rel update">update<small>supersedes dec_31c0</small></div><div>
+          <div class="h3">Route Optimizer Pro launches 17 Nov 2026.</div>
+          <div class="small muted" style="margin-top:2px">Was 3 Nov (Sana Kapoor, 2 Sep). Design partners need bulk route import.</div>
+          <div class="q" style="font-size:15px;margin-top:8px">"we are moving the Route Optimizer Pro launch from 3 Nov to 17 Nov" <span class="ok-mark" style="margin-left:6px">verified</span></div>
+        </div></div>
+        <div class="dec"><div class="rel contradiction">contradiction<small>with dec_2b77</small></div><div>
+          <div class="h3">Pro is priced at $59 per seat.</div>
+          <div class="small muted" style="margin-top:2px">The pricing page decision (Finance, Aug) says $49. No one marked it superseded.</div>
+          <div class="q red" style="font-size:15px;margin-top:8px">"we are pricing Pro at $59 per seat, not $49" <span class="ok-mark" style="margin-left:6px">verified</span></div>
+        </div></div>
+        <div class="dec"><div class="rel new">new</div><div>
+          <div class="h3">Annual plans get two months free.</div>
+          <div class="q" style="font-size:15px;margin-top:8px">"Annual plans get two months free." <span class="ok-mark" style="margin-left:6px">verified</span></div>
+        </div></div>
+        <div class="dec"><div class="rel same">same<small>as dec_9e14</small></div><div>
+          <div class="h3" style="color:var(--ink-2)">Feature freeze is 10 Nov.</div>
+          <div class="small muted" style="margin-top:2px">Already recorded by pm-bot on 14 Oct. Quote added as more evidence.</div>
+        </div></div>
+        <div class="dec"><div class="rel" style="color:var(--signal);border:1px dashed var(--signal)">rejected</div><div>
+          <div class="rej">"Lena will ship the new deck by Friday 17 Oct."</div>
+          <div class="small muted" style="margin-top:4px">Quote not found in the source text, so the claim was dropped. Canon never stores a quote it cannot match word for word.</div>
+        </div></div>
+      </div>
+
+      <div class="sec" style="margin-top:18px"><h2 class="h3">Alerts raised</h2></div>
+      <div class="rows">
+        <div class="row" style="padding:10px 0;gap:10px"><span class="tag red">contradiction</span><span>Pricing: $59 (launch sync) vs $49 (pricing decision, Aug)</span><span class="tag ghost" style="margin-left:auto">high</span></div>
+        <div class="row" style="padding:10px 0;gap:10px"><span class="tag redsoft">stale doc</span><span>Launch deck still says "Pro launches 3 Nov at $49"</span><span class="tag ghost" style="margin-left:auto">medium</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+</body></html>

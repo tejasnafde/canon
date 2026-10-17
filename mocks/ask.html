@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Ask why</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .layout { grid-template-columns: 1fr 1fr; align-items: start; gap: 32px; }
+  .askbox { display: flex; border: 2px solid var(--ink); background: var(--sheet); }
+  .askbox input { flex: 1; border: 0; background: transparent; font-family: var(--serif); font-size: 26px; padding: 14px 18px; color: var(--ink); outline: none; }
+  .askbox .btn { border: 0; font-size: 15px; padding: 0 24px; }
+  .ans { font-family: var(--serif); font-size: 21px; line-height: 1.5; }
+  sup.c { font-family: var(--mono); font-size: 11px; background: var(--ink); color: var(--sheet); padding: 1px 5px; margin-left: 2px; vertical-align: 6px; }
+  .cite { display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 12px 0; }
+  .cite .n { font-family: var(--mono); font-size: 12px; background: var(--ink); color: var(--sheet); height: 22px; text-align: center; line-height: 22px; }
+  .tl2 > div { display: grid; grid-template-columns: 104px 124px 1fr; gap: 12px; justify-items: start; padding: 10px 0; align-items: baseline; font-size: 14.5px; }
+  .tl2 > div + div { border-top: 1px dashed var(--rule); }
+  .refuse { border: 2px dashed var(--ink-3); background: transparent; }
+  .sugg { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .sugg a { font-size: 13.5px; border: 1px solid var(--rule); background: var(--sheet); padding: 5px 10px; }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="label">Ask why / answers only from the record, every claim cited</div>
+  <div class="askbox" style="margin-top:12px"><input value="Why don't we deploy on Fridays?"><button class="btn">Ask</button></div>
+  <div class="sugg"><span class="label" style="align-self:center">Try</span><a href="#">Why did Pro pricing change to $59?</a><a href="#">Who decided to pin Node 20?</a><a href="#">What did Marcus decide about release trains?</a><a href="#">What is our policy on remote offsites?</a></div>
+
+  <div class="grid layout" style="margin-top:28px">
+    <section class="sheet pad">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px"><span class="label ink">Answer / grounded in 3 sources</span><span class="label tnum">1.4 s</span></div>
+      <p class="ans">Because a Friday deploy caused the worst outage of the year. On 13 March a billing migration took route planning down for EU customers for 3 h 12 m, and the one weekend on-call engineer could not roll it back alone<sup class="c">1</sup>. In the postmortem Priya Raman ruled that nothing goes to production on a Friday<sup class="c">2</sup>. Since June, Sev1 hotfixes are allowed if the on-call lead signs off<sup class="c">3</sup>.</p>
+      <p class="small muted" style="margin-top:12px">Note: the "Release process" wiki page says the opposite. Canon has flagged it as stale.</p>
+
+      <div class="sec" style="margin-top:22px"><h2 class="h3">Sources</h2><span class="label">quotes verified word for word</span></div>
+      <div class="rows">
+        <div class="cite"><span class="n">1</span><div><div class="q" style="font-size:15px;border:0;padding:0">"rollback took 3h12m because only one person was on call and the migration had no down script"</div><div class="row small muted" style="margin-top:4px;gap:8px"><span class="chip"><span class="k">slack</span> #incidents</span>Dev Okafor / 13 Mar 2026</div></div></div>
+        <div class="cite"><span class="n">2</span><div><div class="q" style="font-size:15px;border:0;padding:0">"Starting Monday, nothing goes to production on a Friday."</div><div class="row small muted" style="margin-top:4px;gap:8px"><span class="chip"><span class="k">meeting</span> INC-2291 postmortem</span>Priya Raman / 16 Mar 2026</div></div></div>
+        <div class="cite"><span class="n">3</span><div><div class="q" style="font-size:15px;border:0;padding:0">"Sev1 hotfixes can go out on Fridays if the on-call lead signs off in the ticket."</div><div class="row small muted" style="margin-top:4px;gap:8px"><span class="chip"><span class="k">email</span> Re: Friday rule exceptions</span>Priya Raman / 2 Jun 2026</div></div></div>
+      </div>
+    </section>
+
+    <div class="grid" style="gap:28px">
+      <section>
+        <div class="sec"><h2 class="h3">Decision timeline</h2><a class="label" href="decision.html" style="color:var(--link)">open decision</a></div>
+        <div class="tl2">
+          <div><span class="label tnum">4 Nov 2025</span><span class="tag ghost">superseded</span><span>Weekly release train ships Fridays 16:00 (Marcus Lee)</span></div>
+          <div><span class="label tnum">16 Mar 2026</span><span class="tag ink">new</span><span>No production deploys on Fridays</span></div>
+          <div><span class="label tnum">2 Jun 2026</span><span class="tag amber">update</span><span>Sev1 hotfix exception with on-call lead sign-off</span></div>
+          <div><span class="label tnum">17 Oct 2026</span><span class="tag redsoft">contradiction</span><span>PR #412 Friday cron, blocked by agent check</span></div>
+        </div>
+      </section>
+
+      <section class="refuse pad">
+        <div class="label" style="margin-bottom:10px">Another question</div>
+        <div class="h2" style="font-size:24px">"What is our policy on remote offsites?"</div>
+        <div class="row" style="margin-top:16px;gap:14px;align-items:flex-start">
+          <span class="tag line" style="flex:none">refused</span>
+          <div>
+            <p class="ans" style="font-size:19px">I do not know. Nothing in the record covers this.</p>
+            <p class="small muted" style="margin-top:6px">Closest match scored 0.41, below the 0.62 answer threshold. Canon will not guess. If someone decides this, paste it into Ingest and it becomes part of the record.</p>
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;gap:8px"><a class="btn sm ghost" href="ingest.html">Record a decision</a><a class="btn sm ghost" href="#">Ask a person: Lena Fischer</a></div>
+      </section>
+    </div>
+  </div>
+</main>
+</body></html>
