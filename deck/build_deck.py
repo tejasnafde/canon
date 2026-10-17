@@ -20,7 +20,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Emu, Inches, Pt
 
 ROOT = Path(__file__).resolve().parent.parent
-TEAM_NAME = "Canon"  # to be confirmed by the lead
+TEAM_NAME = "Localhost"  # to be confirmed by the lead
 LEADER = "Tejas Nafde"
 PROBLEM = "Future of Work & Enterprise Productivity"
 APP_URL = "https://canon-tn07.web.app"
