@@ -255,10 +255,11 @@ def rank(decs: list[dict], alerts: list[dict], kinds: dict[str, str], persona: s
 
 
 def who_to_ask(persona: str, people: list[dict], decs: list[dict]) -> list[Person]:
-    """Up to 4 active people: on a team relevant to the persona first, then by decisions owned."""
+    """Up to 4 active people: team in the persona's teams, then a team or role match, then by decisions owned."""
     owned = lambda p: sum(1 for d in decs if p["name"].split()[0].lower() in d["owner"].lower())  # noqa: E731
+    fit = lambda p: 0 if p.get("team", "").lower() in PERSONAS[persona]["teams"] else 1 if on_team(persona, p) else 2  # noqa: E731
     act = [p for p in people if p["status"] == "active"]
-    return [Person(**p) for p in sorted(act, key=lambda p: (not on_team(persona, p), -owned(p), p["name"]))[:4]]
+    return [Person(**p) for p in sorted(act, key=lambda p: (fit(p), -owned(p), p["name"]))[:4]]
 
 
 class Prose(BaseModel):
