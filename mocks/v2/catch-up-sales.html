@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: what changed while I was away</title><link rel="stylesheet" href="v2.css">
+<style>
+.picker { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; margin-top: 26px; }
+.picker label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; }
+.todo { display: grid; grid-template-columns: 34px 1fr 170px; gap: 16px; align-items: start; }
+.todo .rank { font: 500 24px var(--serif); color: var(--ink-2); }
+.todo h3 { font-size: 19px; } .todo .why { margin-top: 4px; font-size: 15px; color: var(--ink-2); }
+.todo .why b { color: var(--ink); font-weight: 600; }
+.summary { font: 400 22px/1.45 var(--serif); background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--ink); padding: 20px 24px; border-radius: 4px; }
+@media (max-width: 760px) { .picker { grid-template-columns: 1fr; } .todo { grid-template-columns: 26px 1fr; } .todo .score { grid-column: 2; } }
+</style></head>
+<body data-nav="home">
+<main class="wrap">
+  <a href="home.html" class="small">&larr; Back to the stories</a>
+  <h1 style="margin-top:12px">What changed while you were away?</h1>
+  <p class="lede">Pick your role and how long you were gone. Canon reads everything that happened and tells you what matters to you, most urgent first.</p>
+  <div class="picker">
+    <div><label>My role</label><div class="pill-row"><span class="pill">Engineer</span><span class="pill">Product</span><span class="pill on">Sales &amp; Support</span><span class="pill">Security &amp; Compliance</span><span class="pill">Finance &amp; Ops</span><span class="pill">New hire</span></div></div>
+    <div><label>I was away for</label><div class="pill-row"><span class="pill">1 week</span><span class="pill">1 month</span><span class="pill on">Since I joined</span></div></div>
+  </div>
+  <div class="section">
+    <span class="kicker">Sales &amp; Support, joined 1 March 2026</span>
+    <p class="summary" style="margin-top:12px">Route Lens got more expensive and its launch moved, but some customer emails and sales pages still say the old thing. Two customers have already been told something that is no longer true.</p>
+  </div>
+  <div class="section"><h2>Your to-do list</h2><div class="card todo"><div class="rank">1</div><div><h3>Arjun's email to Meridian still promises USD 99. The price is now USD 149.</h3><p class="why"><b>Why this is high:</b> Meridian has not signed yet, so the old price does not apply. Only signed pilots keep USD 99.</p><div class="chips"><span class="chip"><b>Email</b> Meridian renewal: Route Lens line item &middot; 23 Apr 2026</span><span class="chip"><b>Meeting</b> Route Lens commercial reset &middot; 2 Apr 2026</span></div></div>
+<div class="score"><div class="track"><div class="fill hot" style="width:95%"></div></div><span>95</span></div></div><div class="card todo"><div class="rank">2</div><div><h3>Sakura was told Route Lens goes live on 15 April. It now launches on 2 June.</h3><p class="why"><b>Why this is high:</b> the email promised a production SLA on 15 April. Sakura will plan around a date we will not meet.</p><div class="chips"><span class="chip"><b>Email</b> Sakura production enablement date &middot; 10 Apr 2026</span><span class="chip"><b>Meeting</b> Route Lens launch replan &middot; 9 Apr 2026</span></div></div>
+<div class="score"><div class="track"><div class="fill hot" style="width:90%"></div></div><span>90</span></div></div><div class="card todo"><div class="rank">3</div><div><h3>The Route Lens sales FAQ still says USD 99.</h3><p class="why"><b>Why this is high:</b> sales people copy prices from this page. Fix it so the next quote is right.</p><div class="chips"><span class="chip"><b>Wiki</b> Route Lens sales FAQ &middot; 6 Oct 2025</span></div></div>
+<div class="score"><div class="track"><div class="fill hot" style="width:82%"></div></div><span>82</span></div></div><div class="card todo"><div class="rank">4</div><div><h3>The Route Lens launch brief still shows 15 April.</h3><p class="why"><b>Why this is high:</b> an old copy of the launch note already reached Sakura with the wrong date.</p><div class="chips"><span class="chip"><b>Wiki</b> Route Lens launch brief &middot; 13 Oct 2025</span></div></div>
+<div class="score"><div class="track"><div class="fill mid" style="width:76%"></div></div><span>76</span></div></div><div class="card todo"><div class="rank">5</div><div><h3>The new landing page draft says Route Lens "guarantees" arrival times.</h3><p class="why"><b>Why this is on the list:</b> the team agreed to show an estimated range, never a guarantee.</p><div class="chips"><span class="chip"><b>Slack</b> September landing page draft &middot; 3 Sep 2026</span><span class="chip"><b>Slack</b> Arrival confidence copy &middot; 17 Jul 2025</span></div></div>
+<div class="score"><div class="track"><div class="fill mid" style="width:70%"></div></div><span>70</span></div></div><div class="card todo"><div class="rank">6</div><div><h3>Know this rule: in a major outage, send the first customer notice within 30 minutes.</h3><p class="why"><b>Why this is on the list:</b> you may need it on your first on-call. It is fine to say the cause is not known yet.</p><div class="chips"><span class="chip"><b>Meeting</b> Customer incident comms &middot; 19 Feb 2026</span></div></div>
+<div class="score"><div class="track"><div class="fill mid" style="width:60%"></div></div><span>60</span></div></div></div>
+  <p class="small muted" style="margin-top:16px">Score: how urgent this is for you, from 0 to 100. Canon ranks by how serious the rule is, how recent the change is, and how close it is to your work.</p>
+</main>
+<script src="chrome.js"></script>
+</body></html>

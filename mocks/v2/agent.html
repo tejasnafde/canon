@@ -1,0 +1,73 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canon: watch an AI agent get stopped</title><link rel="stylesheet" href="v2.css">
+<style>
+.replay { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+.steps-side ol { list-style: none; }
+.steps-side li { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--rule); font-size: 15px; }
+.steps-side li .num { background: var(--ink); color: var(--sheet); flex: none; }
+.steps-side li.stop .num { background: var(--signal); }
+.verdict-box { border: 1px solid #f29580; border-radius: 6px; padding: 14px 16px; margin-top: 8px; background: #2a1813; }
+.verdict-box .big { font: 600 16px var(--mono); color: #fff; background: var(--signal); padding: 2px 10px; border-radius: 3px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; font-size: 14px; color: var(--ink-2); }
+@media (max-width: 760px) { .replay { grid-template-columns: 1fr; } }
+</style></head>
+<body data-nav="agents">
+<main class="wrap">
+  <h1>Watch an AI agent get stopped.</h1>
+  <p class="lede">AI coding agents now write and ship code on their own. They do not know what your team decided last spring. Canon gives them that memory, and they ask it before they act.</p>
+
+  <div class="replay section">
+    <div class="term">
+      <div class="step"><div class="who"><span class="num">1</span>Developer, in Claude Code</div>
+        Add a job that deploys the dispatch service to production every Friday at 15:00.</div>
+      <div class="step"><div class="who"><span class="num">2</span>Agent asks Canon: is this allowed?</div>
+        <span class="dim">Before I write this, I will check it against the company's decisions.</span>
+        <div class="tool"><span class="amber">canon</span> &middot; check_intent<br>
+          <span class="dim">action:</span> "Deploy the production dispatch service every Friday at 15:00 SGT using a cron job."</div></div>
+      <div class="step"><div class="who"><span class="num">3</span>Canon answers</div>
+        <div class="verdict-box">
+          <span class="big">BLOCK</span>
+          <p style="margin-top:10px">This breaks the decision <b>"No production deploys on Fridays, including scheduled jobs and configuration-only releases."</b></p>
+          <p class="dim" style="margin-top:8px">Owner: Mei Tan. Decided on 9 March 2026, in the INC-042 review meeting.<br>
+          Why: on 6 March a Friday rollout stopped dispatch for 47 minutes. The rollback engineer was on a flight.</p>
+        </div></div>
+      <div class="step"><div class="who"><span class="num">4</span>Agent replies to the developer</div>
+        I did not add this job. Northwind banned production deploys on Fridays after an outage in March, and the ban covers scheduled jobs. <span class="green">I can schedule it for Tuesday or Thursday morning instead. Which one?</span></div>
+    </div>
+    <aside class="steps-side">
+      <span class="kicker">What just happened</span>
+      <ol style="margin-top:10px">
+        <li><span class="num">1</span>A person asks an AI agent to do something normal-looking.</li>
+        <li><span class="num">2</span>Before acting, the agent asks Canon. This is a real tool call, not a script.</li>
+        <li class="stop"><span class="num">3</span>Canon finds the rule, who made it, when, and the outage behind it.</li>
+        <li><span class="num">4</span>The agent stops, explains why, and offers a safe option.</li>
+      </ol>
+      <p class="small muted" style="margin-top:12px">Every check shows up in Canon, so people can see what their agents asked.</p>
+    </aside>
+  </div>
+
+  <div class="section grid2">
+    <div class="card">
+      <h2>Try it yourself</h2>
+      <p class="muted" style="margin:6px 0 14px">Describe something an agent wants to do. Canon tells you if it is allowed.</p>
+      <textarea class="input" style="min-height:84px">Keep the five-minute fleet dashboard cache now that traffic is 3,400 events a second.</textarea>
+      <div class="pill-row" style="margin-top:10px"><span class="pill">Release a config change on Friday</span><span class="pill">Quote a new customer USD 99</span><span class="pill">Deploy on Tuesday morning</span></div>
+      <div style="margin-top:12px"><span class="btn">Check it</span></div>
+      <div class="alert warn" style="margin-top:16px"><span class="badge b-warn">Warn</span>
+        <p style="margin-top:8px">The 5-minute cache was agreed only while traffic stays under 2,000 events a second. That is no longer true, so ask Linh Nguyen before you rely on it.</p>
+        <div class="chips"><span class="chip"><b>Slack</b> Operations dashboard cache &middot; 4 Dec 2025</span></div></div>
+      <div class="legend"><span><span class="badge b-allow">Allow</span> no rule against it</span><span><span class="badge b-warn">Warn</span> check with a person first</span><span><span class="badge b-block">Block</span> breaks a decision</span></div>
+    </div>
+    <div class="card">
+      <h2>Connect your own agent</h2>
+      <p class="muted" style="margin-top:6px">Canon speaks MCP, the standard plug that lets AI assistants use outside tools, like a USB port for AI. One line connects it.</p>
+      <p style="margin-top:16px" class="small"><b>Claude Code</b></p>
+      <code class="line">claude mcp add --transport http canon https://canon.tn07.dev/mcp</code>
+      <p style="margin-top:14px" class="small"><b>Codex</b></p>
+      <code class="line">codex mcp add canon --url https://canon.tn07.dev/mcp</code>
+      <p class="small muted" style="margin-top:16px">Your agent gets six tools: search decisions, ask why, catch me up, check an action, record a decision, and flag a conflict.</p>
+    </div>
+  </div>
+</main>
+<script src="chrome.js"></script>
+</body></html>
