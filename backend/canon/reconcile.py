@@ -61,18 +61,21 @@ async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: 
     return [(d, s) for d, s in hits if s >= min_score and (not active_only or d["status"] == "active")][:k]
 
 
-async def judge(dec: dict, cands: list[tuple[dict, float]]) -> tuple[str, dict | None, str]:
+async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[str, dict | None, str]:
     """Returns (relation, related decision dict or None, explanation)."""
     if not cands:
         return "new", None, "No related decision in the record."
     labels = {f"D{i + 1}": d for i, (d, _) in enumerate(cands)}
     prompt = (
-        f"NEW decision ({utc(dec['ts']).date()}): {dec['statement']}\nRationale: {dec['rationale']}\n\n"
+        f"NEW decision ({utc(dec['ts']).date()}, from {src['kind']} \"{src['title']}\" by {src['author']}): "
+        f"{dec['statement']}\nRationale: {dec['rationale']}\n\n"
         "EXISTING decisions:\n" + "\n".join(_dline(l, d) for l, d in labels.items()) +
         "\n\nClassify the NEW decision against the closest EXISTING one:\n"
         "- same: restates it, no change in substance\n"
-        "- update: deliberately revises, replaces or extends it (newer intent wins)\n"
-        "- contradiction: conflicts with it without acknowledging the change\n"
+        "- update: an intentional change to it by people with the authority to change it (a review, meeting, "
+        "approval or announcement that revises, replaces, narrows or extends it); newer intent wins\n"
+        "- contradiction: conflicts with it but is NOT an authorised change: an implementation, promise, email, "
+        "doc or plan that ignores or breaks the existing decision\n"
         "- new: a different subject; none of them is about the same thing\n"
         "Set related to the label (e.g. D1), or \"\" for new. One sentence of explanation."
     )
@@ -90,16 +93,18 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
     pool: dict[str, dict] = {}
     for hits in found:
         for d, _ in hits:
-            if d.get("assumptions"):
-                pool[d["id"]] = d
+            pool[d["id"]] = d
     if not pool:
         return []
     labels = {f"D{i + 1}": d for i, d in enumerate(list(pool.values())[:8])}
     prompt = (
         "NEW information:\n" + "\n".join(f"- {i['statement']}" for i in items) +
-        "\n\nACTIVE decisions and the assumptions they rest on:\n" +
-        "\n".join(f"[{l}] {d['statement']}\n  assumptions: " + "; ".join(d["assumptions"]) for l, d in labels.items()) +
-        "\n\nList only assumptions that the NEW information clearly shows to be false or no longer true. "
+        "\n\nACTIVE decisions:\n" +
+        "\n".join(f"[{l}] {d['statement']} Why: {d['rationale']}\n  stated assumptions: "
+                  + ("; ".join(d.get("assumptions") or []) or "none") for l, d in labels.items()) +
+        "\n\nA decision rests on assumptions, stated or implicit (the facts that made it a sensible choice). "
+        "List only cases where the NEW information clearly makes such an assumption false, so the decision "
+        "may no longer work as intended. Do not list a decision just because it is on the same topic. "
         "evidence_quote must be copied word for word from the SOURCE below. Return an empty list if none.\n\n"
         f"SOURCE:\n{source_text[:6000]}"
     )

@@ -34,8 +34,11 @@ class Extraction(BaseModel):
 
 
 EXTRACT = """Extract the decisions recorded in this {kind} ("{title}", by {author}, {date}).
-A decision is a choice the team or a person committed to (a rule, policy, plan, or technical choice),
-not a suggestion, question or open discussion. Skip pleasantries.
+A decision is a durable commitment meant to hold beyond today: a rule, policy, price, plan, deadline,
+technical or vendor choice, or a change to one of these. NOT a decision: status updates, who is doing
+what right now, incident play-by-play, questions, suggestions, open discussion, pleasantries.
+Most chat messages and commits contain no decision; return [] for them. Implementation changes that
+set behaviour (e.g. a PR that schedules a job or changes a timeout) ARE decisions.
 For each decision:
 - statement: one plain sentence, self-contained (name the system or team).
 - rationale: why, from the text; "" if not given.
@@ -131,16 +134,30 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     await asyncio.gather(st.put("sources", p.source), *(st.put("chunks", c) for c in p.chunks))
 
     async def judge(d):
-        return await reconcile.judge(d, await reconcile.candidates(d["embedding"], scope))
+        return await reconcile.judge(d, await reconcile.candidates(d["embedding"], scope), p.source)
 
-    items = p.decisions + p.facts
     judged, broken, stales = await asyncio.gather(
         asyncio.gather(*(judge(d) for d in p.decisions)),
-        reconcile.premise_check(p.source["text"], items, [i["embedding"] for i in items], scope),
+        reconcile.premise_check(p.source["text"], p.facts + p.decisions,
+                                [i["embedding"] for i in p.facts + p.decisions], scope),
         asyncio.gather(*(reconcile.stale_check(d, d["embedding"], scope, sid) for d in p.decisions)),
     )
+    # Docs quoted by a decision this source updates are stale too, no extra Gemini call needed.
+    olds = [old for rel, old, _ in judged if rel == "update" and old]
+    kinds = await st.get_many("sources", [q["source_id"] for o in olds for q in o["quotes"]])
 
-    results, alerts, writes = [], [], []
+    results, alerts, writes, flagged = [], [], [], set()
+    touched = {old["id"] for _, old, _ in judged if old}
+
+    def stale_alert(d, doc_sid, quote, why):
+        if doc_sid in flagged or doc_sid == sid:
+            return
+        flagged.add(doc_sid)
+        title = kinds.get(doc_sid, {}).get("title") or "Doc"
+        alerts.append(_alert(ws, "stale_doc", "medium", d["id"], doc_sid,
+                             f"\"{title}\" is contradicted by a newer decision: {why}",
+                             d["quotes"][:1] + [{"source_id": doc_sid, "quote": quote}]))
+
     for d, (rel, old, why), stale in zip(p.decisions, judged, stales):
         if rel == "same" and old:
             # Corroboration: keep one decision, add the new quote to it.
@@ -155,6 +172,9 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
                 d["supersedes"] = [old["id"]]
                 if old["workspace"] == ws:
                     writes.append(st.update("decisions", old["id"], {"status": "superseded", "superseded_by": d["id"]}))
+                for q in old["quotes"]:
+                    if kinds.get(q["source_id"], {}).get("kind") in ("wiki", "doc"):
+                        stale_alert(d, q["source_id"], q["quote"], f"it still states the superseded decision: {old['statement']}")
             else:  # ingested out of order: the existing one is newer
                 d["status"], d["superseded_by"] = "superseded", old["id"]
                 if old["workspace"] == ws:
@@ -162,14 +182,16 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         if rel == "contradiction" and old:
             alerts.append(_alert(ws, "contradiction", "high", d["id"], sid, why, d["quotes"][:1] + old["quotes"][:1],
                                  related_decision_id=old["id"]))
-        for c, h in stale:
-            alerts.append(_alert(ws, "stale_doc", "medium", d["id"], c["source_id"],
-                                 f"\"{c.get('title', 'Doc')}\" is contradicted by a newer decision: {h.explanation}",
-                                 d["quotes"][:1] + [{"source_id": c["source_id"], "quote": reconcile.norm(h.quote)}]))
+        if rel in ("new", "update") and d["status"] == "active":  # a contradicting decision does not make docs stale
+            for c, h in stale:
+                kinds.setdefault(c["source_id"], {"title": c.get("title")})
+                stale_alert(d, c["source_id"], reconcile.norm(h.quote), h.explanation)
         writes.append(st.put("decisions", d))
         results.append(ReconciledDecision(decision=Decision(**d), relation=rel,
                                           related_decision_id=old["id"] if old else None, explanation=why))
     for old, b in broken:
+        if old["id"] in touched:  # already reported as update / contradiction
+            continue
         alerts.append(_alert(ws, "premise_changed", "medium", old["id"], sid,
                              f"Assumption \"{b.assumption}\" may no longer hold: {b.explanation}",
                              [{"source_id": sid, "quote": reconcile.norm(b.evidence_quote)}] + old["quotes"][:1]))
