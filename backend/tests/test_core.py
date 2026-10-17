@@ -190,7 +190,7 @@ def test_nba_score_factors():
     s, reasons = score("Ship the billing migration by Oct 19, blocks marketing and sales; deploy urgent",
                        "engineer", "decision", today - timedelta(days=1), today, teams={"marketing", "sales"}, links=1)
     assert "deadline in 2 days" in reasons and any("urgent" in r for r in reasons)
-    assert any("cross-team" in r for r in reasons) and "relevant to engineer" in reasons
+    assert any("cross-team" in r for r in reasons) and "relevant to Engineering" in reasons
     low, _ = score("Lunch is at noon.", "engineer", "decision", today - timedelta(days=400), today)
     assert low == 30 < s <= 98
     assert deadline_days("due 2026-10-20", today, today) == 3
