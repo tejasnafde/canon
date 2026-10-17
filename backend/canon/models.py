@@ -39,6 +39,7 @@ class Decision(BaseModel):
     ts: datetime
     topic: str
     status: Literal["active", "superseded", "retired"] = "active"
+    version: int = 1  # 1 + length of the supersedes chain
     supersedes: list[str] = []
     superseded_by: str | None = None
     quotes: list[Quote]
@@ -64,9 +65,10 @@ class Activity(BaseModel):
     id: str
     workspace: str
     actor: str  # human:web | agent:<name>
-    action: Literal["ingest", "ask", "check", "record", "briefing", "resolve", "expert", "search"]
+    action: Literal["ingest", "ask", "check", "record", "briefing", "resolve", "expert", "search", "flag"]
     summary: str
     ref_ids: list[str] = []
+    ref_titles: list[str] = []  # display text for ref_ids, so the feed needs no second lookup
     verdict: Verdict | None = None
     created_at: datetime
 
@@ -143,6 +145,7 @@ class Action(BaseModel):
     priority: int = Field(ge=0, le=100)
     title: str
     why: str
+    deadline: datetime | None = None
     reasons: list[str]  # scoring factors, e.g. "deadline in 2 days", "blocks marketing"
     citations: list[Citation]
     chip: Literal["open_source", "view_decision", "resolve_alert", "ask_person", "draft_reply"]

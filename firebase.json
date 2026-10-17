@@ -1,0 +1,90 @@
+{
+  "hosting": {
+    "site": "canon-tn07",
+    "public": "web/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/mcp",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/mcp/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/a2a",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/a2a/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/hooks/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/discord/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/.well-known/**",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/healthz",
+        "run": {
+          "serviceId": "canon",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/assets/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=31536000,immutable"
+          }
+        ]
+      }
+    ]
+  }
+}
