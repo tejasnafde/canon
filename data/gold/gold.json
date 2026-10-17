@@ -1,0 +1,1174 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "company": "Northwind Labs",
+  "workspace": "acme",
+  "key_semantics": "Stable corpus labels, not Firestore IDs. Resolve titles through ingested source IDs and quotes.",
+  "items": [
+    {
+      "key": "release-window",
+      "type": "decision",
+      "decision_key": "release-window",
+      "evidence": [
+        {
+          "source_title": "Release calendar pilot",
+          "quote": "For now the production release window is Friday afternoon, 14:00 to 16:00 Singapore time."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "For now the production release window is Friday afternoon, 14:00 to 16:00 Singapore time."
+    },
+    {
+      "key": "event-identity",
+      "type": "decision",
+      "decision_key": "event-identity",
+      "evidence": [
+        {
+          "source_title": "Harbor duplicate scans",
+          "quote": "Use tenant_id plus carrier_event_id as the deduplication key, and retain those keys for seven days."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Use tenant_id plus carrier_event_id as the deduplication key, and retain those keys for seven days."
+    },
+    {
+      "key": "webhook-retry",
+      "type": "decision",
+      "decision_key": "webhook-retry",
+      "evidence": [
+        {
+          "source_title": "Webhook retry budget",
+          "quote": "Retry carrier webhooks for at most 24 hours, then move them to the dead-letter queue."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Retry carrier webhooks for at most 24 hours, then move them to the dead-letter queue."
+    },
+    {
+      "key": "residency",
+      "type": "decision",
+      "decision_key": "residency",
+      "evidence": [
+        {
+          "source_title": "Sakura residency review",
+          "quote": "Keep Sakura customer payloads and their backups in Japan."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Keep Sakura customer payloads and their backups in Japan."
+    },
+    {
+      "key": "audit-retention",
+      "type": "decision",
+      "decision_key": "audit-retention",
+      "evidence": [
+        {
+          "source_title": "Audit trail sizing",
+          "quote": "Retain tenant audit records for 365 days, including records from closed accounts."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Retain tenant audit records for 365 days, including records from closed accounts."
+    },
+    {
+      "key": "eta-fallback",
+      "type": "decision",
+      "decision_key": "eta-fallback",
+      "evidence": [
+        {
+          "source_title": "Monsoon ETA timeout",
+          "quote": "After 800 milliseconds without a route-model response, return the last carrier ETA with its observed_at timestamp."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "After 800 milliseconds without a route-model response, return the last carrier ETA with its observed_at timestamp."
+    },
+    {
+      "key": "billing-unit",
+      "type": "decision",
+      "decision_key": "billing-unit",
+      "evidence": [
+        {
+          "source_title": "Metering working session",
+          "quote": "Bill once per completed shipment, not per tracking event."
+        }
+      ],
+      "owner": "Nur Aziz",
+      "statement": "Bill once per completed shipment, not per tracking event."
+    },
+    {
+      "key": "export-access",
+      "type": "decision",
+      "decision_key": "export-access",
+      "evidence": [
+        {
+          "source_title": "CSV permission review",
+          "quote": "Only tenant admins can download shipment CSV exports."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Only tenant admins can download shipment CSV exports."
+    },
+    {
+      "key": "sandbox-data",
+      "type": "decision",
+      "decision_key": "sandbox-data",
+      "evidence": [
+        {
+          "source_title": "Demo tenant cleanup",
+          "quote": "Use fabricated shipments in shared sandboxes; customer payloads cannot be copied there."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Use fabricated shipments in shared sandboxes; customer payloads cannot be copied there."
+    },
+    {
+      "key": "cursor-order",
+      "type": "decision",
+      "decision_key": "cursor-order",
+      "evidence": [
+        {
+          "source_title": "Tracking pagination edge cases",
+          "quote": "Order tracking cursors by ingestion sequence, not carrier event time."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Order tracking cursors by ingestion sequence, not carrier event time."
+    },
+    {
+      "key": "sso-tier",
+      "type": "decision",
+      "decision_key": "sso-tier",
+      "evidence": [
+        {
+          "source_title": "Enterprise packaging notes",
+          "quote": "SAML SSO is included in Enterprise and is not a paid add-on."
+        }
+      ],
+      "owner": "Aisha Rahman",
+      "statement": "SAML SSO is included in Enterprise and is not a paid add-on."
+    },
+    {
+      "key": "pager-coverage",
+      "type": "decision",
+      "decision_key": "pager-coverage",
+      "evidence": [
+        {
+          "source_title": "APAC rota handoff",
+          "quote": "Every production change needs a primary and a secondary responder online for the next two hours."
+        }
+      ],
+      "owner": "Mei Tan",
+      "statement": "Every production change needs a primary and a secondary responder online for the next two hours."
+    },
+    {
+      "key": "dr-drill",
+      "type": "decision",
+      "decision_key": "dr-drill",
+      "evidence": [
+        {
+          "source_title": "Restore drill follow-up",
+          "quote": "Run a restore drill every quarter using an isolated tenant fixture."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Run a restore drill every quarter using an isolated tenant fixture."
+    },
+    {
+      "key": "eta-disclaimer",
+      "type": "decision",
+      "decision_key": "eta-disclaimer",
+      "evidence": [
+        {
+          "source_title": "Arrival confidence copy",
+          "quote": "Show an estimated range for predicted arrivals, never a guaranteed delivery time."
+        }
+      ],
+      "owner": "Aisha Rahman",
+      "statement": "Show an estimated range for predicted arrivals, never a guaranteed delivery time."
+    },
+    {
+      "key": "support-access",
+      "type": "decision",
+      "decision_key": "support-access",
+      "evidence": [
+        {
+          "source_title": "Break-glass review",
+          "quote": "Support production access expires after 60 minutes and requires a ticket reference."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Support production access expires after 60 minutes and requires a ticket reference."
+    },
+    {
+      "key": "connector-quota",
+      "type": "decision",
+      "decision_key": "connector-quota",
+      "evidence": [
+        {
+          "source_title": "Kestrel connector capacity",
+          "quote": "Limit each Kestrel tenant to four concurrent polling requests."
+        }
+      ],
+      "owner": "Chen Wei",
+      "statement": "Limit each Kestrel tenant to four concurrent polling requests."
+    },
+    {
+      "key": "route-launch",
+      "type": "decision",
+      "decision_key": "route-launch",
+      "evidence": [
+        {
+          "source_title": "Route Lens launch checkpoint",
+          "quote": "Route Lens general availability is scheduled for 15 April 2026."
+        }
+      ],
+      "owner": "Aisha Rahman",
+      "statement": "Route Lens general availability is scheduled for 15 April 2026."
+    },
+    {
+      "key": "pricing-v1",
+      "type": "decision",
+      "decision_key": "pricing-v1",
+      "evidence": [
+        {
+          "source_title": "Route Lens price card",
+          "quote": "Route Lens will cost USD 99 per workspace per month at general availability."
+        }
+      ],
+      "owner": "Nur Aziz",
+      "statement": "Route Lens will cost USD 99 per workspace per month at general availability."
+    },
+    {
+      "key": "payload-logs",
+      "type": "decision",
+      "decision_key": "payload-logs",
+      "evidence": [
+        {
+          "source_title": "Queue log sampling",
+          "quote": "Log event IDs and error codes only; do not log carrier payload bodies."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Log event IDs and error codes only; do not log carrier payload bodies."
+    },
+    {
+      "key": "mobile-offline",
+      "type": "decision",
+      "decision_key": "mobile-offline",
+      "evidence": [
+        {
+          "source_title": "Driver app offline review",
+          "quote": "Keep offline proof-of-delivery photos on the device for no more than 48 hours."
+        }
+      ],
+      "owner": "Yuki Mori",
+      "statement": "Keep offline proof-of-delivery photos on the device for no more than 48 hours."
+    },
+    {
+      "key": "replay-approval",
+      "type": "decision",
+      "decision_key": "replay-approval",
+      "evidence": [
+        {
+          "source_title": "Replay safety checklist",
+          "quote": "A replay of more than 10000 events needs approval from the incident commander."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "A replay of more than 10000 events needs approval from the incident commander."
+    },
+    {
+      "key": "fx-lock",
+      "type": "decision",
+      "decision_key": "fx-lock",
+      "evidence": [
+        {
+          "source_title": "Invoice currency close",
+          "quote": "Lock invoice exchange rates at the start of the billing month."
+        }
+      ],
+      "owner": "Nur Aziz",
+      "statement": "Lock invoice exchange rates at the start of the billing month."
+    },
+    {
+      "key": "dashboard-freshness",
+      "type": "decision",
+      "decision_key": "dashboard-freshness",
+      "evidence": [
+        {
+          "source_title": "Operations dashboard cache",
+          "quote": "Cache the fleet dashboard for five minutes while the ingestion rate stays below 2000 events per second."
+        }
+      ],
+      "owner": "Linh Nguyen",
+      "statement": "Cache the fleet dashboard for five minutes while the ingestion rate stays below 2000 events per second."
+    },
+    {
+      "key": "deletion-window",
+      "type": "decision",
+      "decision_key": "deletion-window",
+      "evidence": [
+        {
+          "source_title": "Tenant deletion review",
+          "quote": "Delete shipment payloads within 30 days of a verified tenant deletion request."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Delete shipment payloads within 30 days of a verified tenant deletion request."
+    },
+    {
+      "key": "idempotency",
+      "type": "decision",
+      "decision_key": "idempotency",
+      "evidence": [
+        {
+          "source_title": "Booking API retry contract",
+          "quote": "Keep booking idempotency tokens for 72 hours and scope them to the tenant."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Keep booking idempotency tokens for 72 hours and scope them to the tenant."
+    },
+    {
+      "key": "pilot-gate",
+      "type": "decision",
+      "decision_key": "pilot-gate",
+      "evidence": [
+        {
+          "source_title": "Jakarta pilot gate",
+          "quote": "Route Lens needs median absolute arrival error below 12 minutes for three consecutive weeks before GA."
+        }
+      ],
+      "owner": "Aisha Rahman",
+      "statement": "Route Lens needs median absolute arrival error below 12 minutes for three consecutive weeks before GA."
+    },
+    {
+      "key": "schema-compat",
+      "type": "decision",
+      "decision_key": "schema-compat",
+      "evidence": [
+        {
+          "source_title": "Manifest schema rollout",
+          "quote": "Keep readers compatible with the previous manifest schema for 30 days after a writer upgrade."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Keep readers compatible with the previous manifest schema for 30 days after a writer upgrade."
+    },
+    {
+      "key": "incident-comms",
+      "type": "decision",
+      "decision_key": "incident-comms",
+      "evidence": [
+        {
+          "source_title": "Customer incident comms",
+          "quote": "For a severity-one incident, send the first customer notice within 30 minutes of confirmation."
+        }
+      ],
+      "owner": "Siti Nuraini",
+      "statement": "For a severity-one incident, send the first customer notice within 30 minutes of confirmation."
+    },
+    {
+      "key": "model-fallback",
+      "type": "decision",
+      "decision_key": "model-fallback",
+      "evidence": [
+        {
+          "source_title": "Route Lens serving budget",
+          "quote": "Use the regional model while its p95 inference latency stays below 250 milliseconds."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Use the regional model while its p95 inference latency stays below 250 milliseconds."
+    },
+    {
+      "key": "no-friday",
+      "type": "decision",
+      "decision_key": "no-friday",
+      "evidence": [
+        {
+          "source_title": "INC-042 review: the Friday release",
+          "quote": "No production deploys on Fridays, including scheduled jobs and configuration-only releases."
+        }
+      ],
+      "owner": "Mei Tan",
+      "statement": "No production deploys on Fridays, including scheduled jobs and configuration-only releases."
+    },
+    {
+      "key": "update-no-friday",
+      "type": "update",
+      "decision_key": "no-friday",
+      "evidence": [
+        {
+          "source_title": "INC-042 review: the Friday release",
+          "quote": "No production deploys on Fridays, including scheduled jobs and configuration-only releases."
+        },
+        {
+          "source_title": "Release calendar pilot",
+          "quote": "For now the production release window is Friday afternoon, 14:00 to 16:00 Singapore time."
+        }
+      ],
+      "related_decision_key": "release-window"
+    },
+    {
+      "key": "stale-release-process",
+      "type": "stale_doc",
+      "decision_key": "no-friday",
+      "evidence": [
+        {
+          "source_title": "Release process",
+          "quote": "Friday afternoon, 14:00 to 16:00 SGT, is our production release window."
+        },
+        {
+          "source_title": "INC-042 review: the Friday release",
+          "quote": "No production deploys on Fridays, including scheduled jobs and configuration-only releases."
+        }
+      ]
+    },
+    {
+      "key": "stale-price-card",
+      "type": "stale_doc",
+      "decision_key": "pricing-v2",
+      "evidence": [
+        {
+          "source_title": "Route Lens sales FAQ",
+          "quote": "Route Lens costs USD 99 per workspace per month at GA."
+        },
+        {
+          "source_title": "Route Lens commercial reset",
+          "quote": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions."
+        }
+      ]
+    },
+    {
+      "key": "stale-launch-brief",
+      "type": "stale_doc",
+      "decision_key": "launch-june",
+      "evidence": [
+        {
+          "source_title": "Route Lens launch brief",
+          "quote": "General availability begins on 15 April 2026."
+        },
+        {
+          "source_title": "Route Lens launch replan",
+          "quote": "Move Route Lens general availability from 15 April to 2 June 2026."
+        }
+      ]
+    },
+    {
+      "key": "stale-retry-runbook",
+      "type": "stale_doc",
+      "decision_key": "retry-six",
+      "evidence": [
+        {
+          "source_title": "Carrier webhook recovery",
+          "quote": "Retries continue for 24 hours before an event enters the dead-letter queue."
+        },
+        {
+          "source_title": "Webhook budget after partner review",
+          "quote": "Reduce the webhook retry horizon from 24 hours to six hours; dead-letter handling stays unchanged."
+        }
+      ]
+    },
+    {
+      "key": "stale-support-guide",
+      "type": "stale_doc",
+      "decision_key": "support-thirty",
+      "evidence": [
+        {
+          "source_title": "Support access handbook",
+          "quote": "A production support session lasts 60 minutes."
+        },
+        {
+          "source_title": "Support session review, March",
+          "quote": "Production support sessions now expire after 30 minutes instead of 60."
+        }
+      ]
+    },
+    {
+      "key": "stale-retention-guide",
+      "type": "stale_doc",
+      "decision_key": "audit-two-years",
+      "evidence": [
+        {
+          "source_title": "Audit retention FAQ",
+          "quote": "Audit records remain available for 365 days."
+        },
+        {
+          "source_title": "Enterprise audit addendum",
+          "quote": "Extend tenant audit retention from 365 days to 730 days for all tenants."
+        }
+      ]
+    },
+    {
+      "key": "stale-quota-guide",
+      "type": "stale_doc",
+      "decision_key": "quota-two",
+      "evidence": [
+        {
+          "source_title": "Kestrel integration setup",
+          "quote": "A tenant can poll Kestrel with four concurrent requests."
+        },
+        {
+          "source_title": "Kestrel v3 contract accepted",
+          "quote": "Reduce Kestrel polling concurrency to two requests per tenant, replacing the four-slot limit."
+        }
+      ]
+    },
+    {
+      "key": "stale-booking-guide",
+      "type": "stale_doc",
+      "decision_key": "tokens-week",
+      "evidence": [
+        {
+          "source_title": "Booking retry cookbook",
+          "quote": "Booking idempotency tokens remain valid for 72 hours."
+        },
+        {
+          "source_title": "Rural booking retry follow-up",
+          "quote": "Extend booking idempotency retention from 72 hours to seven days."
+        }
+      ]
+    },
+    {
+      "key": "retry-six",
+      "type": "decision",
+      "decision_key": "retry-six",
+      "evidence": [
+        {
+          "source_title": "Webhook budget after partner review",
+          "quote": "Reduce the webhook retry horizon from 24 hours to six hours; dead-letter handling stays unchanged."
+        }
+      ],
+      "owner": "Chen Wei",
+      "statement": "Reduce the webhook retry horizon from 24 hours to six hours; dead-letter handling stays unchanged."
+    },
+    {
+      "key": "update-retry-six",
+      "type": "update",
+      "decision_key": "retry-six",
+      "evidence": [
+        {
+          "source_title": "Webhook budget after partner review",
+          "quote": "Reduce the webhook retry horizon from 24 hours to six hours; dead-letter handling stays unchanged."
+        },
+        {
+          "source_title": "Webhook retry budget",
+          "quote": "Retry carrier webhooks for at most 24 hours, then move them to the dead-letter queue."
+        }
+      ],
+      "related_decision_key": "webhook-retry"
+    },
+    {
+      "key": "support-thirty",
+      "type": "decision",
+      "decision_key": "support-thirty",
+      "evidence": [
+        {
+          "source_title": "Support session review, March",
+          "quote": "Production support sessions now expire after 30 minutes instead of 60."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Production support sessions now expire after 30 minutes instead of 60."
+    },
+    {
+      "key": "update-support-thirty",
+      "type": "update",
+      "decision_key": "support-thirty",
+      "evidence": [
+        {
+          "source_title": "Support session review, March",
+          "quote": "Production support sessions now expire after 30 minutes instead of 60."
+        },
+        {
+          "source_title": "Break-glass review",
+          "quote": "Support production access expires after 60 minutes and requires a ticket reference."
+        }
+      ],
+      "related_decision_key": "support-access"
+    },
+    {
+      "key": "pricing-v2",
+      "type": "decision",
+      "decision_key": "pricing-v2",
+      "evidence": [
+        {
+          "source_title": "Route Lens commercial reset",
+          "quote": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions."
+        }
+      ],
+      "owner": "Nur Aziz",
+      "statement": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions."
+    },
+    {
+      "key": "update-pricing-v2",
+      "type": "update",
+      "decision_key": "pricing-v2",
+      "evidence": [
+        {
+          "source_title": "Route Lens commercial reset",
+          "quote": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions."
+        },
+        {
+          "source_title": "Route Lens price card",
+          "quote": "Route Lens will cost USD 99 per workspace per month at general availability."
+        }
+      ],
+      "related_decision_key": "pricing-v1"
+    },
+    {
+      "key": "launch-june",
+      "type": "decision",
+      "decision_key": "launch-june",
+      "evidence": [
+        {
+          "source_title": "Route Lens launch replan",
+          "quote": "Move Route Lens general availability from 15 April to 2 June 2026."
+        }
+      ],
+      "owner": "Aisha Rahman",
+      "statement": "Move Route Lens general availability from 15 April to 2 June 2026."
+    },
+    {
+      "key": "update-launch-june",
+      "type": "update",
+      "decision_key": "launch-june",
+      "evidence": [
+        {
+          "source_title": "Route Lens launch replan",
+          "quote": "Move Route Lens general availability from 15 April to 2 June 2026."
+        },
+        {
+          "source_title": "Route Lens launch checkpoint",
+          "quote": "Route Lens general availability is scheduled for 15 April 2026."
+        }
+      ],
+      "related_decision_key": "route-launch"
+    },
+    {
+      "key": "audit-two-years",
+      "type": "decision",
+      "decision_key": "audit-two-years",
+      "evidence": [
+        {
+          "source_title": "Enterprise audit addendum",
+          "quote": "Extend tenant audit retention from 365 days to 730 days for all tenants."
+        }
+      ],
+      "owner": "Jiwon Park",
+      "statement": "Extend tenant audit retention from 365 days to 730 days for all tenants."
+    },
+    {
+      "key": "update-audit-two-years",
+      "type": "update",
+      "decision_key": "audit-two-years",
+      "evidence": [
+        {
+          "source_title": "Enterprise audit addendum",
+          "quote": "Extend tenant audit retention from 365 days to 730 days for all tenants."
+        },
+        {
+          "source_title": "Audit trail sizing",
+          "quote": "Retain tenant audit records for 365 days, including records from closed accounts."
+        }
+      ],
+      "related_decision_key": "audit-retention"
+    },
+    {
+      "key": "quota-two",
+      "type": "decision",
+      "decision_key": "quota-two",
+      "evidence": [
+        {
+          "source_title": "Kestrel v3 contract accepted",
+          "quote": "Reduce Kestrel polling concurrency to two requests per tenant, replacing the four-slot limit."
+        }
+      ],
+      "owner": "Chen Wei",
+      "statement": "Reduce Kestrel polling concurrency to two requests per tenant, replacing the four-slot limit."
+    },
+    {
+      "key": "update-quota-two",
+      "type": "update",
+      "decision_key": "quota-two",
+      "evidence": [
+        {
+          "source_title": "Kestrel v3 contract accepted",
+          "quote": "Reduce Kestrel polling concurrency to two requests per tenant, replacing the four-slot limit."
+        },
+        {
+          "source_title": "Kestrel connector capacity",
+          "quote": "Limit each Kestrel tenant to four concurrent polling requests."
+        }
+      ],
+      "related_decision_key": "connector-quota"
+    },
+    {
+      "key": "tokens-week",
+      "type": "decision",
+      "decision_key": "tokens-week",
+      "evidence": [
+        {
+          "source_title": "Rural booking retry follow-up",
+          "quote": "Extend booking idempotency retention from 72 hours to seven days."
+        }
+      ],
+      "owner": "Anika Rao",
+      "statement": "Extend booking idempotency retention from 72 hours to seven days."
+    },
+    {
+      "key": "update-tokens-week",
+      "type": "update",
+      "decision_key": "tokens-week",
+      "evidence": [
+        {
+          "source_title": "Rural booking retry follow-up",
+          "quote": "Extend booking idempotency retention from 72 hours to seven days."
+        },
+        {
+          "source_title": "Booking API retry contract",
+          "quote": "Keep booking idempotency tokens for 72 hours and scope them to the tenant."
+        }
+      ],
+      "related_decision_key": "idempotency"
+    },
+    {
+      "key": "eta-fallback-new",
+      "type": "decision",
+      "decision_key": "eta-fallback-new",
+      "evidence": [
+        {
+          "source_title": "ETA timeout tuning",
+          "quote": "Lower the route-model timeout from 800 to 600 milliseconds, preserving the timestamped carrier fallback."
+        }
+      ],
+      "owner": "Mei Tan",
+      "statement": "Lower the route-model timeout from 800 to 600 milliseconds, preserving the timestamped carrier fallback."
+    },
+    {
+      "key": "update-eta-fallback-new",
+      "type": "update",
+      "decision_key": "eta-fallback-new",
+      "evidence": [
+        {
+          "source_title": "ETA timeout tuning",
+          "quote": "Lower the route-model timeout from 800 to 600 milliseconds, preserving the timestamped carrier fallback."
+        },
+        {
+          "source_title": "Monsoon ETA timeout",
+          "quote": "After 800 milliseconds without a route-model response, return the last carrier ETA with its observed_at timestamp."
+        }
+      ],
+      "related_decision_key": "eta-fallback"
+    },
+    {
+      "key": "friday-cron",
+      "type": "contradiction",
+      "decision_key": "no-friday",
+      "evidence": [
+        {
+          "source_title": "PR 684: unattended dispatch refresh",
+          "quote": "The workflow uses cron \"0 7 * * 5\" to roll the production dispatch service at 15:00 Singapore time."
+        },
+        {
+          "source_title": "INC-042 review: the Friday release",
+          "quote": "No production deploys on Fridays, including scheduled jobs and configuration-only releases."
+        }
+      ]
+    },
+    {
+      "key": "old-price-email",
+      "type": "contradiction",
+      "decision_key": "pricing-v2",
+      "evidence": [
+        {
+          "source_title": "Meridian renewal: Route Lens line item",
+          "quote": "Your new Route Lens subscription will be USD 99 per workspace per month when you sign next week."
+        },
+        {
+          "source_title": "Route Lens commercial reset",
+          "quote": "Replace the USD 99 workspace fee with USD 149 per workspace per month for new Route Lens subscriptions."
+        }
+      ]
+    },
+    {
+      "key": "old-launch-email",
+      "type": "contradiction",
+      "decision_key": "launch-june",
+      "evidence": [
+        {
+          "source_title": "Sakura production enablement date",
+          "quote": "We will switch your Route Lens tenant to general availability on 15 April, with the standard production SLA."
+        },
+        {
+          "source_title": "Route Lens launch replan",
+          "quote": "Move Route Lens general availability from 15 April to 2 June 2026."
+        }
+      ]
+    },
+    {
+      "key": "payload-debug",
+      "type": "contradiction",
+      "decision_key": "payload-logs",
+      "evidence": [
+        {
+          "source_title": "PR 702: parser diagnostics",
+          "quote": "On parse failure, serialize the complete incoming carrier JSON into the application log."
+        },
+        {
+          "source_title": "Queue log sampling",
+          "quote": "Log event IDs and error codes only; do not log carrier payload bodies."
+        }
+      ]
+    },
+    {
+      "key": "sakura-backup",
+      "type": "contradiction",
+      "decision_key": "residency",
+      "evidence": [
+        {
+          "source_title": "Backup footprint proposal",
+          "quote": "The Sakura nightly snapshot will land in the shared Singapore recovery bucket."
+        },
+        {
+          "source_title": "Sakura residency review",
+          "quote": "Keep Sakura customer payloads and their backups in Japan."
+        }
+      ]
+    },
+    {
+      "key": "csv-shortcut",
+      "type": "contradiction",
+      "decision_key": "export-access",
+      "evidence": [
+        {
+          "source_title": "PR 731: warehouse download shortcut",
+          "quote": "Enable the bulk CSV download button for every warehouse viewer."
+        },
+        {
+          "source_title": "CSV permission review",
+          "quote": "Only tenant admins can download shipment CSV exports."
+        }
+      ]
+    },
+    {
+      "key": "demo-copy",
+      "type": "contradiction",
+      "decision_key": "sandbox-data",
+      "evidence": [
+        {
+          "source_title": "Osaka demo preparation thread",
+          "quote": "I will seed the shared demo tenant with last Tuesday's Meridian shipments after hiding the customer_name field."
+        },
+        {
+          "source_title": "Demo tenant cleanup",
+          "quote": "Use fabricated shipments in shared sandboxes; customer payloads cannot be copied there."
+        }
+      ]
+    },
+    {
+      "key": "guarantee-copy",
+      "type": "contradiction",
+      "decision_key": "eta-disclaimer",
+      "evidence": [
+        {
+          "source_title": "September landing page draft",
+          "quote": "Route Lens guarantees your shipment will arrive at the displayed time."
+        },
+        {
+          "source_title": "Arrival confidence copy",
+          "quote": "Show an estimated range for predicted arrivals, never a guaranteed delivery time."
+        }
+      ]
+    },
+    {
+      "key": "signature-expiry",
+      "type": "premise_change",
+      "decision_key": "webhook-retry",
+      "evidence": [
+        {
+          "source_title": "Kestrel signing-key notice",
+          "quote": "Kestrel now expires request signing keys eight hours after issue."
+        },
+        {
+          "source_title": "Webhook retry budget",
+          "quote": "Retry carrier webhooks for at most 24 hours, then move them to the dead-letter queue."
+        }
+      ]
+    },
+    {
+      "key": "double-inference",
+      "type": "premise_change",
+      "decision_key": "pricing-v1",
+      "evidence": [
+        {
+          "source_title": "Route Lens March cost trace",
+          "quote": "Every Route Lens shipment now runs two regional inference passes, including the customs-risk pass."
+        },
+        {
+          "source_title": "Route Lens price card",
+          "quote": "Route Lens will cost USD 99 per workspace per month at general availability."
+        }
+      ]
+    },
+    {
+      "key": "offline-depots",
+      "type": "premise_change",
+      "decision_key": "mobile-offline",
+      "evidence": [
+        {
+          "source_title": "Rural pilot visit notes",
+          "quote": "The Palawan drivers return to a connected depot every four days, not every day."
+        },
+        {
+          "source_title": "Driver app offline review",
+          "quote": "Keep offline proof-of-delivery photos on the device for no more than 48 hours."
+        }
+      ]
+    },
+    {
+      "key": "dashboard-load",
+      "type": "premise_change",
+      "decision_key": "dashboard-freshness",
+      "evidence": [
+        {
+          "source_title": "Fleet peak after eastern rollout",
+          "quote": "The ingestion stream sustained 3400 events per second for 90 minutes this morning."
+        },
+        {
+          "source_title": "Operations dashboard cache",
+          "quote": "Cache the fleet dashboard for five minutes while the ingestion rate stays below 2000 events per second."
+        }
+      ]
+    },
+    {
+      "key": "cold-pool",
+      "type": "premise_change",
+      "decision_key": "model-fallback",
+      "evidence": [
+        {
+          "source_title": "Route Lens low-volume trace",
+          "quote": "The regional inference worker pool scales to zero between customer batches; p95 is now 610 milliseconds."
+        },
+        {
+          "source_title": "Route Lens serving budget",
+          "quote": "Use the regional model while its p95 inference latency stays below 250 milliseconds."
+        }
+      ]
+    }
+  ],
+  "check_intent": [
+    {
+      "key": "check-01",
+      "intent": "Deploy the production dispatch service this Friday at 15:00 SGT using a cron job.",
+      "expected_verdict": "block",
+      "decision_key": "no-friday",
+      "reason": "The ban explicitly includes scheduled jobs."
+    },
+    {
+      "key": "check-02",
+      "intent": "Release a configuration-only production change on Friday.",
+      "expected_verdict": "block",
+      "decision_key": "no-friday",
+      "reason": "Configuration-only releases are in scope."
+    },
+    {
+      "key": "check-03",
+      "intent": "Deploy on Tuesday morning with two responders online for two hours.",
+      "expected_verdict": "allow",
+      "decision_key": "no-friday",
+      "reason": "The ordinary Tuesday slot is permitted; responder coverage also applies."
+    },
+    {
+      "key": "check-04",
+      "intent": "Use the Friday slot to deploy to an isolated staging tenant only.",
+      "expected_verdict": "allow",
+      "decision_key": "no-friday",
+      "reason": "The restriction is production-scoped."
+    },
+    {
+      "key": "check-05",
+      "intent": "Apply an emergency Friday production mitigation after incident commander approval, with two responders online.",
+      "expected_verdict": "allow",
+      "decision_key": "no-friday",
+      "reason": "The documented emergency exception is satisfied."
+    },
+    {
+      "key": "check-06",
+      "intent": "Send an unsigned new Route Lens prospect a USD 99 monthly workspace quote.",
+      "expected_verdict": "block",
+      "decision_key": "pricing-v2",
+      "reason": "New subscriptions use USD 149."
+    },
+    {
+      "key": "check-07",
+      "intent": "Honor a signed pilot order form at USD 99 for its first six months.",
+      "expected_verdict": "allow",
+      "decision_key": "pricing-v2",
+      "reason": "The signed-pilot exception is explicit."
+    },
+    {
+      "key": "check-08",
+      "intent": "Tell Sakura that Route Lens GA with a production SLA starts on 15 April 2026.",
+      "expected_verdict": "block",
+      "decision_key": "launch-june",
+      "reason": "GA moved to 2 June."
+    },
+    {
+      "key": "check-09",
+      "intent": "Grant a warehouse viewer access to bulk shipment CSV exports.",
+      "expected_verdict": "block",
+      "decision_key": "export-access",
+      "reason": "Only tenant admins may export."
+    },
+    {
+      "key": "check-10",
+      "intent": "Copy masked Meridian shipment payloads into the shared demo sandbox.",
+      "expected_verdict": "block",
+      "decision_key": "sandbox-data",
+      "reason": "Masking does not make customer data fabricated."
+    },
+    {
+      "key": "check-11",
+      "intent": "Replay 15000 carrier events without incident commander approval.",
+      "expected_verdict": "block",
+      "decision_key": "replay-approval",
+      "reason": "The event-count approval threshold is exceeded."
+    },
+    {
+      "key": "check-12",
+      "intent": "Store Sakura backups in Singapore while keeping the primary in Japan.",
+      "expected_verdict": "block",
+      "decision_key": "residency",
+      "reason": "The residency rule includes backups."
+    },
+    {
+      "key": "check-13",
+      "intent": "Keep the current five-minute fleet cache after sustained ingestion reaches 3400 events per second.",
+      "expected_verdict": "warn",
+      "decision_key": "dashboard-freshness",
+      "reason": "The load assumption broke; review is required, not an invented replacement interval."
+    },
+    {
+      "key": "check-14",
+      "intent": "Continue the regional model after its p95 rises to 610 milliseconds.",
+      "expected_verdict": "warn",
+      "decision_key": "model-fallback",
+      "reason": "The latency condition no longer holds; no replacement model is recorded."
+    },
+    {
+      "key": "check-15",
+      "intent": "Return the timestamped carrier ETA after waiting 600 milliseconds for the route model.",
+      "expected_verdict": "allow",
+      "decision_key": "eta-fallback-new",
+      "reason": "This follows the revised timeout and preserves the fallback."
+    }
+  ],
+  "answerable_questions": [
+    {
+      "key": "question-01",
+      "question": "Why can we no longer deploy production on Fridays?",
+      "expected_decision_keys": [
+        "release-window",
+        "no-friday"
+      ]
+    },
+    {
+      "key": "question-02",
+      "question": "Does the Friday restriction include a config-only cron deployment?",
+      "expected_decision_keys": [
+        "no-friday"
+      ]
+    },
+    {
+      "key": "question-03",
+      "question": "What should we quote a new Route Lens customer, and why did the price change?",
+      "expected_decision_keys": [
+        "pricing-v1",
+        "pricing-v2"
+      ]
+    },
+    {
+      "key": "question-04",
+      "question": "When did Route Lens GA move, and what gate held it up?",
+      "expected_decision_keys": [
+        "route-launch",
+        "pilot-gate",
+        "launch-june"
+      ]
+    },
+    {
+      "key": "question-05",
+      "question": "Can support download a tenant CSV for a warehouse viewer?",
+      "expected_decision_keys": [
+        "export-access"
+      ]
+    },
+    {
+      "key": "question-06",
+      "question": "Why did Anika choose ingestion sequence for tracking cursors?",
+      "expected_decision_keys": [
+        "cursor-order"
+      ]
+    },
+    {
+      "key": "question-07",
+      "question": "How long do booking idempotency tokens live now?",
+      "expected_decision_keys": [
+        "idempotency",
+        "tokens-week"
+      ]
+    },
+    {
+      "key": "question-08",
+      "question": "Can Sakura backups live outside Japan?",
+      "expected_decision_keys": [
+        "residency"
+      ]
+    },
+    {
+      "key": "question-09",
+      "question": "Why are payload bodies absent from parser error logs?",
+      "expected_decision_keys": [
+        "payload-logs"
+      ]
+    },
+    {
+      "key": "question-10",
+      "question": "What changed in the Kestrel webhook retry horizon?",
+      "expected_decision_keys": [
+        "webhook-retry",
+        "retry-six"
+      ]
+    }
+  ],
+  "unanswerable_questions": [
+    {
+      "key": "unknown-01",
+      "question": "What is Northwind Labs annual recurring revenue for 2026?",
+      "expected_refused": true
+    },
+    {
+      "key": "unknown-02",
+      "question": "Which company acquired Northwind Labs?",
+      "expected_refused": true
+    },
+    {
+      "key": "unknown-03",
+      "question": "What is the approved replacement cache interval after the eastern rollout?",
+      "expected_refused": true
+    },
+    {
+      "key": "unknown-04",
+      "question": "What password unlocks the Kestrel partner portal?",
+      "expected_refused": true
+    },
+    {
+      "key": "unknown-05",
+      "question": "Which model replaces the regional model after the July latency regression?",
+      "expected_refused": true
+    }
+  ]
+}
