@@ -191,8 +191,21 @@ async def list_decisions(workspaces, status=None, topic=None):
     return [Decision(**d) for d in sorted(docs, key=lambda d: utc(d["ts"]), reverse=True)]
 
 
+async def scrub_alerts(docs):
+    """Rewrite prompt labels ("D1") that older alert rows leaked into the explanation, in place."""
+    import re
+    from canon.reconcile import unlabel
+    leaky = [a for a in docs if re.search(r"\bD\d{1,2}\b", a.get("explanation", ""))]
+    about = {a["id"]: a.get("related_decision_id") or a.get("decision_id") for a in leaky}
+    decs = await get_store().get_many("decisions", [i for i in about.values() if i]) if leaky else {}
+    for a in leaky:
+        a["explanation"] = unlabel(a["explanation"], fallback=decs.get(about[a["id"]] or ""))
+    return docs
+
+
 async def _alerts_with_overlay(workspaces, docs):
     """Visitors cannot write to `acme`, so resolving a base alert writes a `resolutions` row in their workspace."""
+    await scrub_alerts(docs)
     res = {r["alert_id"]: r for r in await get_store().query("resolutions", workspaces)}
     for a in docs:
         if a["id"] in res:
@@ -264,10 +277,48 @@ async def list_activity(workspaces, since_iso=None):
     return [Activity(**a) for a in await get_store().query("activity", workspaces, since=since, limit=100)]
 
 
-async def log_activity(workspace, actor, action, summary, ref_ids=None, verdict=None):
+async def _titles(ids: list[str]) -> list[str]:
+    """Display text per ref id: decision statement, source title, or alert kind + explanation. Unknown ids skipped."""
+    st = get_store()
+    decs, srcs, alerts = await asyncio.gather(*(st.get_many(c, ids) for c in ("decisions", "sources", "alerts")))
+    out = []
+    for i in ids:
+        if i in decs:
+            out.append(decs[i]["statement"])
+        elif i in srcs:
+            out.append(srcs[i]["title"])
+        elif i in alerts:
+            out.append(f"{alerts[i]['kind'].replace('_', ' ')}: {alerts[i]['explanation']}"[:160])
+    return out
+
+
+async def log_activity(workspace, actor, action, summary, ref_ids=None, verdict=None, explanation=None):
+    ids = list(dict.fromkeys(i for i in (ref_ids or []) if i))[:20]
     await get_store().put("activity", {"id": new_id("act"), "workspace": workspace, "actor": actor, "action": action,
-                                       "summary": summary, "ref_ids": [i for i in (ref_ids or []) if i][:20],
-                                       "verdict": verdict, "created_at": now()})
+                                       "summary": summary, "ref_ids": ids, "ref_titles": await _titles(ids),
+                                       "verdict": verdict, "explanation": explanation, "created_at": now()})
+
+
+async def raise_alert(description, source_text, actor, workspaces, kind="agent_violation", severity="medium"):
+    """An alert raised by a person or agent (MCP flag_conflict), linked to the closest active decision."""
+    from canon.ask import search_decisions
+    from canon.models import Alert
+    ws = workspaces[-1]
+    sid = new_id("s")
+    await get_store().put("sources", {"id": sid, "workspace": ws, "kind": "agent", "title": f"Conflict: {description[:110]}",
+                                      "author": actor, "ts": now(), "url": None, "synthetic": False,
+                                      "text": f"{description}\n\n{source_text}".strip()})
+    hits = await search_decisions(f"{description}\n{source_text}", workspaces, limit=2)
+    quotes = [{"source_id": sid, "quote": " ".join((source_text or description).split())[:300]}]
+    quotes += [q.model_dump() for q in hits[0].quotes[:1]] if hits else []
+    a = {"id": new_id("a"), "workspace": ws, "kind": kind, "severity": severity,
+         "decision_id": hits[0].id if hits else None, "related_decision_id": hits[1].id if len(hits) > 1 else None,
+         "source_id": sid, "explanation": description, "quotes": quotes, "status": "open", "resolution": None,
+         "created_by": actor, "created_at": now()}
+    await get_store().put("alerts", a)
+    await log_activity(ws, actor, "flag", f"Flagged: {description[:120]}", [a["id"], a["decision_id"]],
+                       explanation=description)
+    return Alert(**a)
 
 
 async def list_people(workspaces):

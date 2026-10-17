@@ -17,11 +17,11 @@ from canon.expert import expert  # noqa: E402
 from canon.ingest import ingest  # noqa: E402
 from canon.store import (  # noqa: E402
     get_decision, get_source, list_activity, list_alerts, list_decisions, list_people, log_activity,
-    reset_workspace, resolve_alert,
+    raise_alert, reset_workspace, resolve_alert,
 )
 
 __all__ = [
     "ingest", "ask", "briefing", "check", "expert", "search_decisions", "list_decisions", "get_decision",
     "list_alerts", "resolve_alert", "get_source", "list_activity", "log_activity", "list_people", "eval_report",
-    "reset_workspace",
+    "reset_workspace", "raise_alert",
 ]

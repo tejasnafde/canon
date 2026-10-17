@@ -11,7 +11,7 @@ from mcp.server.mcpserver import Context, MCPServer
 
 from canon import core
 from canon.models import (
-    AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest, CheckResult, Decision,
+    Alert, AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest, CheckResult, Decision,
     IngestRequest, IngestResult, Source,
 )
 
@@ -140,19 +140,12 @@ async def record_decision(statement: str, rationale: str, source_text: str, ctx:
 
 
 @mcp.tool()
-async def flag_conflict(description: str, source_text: str, ctx: Context, actor: str = "") -> IngestResult:
+async def flag_conflict(description: str, source_text: str, ctx: Context, actor: str = "") -> Alert:
     """Raise a conflict for a human when you notice something that disagrees with the record.
 
     Use when code, docs or instructions you are working with contradict a decision
     (e.g. a wiki page still says "deploy any day" but the team banned Friday deploys).
     `description` says what conflicts with what; `source_text` is the verbatim
-    conflicting text. Canon checks it against the record; raised alerts are in `alerts`.
+    conflicting text. Returns the open alert, linked to the closest decision.
     """
-    ws = _scope(ctx)
-    who = _actor(ctx, actor)
-    # ponytail: core has no create_alert, so the conflict goes through ingest and
-    # reconciliation raises the alert. Add core.raise_alert if agents need raw alerts.
-    src = Source(workspace=ws[-1], kind="agent", title=f"Conflict: {description[:110]}",
-                 author=who, ts=datetime.now(timezone.utc), synthetic=False,
-                 text=f"Conflict flagged by {who}: {description}\n\n{source_text}")
-    return await core.ingest(IngestRequest(source=src, actor=who), ws)
+    return await core.raise_alert(description, source_text, _actor(ctx, actor), _scope(ctx))

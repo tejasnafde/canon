@@ -79,6 +79,7 @@ function BlockCard({ a }: { a: Activity }) {
       </div>
       <div className="bd">
         <div className="h3" style={{ fontSize: 22 }}>{a.summary}</div>
+        {a.explanation && <p style={{ margin: 0 }}>{a.explanation}</p>}
         {id && (
           <div>
             <div className="label" style={{ marginBottom: 6 }}>Deciding decision</div>
@@ -193,7 +194,10 @@ function Alerts() {
                     <span className="label" style={{ marginLeft: 'auto' }}>{a.severity} / {ago(a.created_at)}</span>
                   </div>
                   <div style={{ marginTop: 6 }}>{a.explanation}</div>
-                  {a.decision_id && <Link className="lnk small" to={`/decisions/${a.decision_id}`}>Open the decision</Link>}
+                  <div className="row" style={{ gap: 14 }}>
+                    {a.decision_id && <Link className="lnk small" to={`/decisions/${a.decision_id}`}>Open the decision</Link>}
+                    {a.related_decision_id && <Link className="lnk small" to={`/decisions/${a.related_decision_id}`}>Open the decision it conflicts with</Link>}
+                  </div>
                 </div>
               </div>
             ))}

@@ -9,19 +9,28 @@ from pydantic import BaseModel
 from canon import llm
 from canon.ask import citations
 from canon.models import Action, Briefing, BriefingRequest, Person
-from canon.store import get_store, now, utc
+from canon.store import get_store, now, scrub_alerts, utc
 
 URGENT = re.compile(r"\b(urgent|asap|blocker|blocking|incident|outage|security|p0|sev1|critical|"
                     r"rollback|revert|breach|escalat\w*|churn)\b", re.I)
 DEPEND = re.compile(r"\b(blocks|blocked by|depends on|dependency|handoff|hand off|waiting on|cross-team)\b", re.I)
+RULE = re.compile(r"\b(no|never|must|always|only|prohibit\w*|forbid\w*|requires?|not allowed)\b", re.I)
+
+# Per persona: the vocabulary of their area and the source kinds where their work lives.
 PERSONA = {
-    "engineer": r"deploy|release|api|code|infra|database|db|migration|pr\b|ci\b|test|incident|on-call|oncall|"
-                r"service|latency|schema|kubernetes|backend|frontend|security",
-    "pm": r"roadmap|pricing|price|customer|launch|scope|deadline|priority|feature|contract|sla|revenue|"
-          r"beta|ga\b|marketing|sales|q[1-4]",
-    "new_hire": r"policy|process|always|never|rule|convention|onboarding|how we|standard|default|must|"
-                r"handbook|on-call|oncall|review",
+    "engineer": r"deploy\w*|release|cron|schedul\w*|ci|pipeline|api|infra\w*|database|migration|schema|incident|"
+                r"on-call|oncall|rollback|revert\w*|logs?|logging|parser|webhooks?|retr\w+|ingestion|service|backups?|"
+                r"security|latency|workers?|batch\w*|config\w*|production|pr|code",
+    "pm": r"pric\w+|launch\w*|general availability|roadmap|customers?|contracts?|renewal|sla|preview|pilot|marketing|"
+          r"sales|landing|promis\w+|subscriptions?|order forms?|proposals?|deadline|brochure|packaging|headline|"
+          r"route lens|scope|beta|ga",
+    "new_hire": r"policy|process|handbook|onboarding|on-call|oncall|release\w*|deploy\w*|production|window|approval|"
+                r"access|incident|security|review|standard|convention|wiki|faq",
 }
+HOME = {"engineer": ("pr", "commit"), "pm": ("email",), "new_hire": ("wiki", "doc")}
+WHERE = {"pr": "a PR", "commit": "a commit", "email": "a customer email", "wiki": "the wiki", "doc": "a doc"}
+BASE = {"decision": 30, "contradiction": 45, "agent_violation": 44, "pr_deviation": 44,
+        "stale_doc": 38, "premise_changed": 32}
 MONTHS = {m: i + 1 for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
 DATE_ISO = re.compile(r"\b(20\d\d)-(\d\d)-(\d\d)\b")
@@ -45,37 +54,91 @@ def deadline_days(text: str, ref: datetime, today: datetime) -> int | None:
     return min(days) if days else None
 
 
-def score(text: str, persona: str, ts: datetime, today: datetime, teams: set[str],
-          alert_severity: str | None, open_alerts: int) -> tuple[int, list[str]]:
-    """Next-best-action score 0-100 with the human-readable reasons behind it."""
-    pts, reasons = 10, []
+def score(text: str, persona: str, kind: str, ts: datetime, today: datetime, *, source_kind: str | None = None,
+          teams: set[str] = frozenset(), links: int = 0, changed: bool = False) -> tuple[int, list[str]]:
+    """Next-best-action score with the human-readable reasons behind it. Deterministic.
+
+    kind is "decision" or an alert kind. Points, then clamped to 30..98:
+      base by kind (a contradiction outranks a stale doc outranks a plain decision)  30-45
+      persona vocabulary hits (distinct terms): 1 / 2 / 3+ -> +10 / +18 / +24; none -> -12
+      evidence lives where the persona works (engineer pr/commit, pm email, new hire wiki)  +12
+      new hire: a standing rule ("no", "must", "only")  +10
+      the decision changed an earlier one  +6
+      other open alerts point at the same decision: +6 each, max +12
+      deadline in 2 / 7 / 30 days  +15 / +10 / +5;  urgent words  +8;  cross-team dependency  +6
+      age: last 7 days +8, last 30 days +4, over a year -6
+    """
+    pts, reasons = BASE.get(kind, 30), []
+    if kind != "decision":
+        reasons.append(f"open {kind.replace('_', ' ')} alert")
+    hits = len({m.lower() for m in re.findall(rf"\b(?:{PERSONA[persona]})\b", text, re.I)})
+    who = persona.replace("_", " ")
+    if hits:
+        pts += (0, 10, 18)[hits] if hits < 3 else 24
+        reasons.append(f"relevant to {who}")
+    else:
+        pts -= 12
+    if source_kind in HOME[persona]:
+        pts += 12
+        reasons.append(f"evidence in {WHERE[source_kind]}")
+    if persona == "new_hire" and RULE.search(text):
+        pts += 10
+        reasons.append("a standing rule")
+    if changed:
+        pts += 6
+        reasons.append("changed an earlier decision")
+    if links:
+        pts += min(12, 6 * links)
+        reasons.append(f"{links} other open alert(s) on this decision")
     dd = deadline_days(text, ts, today)
     if dd is not None and dd <= 30:
-        p = 30 if dd <= 2 else 20 if dd <= 7 else 10
-        pts += p
+        pts += 15 if dd <= 2 else 10 if dd <= 7 else 5
         reasons.append(f"deadline in {max(dd, 0)} days" if dd > 0 else "deadline today")
     if m := URGENT.search(text):
-        pts += 15
+        pts += 8
         reasons.append(f"urgent: \"{m.group(0).lower()}\"")
     mentioned = {t for t in teams if re.search(rf"\b{re.escape(t)}\b", text, re.I)}
     if DEPEND.search(text) or len(mentioned) >= 2:
-        pts += 15
+        pts += 6
         reasons.append("cross-team dependency" + (f" ({', '.join(sorted(mentioned))})" if mentioned else ""))
-    hits = len(set(m.lower() for m in re.findall(PERSONA[persona], text, re.I)))
-    if hits:
-        pts += min(20, 8 * hits)
-        reasons.append(f"relevant to {persona.replace('_', ' ')}")
-    if alert_severity:
-        pts += {"high": 25, "medium": 15, "low": 5}[alert_severity]
-        reasons.append(f"open {alert_severity} alert")
-    elif open_alerts:
-        pts += 15
-        reasons.append(f"{open_alerts} open alert(s) on this decision")
     age = (today - utc(ts)).days
     if age <= 7:
-        pts += 10
+        pts += 8
         reasons.append("from the last 7 days")
-    return max(0, min(100, pts)), reasons
+    elif age <= 30:
+        pts += 4
+        reasons.append("from the last 30 days")
+    elif age > 365:
+        pts -= 6
+    return max(30, min(98, pts)), reasons
+
+
+def rank(decs: list[dict], alerts: list[dict], kinds: dict[str, str], persona: str, since: datetime,
+         today: datetime, teams: set[str]) -> list[tuple[int, list[str], str, dict]]:
+    """Candidates (score, reasons, "decision"|"alert", doc), best first. Ties break on recency, then id."""
+    dmap = {d["id"]: d for d in decs}
+    links: dict[str, int] = {}
+    for a in alerts:
+        for i in {a.get("decision_id"), a.get("related_decision_id")} - {None}:
+            links[i] = links.get(i, 0) + 1
+    cands = []
+    for d in decs:
+        if utc(d["ts"]) >= since and d["status"] == "active":
+            src = kinds.get(d["quotes"][0]["source_id"]) if d["quotes"] else None
+            s, r = score(f"{d['topic']} {d['statement']} {d['rationale']}", persona, "decision", d["ts"], today,
+                         source_kind=src, teams=teams, links=links.get(d["id"], 0), changed=bool(d.get("supersedes")))
+            cands.append((s, r, "decision", d))
+    for a in alerts:  # open alerts are actionable whatever their age
+        d = dmap.get(a.get("decision_id") or "")
+        rel = dmap.get(a.get("related_decision_id") or "")
+        text = " ".join(x for x in (a["explanation"], d and d["statement"], rel and rel["statement"],
+                                    d and d["topic"]) if x)
+        others = max(0, links.get(a.get("related_decision_id") or a.get("decision_id") or "", 0) - 1)
+        s, r = score(text, persona, a["kind"], (d or a)["ts"] if d else a["created_at"], today,
+                     source_kind=kinds.get(a.get("source_id") or ""), teams=teams, links=others)
+        cands.append((s, r, "alert", a))
+    cands.sort(key=lambda c: (c[0], utc(c[3].get("ts") or c[3]["created_at"]), c[3]["id"]), reverse=True)
+    return cands
 
 
 class Prose(BaseModel):
@@ -94,25 +157,13 @@ async def briefing(req: BriefingRequest, workspaces: list[str]) -> Briefing:
         st.query("people", workspaces), st.query("resolutions", workspaces))
     done = {r["alert_id"] for r in resolved}
     alerts = [a for a in alerts if a["id"] not in done]
-    teams = {p["team"] for p in people if p.get("team")}
+    await scrub_alerts(alerts)
+    teams = {p["team"].lower() for p in people if p.get("team")}
     active_people = {p["name"].lower() for p in people if p["status"] == "active"}
-    by_dec: dict[str, list[dict]] = {}
-    for a in alerts:
-        by_dec.setdefault(a.get("decision_id") or "", []).append(a)
-    dmap = {d["id"]: d for d in decs}
-
-    cands = []  # (score, reasons, kind, obj)
-    for d in decs:
-        if utc(d["ts"]) >= since and d["status"] == "active":
-            s, r = score(f"{d['topic']} {d['statement']} {d['rationale']}", req.persona, d["ts"], today, teams,
-                         None, len(by_dec.get(d["id"], [])))
-            cands.append((s, r, "decision", d))
-    for a in alerts:  # open alerts are actionable whatever their age
-        d = dmap.get(a.get("decision_id") or "")
-        text = f"{a['kind']} {a['explanation']} {d['statement'] if d else ''}"
-        s, r = score(text, req.persona, d["ts"] if d else a["created_at"], today, teams, a["severity"], 0)
-        cands.append((s, r, "alert", a))
-    cands.sort(key=lambda c: c[0], reverse=True)
+    kinds = {i: x["kind"] for i, x in (await st.get_many(
+        "sources", [d["quotes"][0]["source_id"] for d in decs if d["quotes"] and utc(d["ts"]) >= since]
+        + [a["source_id"] for a in alerts if a.get("source_id")])).items()}
+    cands = rank(decs, alerts, kinds, req.persona, since, today, teams)
     top = cands[:8]
 
     who = sorted((Person(**p) for p in people if p["status"] == "active"),

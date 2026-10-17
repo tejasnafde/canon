@@ -149,14 +149,14 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     results, alerts, writes, flagged = [], [], [], set()
     touched = {old["id"] for _, old, _ in judged if old}
 
-    def stale_alert(d, doc_sid, quote, why):
+    def stale_alert(d, doc_sid, quote, why, related=None):
         if doc_sid in flagged or doc_sid == sid:
             return
         flagged.add(doc_sid)
         title = kinds.get(doc_sid, {}).get("title") or "Doc"
         alerts.append(_alert(ws, "stale_doc", "medium", d["id"], doc_sid,
                              f"\"{title}\" is contradicted by a newer decision: {why}",
-                             d["quotes"][:1] + [{"source_id": doc_sid, "quote": quote}]))
+                             d["quotes"][:1] + [{"source_id": doc_sid, "quote": quote}], related_decision_id=related))
 
     for d, (rel, old, why), stale in zip(p.decisions, judged, stales):
         if rel == "same" and old:
@@ -174,7 +174,7 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
                     writes.append(st.update("decisions", old["id"], {"status": "superseded", "superseded_by": d["id"]}))
                 for q in old["quotes"]:
                     if kinds.get(q["source_id"], {}).get("kind") in ("wiki", "doc"):
-                        stale_alert(d, q["source_id"], q["quote"], f"it still states the superseded decision: {old['statement']}")
+                        stale_alert(d, q["source_id"], q["quote"], f"it still states the superseded decision: {old['statement']}", old["id"])
             else:  # ingested out of order: the existing one is newer
                 d["status"], d["superseded_by"] = "superseded", old["id"]
                 if old["workspace"] == ws:
@@ -199,8 +199,10 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
     await asyncio.gather(*writes)
     if log:
         from canon.core import log_activity
-        await log_activity(ws, actor, "ingest",
-                           f"Ingested {p.source['kind']} \"{p.source['title']}\": {len(results)} decisions, {len(alerts)} alerts",
+        await log_activity(ws, actor, "record" if p.source["kind"] == "agent" else "ingest",
+                           (f"Recorded \"{p.source['title']}\"" if p.source["kind"] == "agent" else
+                            f"Ingested {p.source['kind']} \"{p.source['title']}\"") +
+                           f": {len(results)} decisions, {len(alerts)} alerts",
                            [sid] + [r.decision.id for r in results] + [a["id"] for a in alerts])
     return IngestResult(source=Source(**p.source), decisions=results, alerts=[Alert(**a) for a in alerts],
                         rejected_quotes=p.rejected, latency_ms=0)

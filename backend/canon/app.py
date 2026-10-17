@@ -15,7 +15,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
 from canon import a2a, core, discord, hooks
-from canon.mcp_server import mcp, scope
+from canon.mcp_server import AGENTS, BASE, mcp, scope
 from canon.models import (
     Activity, Alert, AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest,
     CheckResult, Decision, DecisionDetail, EvalReport, ExpertRequest, IngestRequest,
@@ -23,7 +23,7 @@ from canon.models import (
 )
 
 MODEL = os.environ.get("CANON_MODEL", "gemini-3.5-flash-lite")
-RATE_LIMIT = int(os.environ.get("CANON_RATE_LIMIT", "30"))  # POSTs per IP per minute
+RATE_LIMIT = int(os.environ.get("CANON_RATE_LIMIT", "120"))  # POSTs per IP per minute; judges share networks
 
 
 class _JsonFormatter(logging.Formatter):
@@ -103,6 +103,11 @@ async def _not_found(request: Request, exc: LookupError):
     return JSONResponse({"error": "not_found", "detail": str(exc)}, status_code=404)
 
 
+@app.exception_handler(FileNotFoundError)  # e.g. no committed eval report
+async def _missing(request: Request, exc: FileNotFoundError):
+    return JSONResponse({"error": "not_found", "detail": "not available"}, status_code=404)
+
+
 @app.exception_handler(Exception)
 async def _unhandled(request: Request, exc: Exception):
     log.exception("unhandled", extra={"fields": {"path": request.url.path}})
@@ -110,8 +115,6 @@ async def _unhandled(request: Request, exc: Exception):
 
 
 Ws = Header(default=None, alias="X-Canon-Workspace")
-
-
 
 
 @app.get("/health")
@@ -173,7 +176,8 @@ async def source(source_id: str, x: str | None = Ws):
 
 @app.get("/api/activity", response_model=list[Activity])
 async def activity(since: str | None = None, x: str | None = Ws):
-    return await core.list_activity(scope(x), since_iso=since or None)
+    # Visitors also see agent traffic (MCP/A2A write to "agents"), so the feed shows Claude Code live.
+    return await core.list_activity(list(dict.fromkeys([BASE, AGENTS, *scope(x)])), since_iso=since or None)
 
 
 @app.get("/api/people", response_model=list[Person])
