@@ -107,3 +107,11 @@ async def test_vector_search_falls_back_to_scan(caplog):
     fs._nearest_ws, fs._scan_ws = broken, scan
     assert await fs.nearest("decisions", ["acme"], [1.0], 3) == [({"id": "d1"}, 0.9)]
     assert any(r.levelno == logging.WARNING and "falling back" in r.getMessage() for r in caplog.records)
+
+
+def test_client_error_accepts_path_from_web_client():
+    from fastapi.testclient import TestClient
+    from canon.app import app
+    c = TestClient(app)
+    assert c.post("/api/client-error", json={"message": "boom", "source": "web", "path": "/ask"}).status_code == 204
+    assert c.post("/api/client-error", json={"message": "boom"}).status_code == 422

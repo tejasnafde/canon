@@ -229,6 +229,8 @@ async def client_error(request: Request):
         r = json.loads(body) if len(body) <= 8192 else None
     except ValueError:
         r = None
+    if isinstance(r, dict) and not r.get("url") and isinstance(r.get("path"), str):
+        r["url"] = r["path"]  # the web client sends {message, stack, source, path}
     if not isinstance(r, dict) or not isinstance(r.get("message"), str) or not isinstance(r.get("url"), str):
         return _err("validation", 422 if len(body) <= 8192 else 413, detail="need {message, url} under 8 KB")
     f = {k: str(r[k])[:4000] for k in ("stack", "url", "userAgent", "release") if r.get(k)}
