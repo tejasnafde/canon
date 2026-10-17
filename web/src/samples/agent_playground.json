@@ -1,0 +1,66 @@
+[
+  {
+    "tool": "search_decisions",
+    "args": {
+      "query": "Friday production deployments",
+      "limit": 5
+    },
+    "expected_outcome": "Find no-friday with the incident-review quote; do not treat the stale wiki as the active policy.",
+    "expected_decision_keys": [
+      "no-friday"
+    ]
+  },
+  {
+    "tool": "check_intent",
+    "args": {
+      "intent": "Deploy the production dispatch service this Friday at 15:00 SGT using a cron job.",
+      "actor": "release-bot"
+    },
+    "expected_outcome": "block, citing the Friday production ban.",
+    "expected_verdict": "block",
+    "expected_decision_keys": [
+      "no-friday"
+    ]
+  },
+  {
+    "tool": "ask_why",
+    "args": {
+      "question": "What should we quote a new Route Lens customer, and why did the price change?"
+    },
+    "expected_outcome": "Explain the second inference pass and USD 149 new-subscription fee; cite both commercial reviews.",
+    "expected_decision_keys": [
+      "pricing-v1",
+      "pricing-v2"
+    ]
+  },
+  {
+    "tool": "catch_me_up",
+    "args": {
+      "persona": "pm",
+      "since": "2026-03-01T00:00:00Z"
+    },
+    "expected_outcome": "Surface the GA delay, new price, old customer promises and stale launch material; suggest updating customer communications."
+  },
+  {
+    "tool": "record_decision",
+    "args": {
+      "statement": "Use matte thermal labels for all new depot scanner kits.",
+      "rationale": "Glossy stock causes reflections in cold-room tests.",
+      "source_text": "Kavya Iyer: Use matte thermal labels for all new depot scanner kits. Glossy stock causes reflections in cold-room tests. Nur approves the additional supply cost. Kavya owns the checklist.",
+      "actor": "procurement-bot"
+    },
+    "expected_outcome": "A new decision with a verified quote and an agent activity entry."
+  },
+  {
+    "tool": "flag_conflict",
+    "args": {
+      "description": "A new unsigned Meridian proposal still quotes the old Route Lens fee.",
+      "source_text": "Arjun: The unsigned Meridian proposal for a new Route Lens subscription quotes USD 99 per workspace per month. It has no signed pilot order form.",
+      "actor": "pm-bot"
+    },
+    "expected_outcome": "An alert against pricing-v2 with the old-price proposal evidence and an activity entry.",
+    "expected_decision_keys": [
+      "pricing-v2"
+    ]
+  }
+]

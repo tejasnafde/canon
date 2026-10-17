@@ -1,0 +1,44 @@
+[
+  {
+    "key": "friday-contradiction",
+    "expected_relation": "contradiction",
+    "decision_key": "no-friday",
+    "source": {
+      "kind": "paste",
+      "title": "Dispatch cron review",
+      "author": "Pranav Menon",
+      "ts": "2026-10-17T10:00:00Z",
+      "workspace": "agents",
+      "synthetic": true,
+      "text": "Pranav: I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time. It runs unattended, including configuration changes. I used the slot from the Release process wiki. This is routine housekeeping, not incident mitigation."
+    }
+  },
+  {
+    "key": "timeout-update",
+    "expected_relation": "update",
+    "decision_key": "eta-fallback-new",
+    "source": {
+      "kind": "paste",
+      "title": "Approved October ETA timeout revision",
+      "author": "Mei Tan",
+      "ts": "2026-10-17T10:05:00Z",
+      "workspace": "agents",
+      "synthetic": true,
+      "text": "Mei: After the October latency review, replace the 600 millisecond route-model timeout with 500 milliseconds. Keep the timestamped carrier ETA fallback. I approve this change for the next Tuesday release; the freshness wording stays the same."
+    }
+  },
+  {
+    "key": "new-label-policy",
+    "expected_relation": "new",
+    "decision_key": null,
+    "source": {
+      "kind": "paste",
+      "title": "Thermal label procurement review",
+      "author": "Kavya Iyer",
+      "ts": "2026-10-17T10:10:00Z",
+      "workspace": "agents",
+      "synthetic": true,
+      "text": "Kavya: We will use matte thermal labels for all new depot scanner kits. Glossy stock caused reflections in the cold-room test. Nur approved the additional supply cost today. I own the procurement checklist and will update it before the next kit ships."
+    }
+  }
+]

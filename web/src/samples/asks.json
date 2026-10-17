@@ -1,0 +1,6 @@
+[
+  { "question": "Why can we no longer deploy production on Fridays?" },
+  { "question": "What should we quote a new Route Lens customer, and why did the price change?" },
+  { "question": "When did Route Lens GA move, and what gate held it up?" },
+  { "question": "What is Northwind Labs annual recurring revenue for 2026?", "refusal": true }
+]
