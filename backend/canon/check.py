@@ -66,7 +66,7 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
                   + (("OPEN ALERTS on these decisions:\n" + "\n".join(flags) + "\n\n") if flags else "") +
                   "Judge every decision above, one judgement each, in the order given (decision = its label, e.g. D1). Read its conditions and exceptions "
                   "closely; an exception may be recorded as a separate decision.\n"
-                  "- applies: true if the decision governs this kind of action (same system, time, customer or process)\n"
+                  "- applies: true if the decision governs this kind of action (same system, environment, time, customer or process; a production rule does not govern staging)\n"
                   "- violates: true if the action does what the decision forbids or skips what it requires\n"
                   "- exception_met: true only if the action itself states the conditions of a documented exception to this "
                   "decision, whether written in it or recorded as another decision above (for example an emergency rule)\n"

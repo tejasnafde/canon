@@ -166,10 +166,11 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
         asyncio.gather(*(reconcile.stale_check(d, d["embedding"], scope, sid) for d in p.decisions)),
     )
     # A sibling that conflicts with a decision this same source deliberately revises is part of the revision.
-    revised = {old["id"] for rel, old, _ in judged if rel == "update" and old}
+    revised = {old["id"] for rel, old, _ in judged if rel == "update" and old} | \
+        {x["id"] for d in p.decisions for x in d.get("_also", [])}
     judged = [("update" if rel == "contradiction" and old["id"] in revised else rel, old, why) for rel, old, why in judged]
     # Docs quoted by a decision this source updates are stale too, no extra Gemini call needed.
-    olds = [old for rel, old, _ in judged if rel == "update" and old]
+    olds = [old for rel, old, _ in judged if rel == "update" and old] + [x for d in p.decisions for x in d.get("_also", [])]
     kinds = await st.get_many("sources", [q["source_id"] for o in olds for q in o["quotes"]])
 
     results, alerts, writes, flagged = [], [], [], set()
@@ -207,14 +208,19 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
             results.append(ReconciledDecision(decision=Decision(**old), relation="same",
                                               related_decision_id=old["id"], explanation=why))
             continue
+        also = d.pop("_also", [])
         if rel == "update" and old:
             if utc(d["ts"]) >= utc(old["ts"]):
-                d["supersedes"] = [old["id"]]
+                d["supersedes"] = [old["id"]] + [x["id"] for x in also if utc(x["ts"]) <= utc(d["ts"])]
+                for x in also:
+                    if x["workspace"] == ws and x["id"] in d["supersedes"]:
+                        writes.append(st.update("decisions", x["id"], {"status": "superseded", "superseded_by": d["id"]}))
                 if old["workspace"] == ws:
                     writes.append(st.update("decisions", old["id"], {"status": "superseded", "superseded_by": d["id"]}))
-                for q in old["quotes"]:
-                    if kinds.get(q["source_id"], {}).get("kind") in ("wiki", "doc"):
-                        stale_alert(d, q["source_id"], q["quote"], f"it still states the superseded decision: {old['statement']}", old["id"])
+                for o in [old] + [x for x in also if x["id"] in d["supersedes"]]:
+                    for q in o["quotes"]:
+                        if kinds.get(q["source_id"], {}).get("kind") in ("wiki", "doc"):
+                            stale_alert(d, q["source_id"], q["quote"], f"it still states the superseded decision: {o['statement']}", o["id"])
             else:  # ingested out of order: the existing one is newer
                 d["status"], d["superseded_by"] = "superseded", old["id"]
                 if old["workspace"] == ws:

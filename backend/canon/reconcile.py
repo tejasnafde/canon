@@ -116,8 +116,14 @@ async def candidates(emb: list[float], scope: list[str], k: int = 5, min_score: 
     return [(d, s) for d, s in hits if s >= min_score and (not active_only or d["status"] == "active")][:k]
 
 
+# Wording that announces a revision. With a conflict and authority it counts as explicit_supersede even when the
+# model misses it (it does, run to run); a copied rule or a PR never words itself this way.
+REVISION = re.compile(r"\b(replaces|replacing|replaced|supersed\w*|instead of|no longer applies|"
+                      r"from [\w.:]+(?: [\w.]+)? to [\w.:]+)\b", re.I)
+
+
 def decide(assessments: list[dict], labels: dict[str, dict], authorised,
-           violators: set[str] = frozenset()) -> tuple[str, dict | None, dict | None]:
+           violators: set[str] = frozenset(), revises: bool = False) -> tuple[str, dict | None, dict | None]:
     """Relation from the structured judgement, in code. Returns (relation, related decision, its assessment).
 
     A conflict outranks a restatement: a paste that repeats an earlier violation still breaks the rule.
@@ -131,7 +137,7 @@ def decide(assessments: list[dict], labels: dict[str, dict], authorised,
     seen = [(a, d) for a, d in seen if d is not None]
     for a, d in seen:
         if a["conflicts"] and d.get("kind", "rule") == "rule" and d["id"] not in violators:
-            return ("update" if a["explicit_supersede"] and authorised(d) else "contradiction"), d, a
+            return ("update" if (a["explicit_supersede"] or revises) and authorised(d) else "contradiction"), d, a
     for a, d in seen:
         if a["restates"]:
             return "same", d, a
@@ -184,9 +190,15 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict,
     people = {norm(src["author"]).lower(), norm(dec["owner"]).lower()}
     # A meeting record is a decision forum: the group setting new terms there is the authority.
     authorised = lambda d: approved or src["kind"] == "meeting" or norm(d["owner"]).lower() in people  # noqa: E731
-    rel, old, a = decide(r["assessments"], labels, authorised, violators)
+    revises = bool(REVISION.search(src["text"]))
+    rel, old, a = decide(r["assessments"], labels, authorised, violators, revises)
     if a is None:
         return "new", None, "No existing decision covers the same subject."
+    if rel == "update":
+        # The same old rule often lives in several decisions (the thread and a wiki copy); revise every copy.
+        dec["_also"] = [d for x in r["assessments"] if (d := pick(labels, x["decision"])) and d["id"] != old["id"]
+                        and x["conflicts"] and (x["explicit_supersede"] or revises) and authorised(d)
+                        and d["id"] not in violators and d.get("kind", "rule") == "rule"]
     return rel, old, unlabel(a["why"], labels, old)
 
 
