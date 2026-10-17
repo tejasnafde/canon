@@ -161,11 +161,17 @@ function FeedItem({ a }: { a: Activity }) {
           {a.verdict && <V v={a.verdict} />}
         </div>
         <div className="small" style={{ marginTop: 3 }}>{a.summary}</div>
-        {/* ref_ids mix decision and source ids; only a decision has a page, and the deciding one comes first */}
-        {a.ref_ids[0] && (a.action === 'check' || a.action === 'record') && (
+        {/* ref_titles[i] names ref_ids[i]; only a decision (d-) has a page, and the deciding one comes first */}
+        {a.ref_titles.length > 0 && (
           <div className="label" style={{ marginTop: 4 }}>
-            {a.verdict ? 'deciding: ' : 'decision: '}
-            <Link className="lnk" to={`/decisions/${a.ref_ids[0]}`}>{a.ref_titles[0] ? short(a.ref_titles[0]) : 'open'}</Link>
+            {a.verdict ? 'deciding: ' : 'refs: '}
+            {a.ref_titles.slice(0, 2).map((t, i) => (
+              <span key={i}>
+                {i > 0 && ' / '}
+                {/^d(-|ec_)/.test(a.ref_ids[i] ?? '') ? <Link className="lnk" to={`/decisions/${a.ref_ids[i]}`}>{short(t, 60)}</Link> : short(t, 60)}
+              </span>
+            ))}
+            {a.ref_titles.length > 2 && ` +${a.ref_titles.length - 2}`}
           </div>
         )}
       </div>

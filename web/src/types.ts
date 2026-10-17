@@ -20,14 +20,15 @@ export interface Decision {
 
 export interface Alert {
   id: string; workspace: string; kind: AlertKind; severity: 'high' | 'medium' | 'low'
-  decision_id: string | null; source_id: string | null; explanation: string; quotes: Quote[]
+  decision_id: string | null; related_decision_id?: string | null; source_id: string | null; explanation: string; quotes: Quote[]
   status: 'open' | 'resolved'; resolution: string | null; created_by: string; created_at: string
 }
 
 export interface Activity {
   id: string; workspace: string; actor: string
   action: 'ingest' | 'ask' | 'check' | 'record' | 'briefing' | 'resolve' | 'expert' | 'search' | 'flag'
-  summary: string; ref_ids: string[]; ref_titles: string[]; verdict: Verdict | null; created_at: string
+  summary: string; ref_ids: string[]; ref_titles: string[]; verdict: Verdict | null
+  explanation?: string | null; created_at: string
 }
 
 export interface Person { id: string; name: string; role: string; team: string; status: 'active' | 'left'; left_at: string | null }

@@ -188,16 +188,24 @@ export async function mockApi(method: string, path: string, body: any): Promise<
 export async function mockTool(name: string, args: any): Promise<unknown> {
   await sleep(600)
   const actor = 'agent:' + (args.actor || 'playground')
-  const log = (action: Activity['action'], summary: string, verdict: Activity['verdict'] = null, refs: Decision[] = []) => {
-    activity = [{ id: 'a' + Date.now(), workspace: 'agents', actor, action, summary, verdict, created_at: new Date().toISOString(), ref_ids: refs.map(d => d.id), ref_titles: refs.map(d => d.statement) }, ...activity]
+  const log = (action: Activity['action'], summary: string, verdict: Activity['verdict'] = null, refs: Decision[] = [], explanation: string | null = null) => {
+    activity = [{ id: 'a' + Date.now(), workspace: 'agents', actor, action, summary, verdict, explanation, created_at: new Date().toISOString(), ref_ids: refs.map(d => d.id), ref_titles: refs.map(d => d.statement) }, ...activity]
   }
   switch (name) {
-    case 'check_intent': { const r = check(args.intent); log('check', `check: "${args.intent}"`, r.verdict, r.decisions); return r }
+    case 'check_intent': { const r = check(args.intent); log('check', `check: "${args.intent}"`, r.verdict, r.decisions, r.explanation); return r }
     case 'search_decisions': log('search', `search: "${args.query}"`); return decisions.filter(d => d.status === 'active').slice(0, args.limit ?? 5)
     case 'ask_why': log('ask', `ask: "${args.question}"`); return ask(args.question)
     case 'catch_me_up': log('briefing', `briefing: ${args.persona}`); return briefing(args.persona, args.since)
     case 'record_decision': log('record', `record: "${args.statement}"`); return ingest({ kind: 'agent', title: args.statement, author: actor, ts: new Date().toISOString(), text: args.source_text })
-    case 'flag_conflict': log('flag', `flag: ${args.description}`); return ingest({ kind: 'agent', title: args.description, author: actor, ts: new Date().toISOString(), text: args.source_text })
+    case 'flag_conflict': {
+      const d = decisions.find(x => x.status === 'active')
+      const a: Alert = { id: 'al' + Date.now(), workspace: 'agents', kind: 'agent_violation', severity: 'medium', decision_id: d?.id ?? null,
+        related_decision_id: null, source_id: null, explanation: args.description, quotes: [], status: 'open', resolution: null,
+        created_by: actor, created_at: new Date().toISOString() }
+      alerts = [a, ...alerts]
+      log('flag', `Flagged: ${args.description}`, null, d ? [d] : [], args.description)
+      return a
+    }
   }
   throw new Error('Unknown tool ' + name)
 }
