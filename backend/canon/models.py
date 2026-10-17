@@ -52,6 +52,7 @@ class Alert(BaseModel):
     kind: AlertKind
     severity: Literal["high", "medium", "low"]
     decision_id: str | None = None
+    related_decision_id: str | None = None
     source_id: str | None = None
     explanation: str
     quotes: list[Quote] = []
@@ -70,6 +71,7 @@ class Activity(BaseModel):
     ref_ids: list[str] = []
     ref_titles: list[str] = []  # display text for ref_ids, so the feed needs no second lookup
     verdict: Verdict | None = None
+    explanation: str | None = None  # e.g. the check verdict explanation, for the block card
     created_at: datetime
 
 
