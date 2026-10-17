@@ -48,3 +48,20 @@ export const reasonTone = (r: string): Tone => (/contradict|block|violat/i.test(
 
 /** Only decisions have a page; ids look like `d-...` or `dec_...`. */
 export const isDecisionId = (id: string | undefined) => !!id && /^d(-|ec_)/.test(id)
+
+export type JsonTok = { t: 'key' | 'str' | 'num' | 'lit' | 'punct'; s: string }
+
+/** Tiny tokenizer for pretty-printed JSON, enough to colour it. Unknown text passes through as punct. */
+export function jsonTokens(src: string): JsonTok[] {
+  const out: JsonTok[] = []
+  const re = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([^"\d\-tfn]+|.)/g
+  for (const m of src.matchAll(re)) {
+    if (m[1]) {
+      out.push({ t: m[2] ? 'key' : 'str', s: m[1] })
+      if (m[2]) out.push({ t: 'punct', s: m[2] })
+    } else if (m[3]) out.push({ t: 'num', s: m[3] })
+    else if (m[4]) out.push({ t: 'lit', s: m[4] })
+    else out.push({ t: 'punct', s: m[0] })
+  }
+  return out
+}

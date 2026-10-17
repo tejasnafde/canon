@@ -1,7 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { VerdictBadge } from '@/components/badges'
 import { ErrorState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { callTool } from '@/lib/mcp'
 import { invalidateRecord } from '@/lib/query'
 import { CheckResult, Persona } from '@/lib/schemas'
+import { jsonTokens } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { exampleArgs, typedArgs, type ToolSpec } from './tools'
 
@@ -108,18 +108,30 @@ export function ToolForm({ spec }: { spec: ToolSpec }) {
           <div className="flex flex-col gap-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200">
             {check?.success && <VerdictBanner r={check.data} ms={call.data.ms} />}
             {!check?.success && <p className="label">Response / {call.data.ms} ms round trip</p>}
-            <pre
-              tabIndex={0}
-              role="region"
-              aria-label="Raw tool response"
-              className="max-h-96 overflow-auto rounded-lg border bg-card p-4 font-mono text-[13px] leading-relaxed"
-            >
-              {JSON.stringify(call.data.data, null, 2)}
-            </pre>
+            <JsonPanel value={call.data.data} />
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+const TOK = { key: 'text-sky-300', str: 'text-emerald-300', num: 'text-amber-300', lit: 'text-fuchsia-300', punct: 'text-zinc-400' } as const
+
+function JsonPanel({ value }: { value: unknown }) {
+  return (
+    <pre
+      tabIndex={0}
+      role="region"
+      aria-label="Raw tool response"
+      className="max-h-96 overflow-auto rounded-lg bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100"
+    >
+      {jsonTokens(JSON.stringify(value, null, 2)).map((k, i) => (
+        <span key={i} className={TOK[k.t]}>
+          {k.s}
+        </span>
+      ))}
+    </pre>
   )
 }
 
@@ -128,10 +140,14 @@ const BANNER = { block: 'bg-signal text-white', warn: 'bg-warn-soft text-warn-in
 function VerdictBanner({ r, ms }: { r: CheckResult; ms: number }) {
   const d = r.decisions[0]
   return (
-    <div className={cn('flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg px-5 py-4', BANNER[r.verdict])}>
-      <span className="label text-current">Verdict</span>
-      <VerdictBadge verdict={r.verdict} className={cn('h-8 px-3 text-base', r.verdict === 'block' && 'bg-white text-[#a82710]')} />
-      <span className="min-w-0 flex-1 text-[15px]">
+    <div className={cn('flex flex-col gap-2 rounded-lg px-5 py-4', BANNER[r.verdict])}>
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="label text-current">Verdict</span>
+        <span className="font-mono text-xs tnum">{ms} ms</span>
+      </div>
+      <p className="font-heading text-5xl leading-none font-semibold tracking-tight uppercase md:text-6xl">{r.verdict}</p>
+      <p className="text-[15px]">{r.explanation}</p>
+      <span className="min-w-0 text-[15px]">
         {d ? (
           <>
             Deciding:{' '}
@@ -140,11 +156,8 @@ function VerdictBanner({ r, ms }: { r: CheckResult; ms: number }) {
             </Link>{' '}
             ({d.owner})
           </>
-        ) : (
-          r.explanation
-        )}
+        ) : null}
       </span>
-      <span className="font-mono text-xs tnum">{ms} ms</span>
     </div>
   )
 }

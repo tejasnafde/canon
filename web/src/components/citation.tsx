@@ -1,4 +1,16 @@
-import { BadgeCheck, BookOpen, Bot, ClipboardPaste, FileText, GitCommitHorizontal, GitPullRequest, Hash, Mail, Users, type LucideIcon } from 'lucide-react'
+import {
+  BadgeCheck,
+  BookOpen,
+  Bot,
+  ClipboardPaste,
+  FileText,
+  GitCommitHorizontal,
+  GitPullRequest,
+  Hash,
+  Mail,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { fmtDate } from '@/lib/format'
 import type { Citation, SourceKind } from '@/lib/schemas'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alertTone, isDecisionId, priorityTone } from './format'
+import { alertTone, isDecisionId, priorityTone, jsonTokens } from './format'
 import { shouldRetry } from './query'
 import { ApiError } from './api'
 
@@ -32,5 +32,15 @@ describe('mappings', () => {
     expect(shouldRetry(0, new TypeError('Failed to fetch'))).toBe(true)
     expect(shouldRetry(0, new ApiError(404, 'x'))).toBe(false)
     expect(shouldRetry(3, new ApiError(503, 'x'))).toBe(false)
+  })
+})
+
+describe('jsonTokens', () => {
+  it('tags keys, strings, numbers and literals, and loses no text', () => {
+    const src = JSON.stringify({ verdict: 'block', ms: -12.5, ok: true, x: null, q: 'a "b" : c' }, null, 2)
+    const toks = jsonTokens(src)
+    expect(toks.map(t => t.s).join('')).toBe(src)
+    const kinds = Object.fromEntries(toks.filter(t => t.t !== 'punct').map(t => [t.s, t.t]))
+    expect(kinds).toMatchObject({ '"verdict"': 'key', '"block"': 'str', '-12.5': 'num', true: 'lit', null: 'lit', '"a \\"b\\" : c"': 'str' })
   })
 })
