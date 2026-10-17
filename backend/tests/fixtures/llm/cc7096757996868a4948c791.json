@@ -1,0 +1,1 @@
+{"judgements": [{"decision": "D1", "applies": true, "violates": true, "exception_met": false, "note": "Deploying on Friday violates the production deployment ban by Mei."}, {"decision": "D2", "applies": true, "violates": true, "exception_met": false, "note": "Scheduling a Friday deployment skips the Tuesday and Thursday slots required by Mei."}]}
