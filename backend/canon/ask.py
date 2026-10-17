@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from canon import llm
 from canon.models import AskRequest, AskResult, Citation, Decision, TimelineEntry
-from canon.reconcile import norm, pick, verified
+from canon.reconcile import NO_LABELS, norm, pick, unlabel, verified
 from canon.store import get_store, utc
 
 ASK_MIN = 0.66  # query-to-record cosine below this means "I do not know" without calling Gemini
@@ -106,11 +106,11 @@ async def ask(req: AskRequest, workspaces: list[str]) -> AskResult:
                   "decision was superseded, say what changed and when. Cite every claim with refs (D1, C2) and a "
                   "short quote copied from that ref. If the record does not answer the question, set answerable "
                   "false and answer \"\".")
-        r = await llm.generate_json(prompt, Answer, system="You are Canon, the company's decision record. Never guess.")
+        r = await llm.generate_json(prompt, Answer, system="You are Canon, the company's decision record. Never guess. " + NO_LABELS)
         cites = await map_citations(r["cited"], labels) if r["answerable"] else []
         if r["answerable"] and cites:
             cited_decs = [x for x in (pick(labels, c["ref"]) for c in r["cited"]) if x and "statement" in x]
-            res = AskResult(answer=r["answer"], citations=cites, timeline=await timeline(cited_decs, workspaces),
+            res = AskResult(answer=unlabel(r["answer"], labels), citations=cites, timeline=await timeline(cited_decs, workspaces),
                             refused=False, latency_ms=0)
     res.latency_ms = int((time.perf_counter() - t) * 1000)
     from canon.core import log_activity

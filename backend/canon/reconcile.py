@@ -22,6 +22,40 @@ def verified(quote: str, text: str) -> bool:
     return bool(q) and q in norm(text)
 
 
+NO_LABELS = ("Never write internal labels such as D1, C2 or W1 in prose; name a decision by what it says "
+             "and its owner, and a document by its title.")
+_LABEL = re.compile(r"(?i:\bthe\s+)?(?i:\b(?:existing|active|earlier|older|new|newer|current)\s+)?"
+                    r"(?i:\bdecision\s+)?\[?\b([DCW]\d{1,2})\b\]?")
+
+
+def _short(s: str, n: int = 80) -> str:
+    s = norm(s).rstrip(".")
+    return s if len(s) <= n else s[:n].rsplit(" ", 1)[0] + "..."
+
+
+def unlabel(text: str, labels: dict[str, dict] | None = None, fallback: dict | None = None) -> str:
+    """Replace prompt labels (D1, [C2]) the model leaked into prose with what they point at.
+
+    A decision becomes `the decision "<statement>" (<owner>, <date>)`, a chunk its quoted title. An unknown
+    D-label falls back to `fallback` (the decision an alert is about) or "an earlier decision".
+    """
+    labels = labels or {}
+
+    def sub(m: re.Match) -> str:
+        x = labels.get(m.group(1).upper())
+        if x is None and m.group(1)[0] in "Dd":
+            x = fallback
+            if x is None:
+                return "an earlier decision"
+        if x is None:
+            return m.group(0)
+        if "statement" in x:
+            return f"the decision \"{_short(x['statement'])}\" ({x.get('owner', '')}, {utc(x['ts']).date()})"
+        return f"\"{x.get('title') or 'a document'}\""
+
+    return _LABEL.sub(sub, text or "")
+
+
 def pick(labels: dict[str, dict], ref: str) -> dict | None:
     """Resolve a model's reference: "D1", "[D1]", "D1: ...", or the referenced statement echoed back."""
     m = re.match(r"\W*([A-Z]\d+)\b", ref or "")
@@ -62,7 +96,8 @@ class StaleCheck(BaseModel):
     stale: list[StaleHit]
 
 
-SYSTEM = "You are Canon, a strict auditor of a company's decision record. Judge only from the text given. Be conservative."
+SYSTEM = ("You are Canon, a strict auditor of a company's decision record. Judge only from the text given. "
+          "Be conservative. " + NO_LABELS)
 
 
 def _dline(label: str, d: dict) -> str:
@@ -98,9 +133,10 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[
     )
     r = await llm.generate_json(prompt, Judgement, system=SYSTEM)
     rel = pick(labels, r["related"])
+    why = unlabel(r["explanation"], labels, rel)
     if r["relation"] != "new" and rel is None:
-        return "new", None, r["explanation"]
-    return r["relation"], (rel if r["relation"] != "new" else None), r["explanation"]
+        return "new", None, why
+    return r["relation"], (rel if r["relation"] != "new" else None), why
 
 
 async def premise_check(source_text: str, items: list[dict], emb_list: list[list[float]],
@@ -133,7 +169,7 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
         d = pick(labels, b["decision"])
         if (d and d["id"] not in {x["id"] for x, _ in out} and len(b["assumption"].split()) >= 3
                 and verified(b["evidence_quote"], source_text)):
-            out.append((d, Broken(**b)))
+            out.append((d, Broken(**{**b, "explanation": unlabel(b["explanation"], labels, d)})))
     return out
 
 
@@ -157,5 +193,5 @@ async def stale_check(dec: dict, emb: list[float], scope: list[str], source_id: 
     for h in r["stale"]:
         c = pick(labels, h["excerpt"])
         if c and verified(h["quote"], c["text"]):
-            out.append((c, StaleHit(**h)))
+            out.append((c, StaleHit(**{**h, "explanation": unlabel(h["explanation"], labels)})))
     return out

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from canon import llm
 from canon.ask import citations, context, retrieve
 from canon.models import CheckRequest, CheckResult, Decision
-from canon.reconcile import pick
+from canon.reconcile import NO_LABELS, pick, unlabel
 from canon.store import get_store, new_id, now
 
 CHECK_THINK = int(os.environ.get("CANON_CHECK_THINK", "0"))  # thinking budget for the verdict
@@ -47,9 +47,9 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
                   "deciding = labels of the decisions behind the verdict ([] for allow when none is relevant). "
                   "explanation: 1 or 2 sentences naming the decision and owner.")
         r = await llm.generate_json(prompt, Guard, think=CHECK_THINK,
-                                    system="You are Canon, a guard that checks actions against the company's decisions.")
-        verdict, why = r["verdict"], r["explanation"]
+                                    system="You are Canon, a guard that checks actions against the company's decisions. " + NO_LABELS)
         deciding = [d for d in (pick(labels, x) for x in r["deciding"]) if d]
+        verdict, why = r["verdict"], unlabel(r["explanation"], labels, deciding[0] if deciding else None)
         if verdict != "allow" and not deciding:
             deciding = active[:1]
         broken = {a["decision_id"] for a in open_alerts if a["kind"] == "premise_changed"}
@@ -66,6 +66,7 @@ async def check(req: CheckRequest, workspaces: list[str]) -> CheckResult:
             "quotes": [{"source_id": c.source_id, "quote": c.quote} for c in cites[:1]],
             "status": "open", "resolution": None, "created_by": req.actor, "created_at": now()})
     from canon.core import log_activity
-    await log_activity(ws, req.actor, "check", f"Checked: {req.intent[:120]}", [d["id"] for d in deciding], verdict)
+    await log_activity(ws, req.actor, "check", f"Checked: {req.intent[:120]}", [d["id"] for d in deciding], verdict,
+                       explanation=why)
     return CheckResult(verdict=verdict, explanation=why, decisions=[Decision(**d) for d in deciding],
                        citations=cites, latency_ms=int((time.perf_counter() - t) * 1000))

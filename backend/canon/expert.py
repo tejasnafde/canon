@@ -3,6 +3,7 @@ import time
 
 from canon import llm
 from canon.ask import ASK_MIN, Answer, context, map_citations, retrieve
+from canon.reconcile import NO_LABELS, unlabel
 from canon.models import AskResult, ExpertRequest
 from canon.store import get_store
 
@@ -27,10 +28,10 @@ async def expert(req: ExpertRequest, workspaces: list[str]) -> AskResult:
                   f"QUESTION: {req.question}\n\nTHEIR RECORD:\n{ctx}\n\n"
                   f"Answer in the first person as {name}, in 2 to 4 sentences, using ONLY their record. Cite refs (D1, "
                   "C1) with a short quote copied from each. If their record does not answer it, set answerable false.")
-        r = await llm.generate_json(prompt, Answer, system="Speak only from the given record. Never invent opinions.")
+        r = await llm.generate_json(prompt, Answer, system="Speak only from the given record. Never invent opinions. " + NO_LABELS)
         cites = await map_citations(r["cited"], labels) if r["answerable"] else []
         if r["answerable"] and cites:
-            res = AskResult(answer=r["answer"], citations=cites, refused=False, latency_ms=0)
+            res = AskResult(answer=unlabel(r["answer"], labels), citations=cites, refused=False, latency_ms=0)
     res.latency_ms = int((time.perf_counter() - t) * 1000)
     from canon.core import log_activity
     await log_activity(workspaces[-1], req.actor, "expert", f"Asked {name}: {req.question[:100]}",

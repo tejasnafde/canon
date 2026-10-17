@@ -79,9 +79,6 @@ async def github(request: Request):
     res = await core.check(CheckRequest(intent=summarize(pr, await fetch_diff(pr)), actor=ACTOR), WORKSPACES)
     posted = False
     if res.verdict in ("warn", "block"):
-        await core.log_activity(WORKSPACES[-1], ACTOR, "check",
-                                f"PR #{pr['number']} {res.verdict}: {pr['title']}",
-                                ref_ids=[d.id for d in res.decisions], verdict=res.verdict)
         if os.environ.get("GITHUB_TOKEN"):
             await post_comment(repo, pr["number"], comment_body(res))
             posted = True

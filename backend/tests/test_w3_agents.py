@@ -183,7 +183,8 @@ async def test_github_hook(client, calls, monkeypatch):
     r = await _gh_post(client, PR_PAYLOAD)
     assert r.json() == {"ok": True, "verdict": "block", "commented": True}
     assert posted[0][:2] == ("tejasnafde/canon", 7) and "No production deploys on Fridays" in posted[0][2]
-    assert ("activity", "agents", "agent:github", "check", "block") in calls
+    # core.check (faked here) logs the activity itself; the hook no longer logs a second row.
+    assert not [c for c in calls if c[0] == "activity"]
 
 
 # ---- Discord ----
