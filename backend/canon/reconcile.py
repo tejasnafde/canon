@@ -90,6 +90,9 @@ async def judge(dec: dict, cands: list[tuple[dict, float]], src: dict) -> tuple[
         "approval or announcement that revises, replaces, narrows or extends it); newer intent wins\n"
         "- contradiction: conflicts with it but is NOT an authorised change: an implementation, promise, email, "
         "doc or plan that ignores or breaks the existing decision\n"
+        "Signals of update: \"from now on\", \"replace\", \"we decided\", \"approved\", a review or meeting outcome. "
+        "Signals of contradiction: a customer promise, PR, commit or email that states different terms (often the "
+        "old ones) without saying the decision changed.\n"
         "- new: a different subject; none of them is about the same thing\n"
         "Set related to the label (e.g. D1), or \"\" for new. One sentence of explanation."
     )
@@ -128,7 +131,8 @@ async def premise_check(source_text: str, items: list[dict], emb_list: list[list
     out = []
     for b in r["broken"]:
         d = pick(labels, b["decision"])
-        if d and verified(b["evidence_quote"], source_text):
+        if (d and d["id"] not in {x["id"] for x, _ in out} and len(b["assumption"].split()) >= 3
+                and verified(b["evidence_quote"], source_text)):
             out.append((d, Broken(**b)))
     return out
 

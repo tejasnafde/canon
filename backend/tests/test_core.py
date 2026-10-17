@@ -162,3 +162,15 @@ def test_pick_accepts_label_or_echoed_statement():
     assert pick(labels, "[D2]") is labels["D2"] and pick(labels, "D1: cache") is labels["D1"]
     assert pick(labels, "Retry for 24 hours. Why: keys") is labels["D2"]
     assert pick(labels, "D9") is None and pick(labels, "") is None
+
+
+async def test_check_block_becomes_warn_when_premise_broken():
+    fake(Extraction=extraction(("Cache dashboard five minutes.", ["cache dashboard five minutes"], [])))
+    r = await ingest("We cache dashboard five minutes.")
+    from canon.store import get_store
+    await get_store().put("alerts", {"id": "a-p", "workspace": "acme", "kind": "premise_changed", "severity": "medium",
+                                     "decision_id": r.decisions[0].decision.id, "explanation": "load grew",
+                                     "quotes": [], "status": "open", "created_at": datetime.now(timezone.utc)})
+    llm.FAKE_RESPONSES["Guard"] = {"verdict": "block", "explanation": "Over the limit.", "deciding": ["D1"]}
+    res = await core.check(CheckRequest(intent="keep cache dashboard five minutes"), ["acme"])
+    assert res.verdict == "warn"

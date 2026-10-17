@@ -92,10 +92,10 @@ def _mime(b64: str) -> str:
 
 
 async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | None = None,
-                        image_b64: str | None = None, temperature: float = 0.0) -> dict:
-    """One structured-output call. Returns the parsed dict matching `schema`."""
+                        image_b64: str | None = None, temperature: float = 0.0, think: int = 0) -> dict:
+    """One structured-output call. Returns the parsed dict matching `schema`. `think` = thinking token budget."""
     name = schema.__name__
-    key = _key(MODEL, system, prompt, schema.model_json_schema(), bool(image_b64) and image_b64[:64])
+    key = _key(MODEL, system, prompt, schema.model_json_schema(), bool(image_b64) and image_b64[:64], think or None)
     if fake():
         hit = _fixture(key)
         if hit is not None:
@@ -112,7 +112,7 @@ async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | N
     cfg = types.GenerateContentConfig(
         system_instruction=system, temperature=temperature, labels=LABELS,
         response_mime_type="application/json", response_schema=schema,
-        thinking_config=types.ThinkingConfig(thinking_budget=0),
+        thinking_config=types.ThinkingConfig(thinking_budget=think),
     )
 
     async def call():

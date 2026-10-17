@@ -1,0 +1,1 @@
+{"broken": [{"decision": "D1", "assumption": "Support volume remains lowest on Friday afternoons", "evidence_quote": "No production deploys on Fridays", "explanation": "The decision schedules the production release window for Friday afternoon, but the new information explicitly prohibits production deploys on Fridays."}]}

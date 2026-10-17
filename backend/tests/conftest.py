@@ -1,6 +1,6 @@
 import os
 
-os.environ["CANON_FAKE_LLM"] = "1"
+os.environ.setdefault("CANON_FAKE_LLM", "1")  # CANON_FAKE_LLM=0 CANON_RECORD=1 re-records fixtures
 os.environ["CANON_MEMORY_STORE"] = "1"
 
 import pytest  # noqa: E402
