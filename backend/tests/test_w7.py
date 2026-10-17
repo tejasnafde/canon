@@ -115,3 +115,13 @@ def test_client_error_accepts_path_from_web_client():
     c = TestClient(app)
     assert c.post("/api/client-error", json={"message": "boom", "source": "web", "path": "/ask"}).status_code == 204
     assert c.post("/api/client-error", json={"message": "boom"}).status_code == 422
+
+
+def test_daily_llm_cap(monkeypatch):
+    from canon import llm
+    monkeypatch.setattr(llm, "DAILY_CAP", 2)
+    monkeypatch.setattr(llm, "_spent", {})
+    llm._charge(); llm._charge()
+    import pytest
+    with pytest.raises(llm.BudgetExceeded):
+        llm._charge()

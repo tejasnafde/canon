@@ -100,3 +100,13 @@ One Secret Manager secret, `canon-config` (JSON), holds every Canon secret (Disc
 bot token, sync token, alert relay token, alert webhook). Cloud Run mounts it as env
 `CANON_CONFIG`; `canon/__init__.py` expands it into `CANON_*` env vars at import.
 Do not create more Canon secrets: add a key to `canon-config` instead (cost: one secret).
+
+## Money rules (after the 2026-10-18 overspend)
+
+- A full corpus seed (about 380 sources) costs roughly INR 80 to 100 in Gemini calls, and
+  a full benchmark run adds more. One worker ran five seeds in a row and cost about INR 400.
+- NEVER run backend/scripts/seed.py or a full eval without the lead's explicit go-ahead
+  in your brief, and never more than ONE seed per brief. Iterate offline with the
+  FakeLLM fixtures and small targeted live checks (a handful of calls) instead.
+- llm.py enforces a per-process daily cap (env CANON_DAILY_LLM_CALLS, default 1500
+  generate calls). Do not raise it to get around a limit; stop and report instead.

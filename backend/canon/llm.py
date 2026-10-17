@@ -48,6 +48,23 @@ class ModelTimeout(Exception):
     """Gemini did not answer within the per-call timeout or the request deadline."""
 
 
+class BudgetExceeded(ModelTimeout):
+    """The daily Gemini call cap for this process is used up (money guard)."""
+
+
+# ponytail: per-process daily cap; Cloud Run has at most 3 instances, so the real ceiling
+# is 3x this. Move the counter to Firestore if a shared cap is ever needed.
+DAILY_CAP = int(os.environ.get("CANON_DAILY_LLM_CALLS", "1500"))
+_spent: dict[str, int] = {}
+
+
+def _charge() -> None:
+    day = time.strftime("%Y-%m-%d", time.gmtime())
+    n = _spent[day] = _spent.get(day, 0) + 1
+    if n > DAILY_CAP:
+        raise BudgetExceeded(f"daily Gemini cap of {DAILY_CAP} calls reached")
+
+
 def guarded(system: str | None) -> str:
     return f"{system}\n\n{DATA_RULE}" if system else DATA_RULE
 
@@ -146,6 +163,7 @@ async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | N
             return r(prompt) if callable(r) else r
         raise KeyError(f"FakeLLM: no fixture {key} and no FAKE_RESPONSES[{name!r}]")
 
+    _charge()
     from google.genai import types
     parts: list[Any] = [prompt]
     if image_b64:
