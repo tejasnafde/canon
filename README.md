@@ -1,54 +1,60 @@
+<p align="center"><img src="brand/final/canon-lockup.svg" alt="Canon" width="320"></p>
+
 # Canon
 
-Canon is the shared memory of a company, for its people and for its AI agents.
-It keeps one record of decisions, checks every new message, document and agent action against that record, and flags drift.
+**The shared memory of a company, for its people and its AI agents.**
 
-Built for the Google Cloud AI Builder Cup 2026, track "Future of Work & Enterprise Productivity".
+Teams decide things in Slack threads, meetings and pull requests, then forget. New hires follow a wiki page that was overruled months ago. Coding agents ship changes that break a rule nobody wrote into the code.
+Canon keeps one record of every decision and the reason behind it. Each decision is backed by a quote that is checked word for word against its source. Canon checks every new message, document and agent action against that record, and it warns when a person, a document or an AI agent is about to break a decision.
+
+Built by team **Localhost** (Tejas Nafde, Ishank Giri, Mitushi) for the Google Cloud AI Builder Cup 2026, track "Future of Work & Enterprise Productivity".
 
 ## Live links
 
 | What | URL |
 |---|---|
-| Web app (Firebase Hosting) | https://canon-tn07.web.app |
-| Same app, custom domain | https://canon.tn07.dev |
-| API on Cloud Run | https://canon-ezvux7gqxa-el.a.run.app |
+| Web app | https://canon.tn07.dev |
+| Same app on Firebase Hosting | https://canon-tn07.web.app |
+| Cloud Run service (health check, no Gemini) | https://canon-ezvux7gqxa-el.a.run.app/health |
 | MCP endpoint (streamable HTTP) | https://canon.tn07.dev/mcp |
 | A2A agent card | https://canon.tn07.dev/.well-known/agent-card.json |
+| Public Discord demo server | https://discord.gg/HwSgjmcgF5 |
 
-There is no login. Each browser gets its own private workspace, so judges do not see each other's writes.
-The service scales to zero, so the first request after a quiet period can take a few extra seconds.
+There is no login. Each browser gets its own private workspace, so judges do not see each other's pastes.
+Cloud Run scales to zero, so the first request after a quiet period can take a few seconds more.
 
-All company data is synthetic. "Northwind Labs" is a fictional 60-person logistics SaaS company (see `data/README.md`).
+All company data is synthetic. "Northwind Labs" is a made-up 60-person logistics software company. Canon read 380 of its sources (Slack, meetings, wiki, pull requests, commits, email) from January 2025 to October 2026. See `data/README.md`.
 
-## Try it in 60 seconds
+## Try it in 2 minutes
 
-1. Open https://canon-tn07.web.app. The Home page shows "Here is what changed" for the Engineer persona, with a ranked list of next best actions.
-2. Go to **Ask why**. Ask: `Why can we no longer deploy production on Fridays?`
-   You get a short answer, a decision timeline (the old Friday window, then the INC-042 ban), and quotes marked "verified".
-3. Ask: `Which company acquired Northwind Labs?`
-   Canon answers "I do not know. The record has no decision or document that answers this." It does not guess.
-4. Go to **Agents**. Pick `check_intent` and send:
-   `Deploy the production dispatch service this Friday at 15:00 SGT using a cron job.`
-   The verdict is **Block**. It cites the decision "no production deploys on Fridays, including scheduled jobs and configuration-only releases" (owner Mei Tan). The call appears in the live Agent activity feed.
-5. Go to **Ingest**. Paste this text (sample `friday-contradiction` in `data/samples/live_paste.json`):
+Open https://canon.tn07.dev. Home shows the live counts (380 items read, 345 official decisions, 27 documents now out of date) and four stories.
+
+1. **I am new here.** Click it. You see "Welcome to Northwind Labs.", a red warning that one handbook page is out of date (with the old line and the newer decision side by side), "5 things you must know", and "People to ask" with their topics.
+2. **What changed while I was away?** Pick **Engineer**, then **Sales**. The summary and the to-do list change with the role, most urgent first, each item with a score and its reasons. Canon has 14 roles.
+3. **Watch an AI agent get stopped.** A coding agent asks Canon before it adds a Friday deploy job. The verdict is **Block**, with the rule "There will be no production deployments on Fridays, which includes scheduled jobs and configuration-only releases.", the owner (Mei Tan), the date (9 March 2026) and the incident behind it. Below it, the same exchange as the agent saw it.
+4. **Paste a new message.** Pick the sample **Friday deploy job** (or paste the text below) and click **Check this message**. Canon extracts the decision, verifies the quote, and shows what it goes against: the Friday ban, and the out-of-date Release process wiki.
 
    ```
    Pranav: I have scheduled the production dispatch image refresh for every Friday at 15:00 Singapore time. It runs unattended, including configuration changes. I used the slot from the Release process wiki. This is routine housekeeping, not incident mitigation.
    ```
 
-   Canon extracts the decision, reconciles it against the record and raises an alert with both quotes.
-   The stale **Release process** wiki page already carries a "contradicted by a newer decision" alert on Home.
-6. On Home, switch the persona to **PM** or **New hire**. The briefing, the ranked actions and "who to ask" change with it.
-7. Open **Benchmark** to see the gold-set scores.
+5. **Ask why.** Ask `Why can we no longer deploy production on Fridays?` You get a short answer, a timeline (the old Friday window, then the INC-042 ban) and verified quotes.
+   Then ask `Which company acquired Northwind Labs?` Canon says "I do not know. The record has no decision or document that answers this." It does not guess.
+6. **People.** The org tree: who reports to whom, who left, and who took over their topics. Open a person to see the decisions they own.
+7. **Discord, live.** Join https://discord.gg/HwSgjmcgF5 and post in **#engineering**:
 
-More inputs: the other two paste samples in `data/samples/live_paste.json` (an `update` and a `new` decision), one example per MCP tool in `data/samples/agent_playground.json`, and these questions:
+   ```
+   lets ship the dispatch cron this friday
+   ```
+
+   Wait about a minute. Canon reads the server every minute, replies under your message with the decision it breaks, and the alert appears on the web app. You can also use `/canon ask`, `/canon check`, `/canon catchup` and `/canon remember`.
+8. **How well does it work?** The benchmark and the memory-health replay (numbers below).
+
+More inputs: two more paste samples (an update and a new decision) in `data/samples/live_paste.json`, one example per MCP tool in `data/samples/agent_playground.json`, and these questions:
 
 - What should we quote a new Route Lens customer, and why did the price change?
 - When did Route Lens GA move, and what gate held it up?
-- Ask the departed expert (API only): `POST /api/expert` with `{"person_id": "anika-rao", "question": "Why did you choose ingestion sequence for tracking cursors?"}`. Canon answers in her voice, only from her recorded decisions.
-- What is the approved replacement cache interval after the eastern rollout? (Canon refuses: the record has no answer)
-
-Use **Reset my workspace** on the Ingest page to run the samples again from a clean state.
+- What is Northwind Labs annual recurring revenue for 2026? (Canon refuses: the record has no answer)
 
 ## Connect your agent
 
@@ -60,39 +66,38 @@ Claude Code:
 claude mcp add --transport http canon https://canon.tn07.dev/mcp
 ```
 
-Then ask Claude Code: "Add a GitHub Actions cron that deploys to production every Friday."
-It calls `check_intent` first and gets `block`, with the deciding decision and its quote.
+Codex:
 
-Codex, in `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.canon]
-url = "https://canon.tn07.dev/mcp"
+```sh
+codex mcp add canon --url https://canon.tn07.dev/mcp
 ```
 
-Tools:
+Then ask your agent: "Add a GitHub Actions cron that deploys the dispatch service to production every Friday." It calls `check_intent` first and gets `block`, with the deciding decision and its quote.
 
 | Tool | Use |
 |---|---|
 | `check_intent(intent, actor)` | Before a deploy, infra, API, pricing or process change. Returns allow, warn or block with the deciding decisions. |
 | `search_decisions(query, limit)` | Find what was decided about a topic. |
 | `ask_why(question)` | Cited answer, or a refusal. |
-| `catch_me_up(persona, since)` | Briefing for engineer, pm or new_hire since an ISO date. |
+| `catch_me_up(persona, since)` | Briefing for one of the 14 roles since an ISO date. |
 | `record_decision(statement, rationale, source_text, actor)` | Store a decision. Returns new, same, update or contradiction. |
 | `flag_conflict(description, source_text, actor)` | Raise an alert about text that disagrees with the record. |
 
-Agents without a workspace header read the seeded corpus and write to a shared `agents` workspace.
-Every call shows in the web app's activity feed as `agent:<name>`. Details: `backend/MCP.md`.
-A scripted demo (an engineering agent is blocked, a PM bot catches up): `uv run python scripts/agent_demo.py https://canon.tn07.dev/mcp` from `backend/`.
+Agents without a workspace header read the seeded corpus and write to a shared `agents` workspace. Every call is written to the activity feed as `agent:<name>`. Details and A2A: `backend/MCP.md`.
+Scripted demo: `uv run python scripts/agent_demo.py https://canon.tn07.dev/mcp` from `backend/`.
 
 ## How Canon uses Google Cloud
 
-- **Gemini on Vertex AI.** Model `gemini-3.5-flash-lite` in `asia-south1` for every extraction and judgement: decision extraction, reconciliation (same, update, contradiction), stale-document and premise checks, answers, briefings and the `check_intent` verdict. Every call uses structured output (`response_schema` with Pydantic models) at temperature 0, and carries the label `app=canon` for cost attribution. All model access goes through one module, `backend/canon/llm.py`.
+- **Gemini on Vertex AI.** `gemini-3.5-flash-lite` in `asia-south1` does every extraction and judgement: decision extraction, reconciliation (same, update, contradiction), out-of-date document and premise checks, answers, briefings and `check_intent` verdicts. Every call uses structured output (`response_schema` from Pydantic models) and carries the label `app=canon`. All model access goes through one module, `backend/canon/llm.py`.
+- **Multimodal.** PDFs and screenshots (from the web paste or Discord attachments) go to Gemini as they are. Gemini reads them natively, and the extracted decisions get the same quote check.
 - **Embeddings.** `gemini-embedding-001` at 768 dimensions for chunks, decisions and queries.
-- **ADK and A2A.** Canon is also an ADK `LlmAgent` on the same model, with tools `check_intent`, `ask_why`, `search_decisions` and `catch_me_up`. It is served over A2A: card at `/.well-known/agent-card.json`, JSON-RPC at `/a2a`.
-- **Firestore.** A named database, `canon`, holds sources, chunks, decisions, alerts, activity and people. Retrieval uses Firestore vector search (`find_nearest`, cosine) on `chunks.embedding` and `decisions.embedding`, with an equality prefilter on `workspace` so a visitor only reads the base corpus and their own workspace. If a vector index is missing, the store falls back to an in-memory cosine scan and logs a warning.
-- **Cloud Run.** One service, `canon`, in `asia-south1`, runs the FastAPI app: the HTTP API, the MCP server, the A2A agent, and the GitHub and Discord hooks. Minimum instances is 0. It runs as a dedicated service account that can only reach Vertex AI and the `canon` database.
-- **Firebase Hosting.** Site `canon-tn07` serves the static React app and rewrites `/api`, `/mcp`, `/a2a`, `/.well-known` and `/health` to Cloud Run, so the browser and agents use one origin.
+- **ADK and A2A.** Canon is also an ADK `LlmAgent` on the same model, with tools `check_intent`, `ask_why`, `search_decisions` and `catch_me_up`, served over A2A (card at `/.well-known/agent-card.json`, JSON-RPC at `/a2a`).
+- **Firestore.** A named database, `canon`, holds sources, chunks, decisions, alerts, activity, people and connector cursors. Retrieval uses Firestore vector search (`find_nearest`, cosine) on `chunks.embedding` and `decisions.embedding` with an equality prefilter on `workspace`, so a visitor reads only the base corpus, the shared demo spaces and their own workspace.
+- **Cloud Run.** One service, `canon`, in `asia-south1`: the HTTP API, the MCP server, the A2A agent, and the Discord and GitHub hooks. Minimum instances 0. It runs as a dedicated service account that can reach only Vertex AI and the `canon` database.
+- **Firebase Hosting.** Site `canon-tn07` serves the React app and rewrites `/api`, `/mcp`, `/a2a`, `/hooks`, `/discord` and `/.well-known` to Cloud Run, so the browser and agents use one origin.
+- **Cloud Scheduler.** Calls `POST /hooks/discord/sync` every minute. Canon pulls Discord instead of holding a gateway socket, so Cloud Run can still scale to zero.
+- **Cloud Monitoring.** Alert policies post to a private Discord channel through a relay in the edge Worker (`deploy/edge`).
+- **Secret Manager.** One secret, `canon-config`, mounted into Cloud Run. No secret is in the repo.
 
 ## Architecture
 
@@ -102,115 +107,143 @@ flowchart LR
     W[Web app<br/>React on Firebase Hosting]
     CC[Claude Code / Codex<br/>MCP client]
     A2[Other agents<br/>A2A]
-    GH[GitHub PR webhook<br/>Discord slash command]
+    DC[Discord server<br/>messages, threads, files, /canon]
   end
+  SCH[Cloud Scheduler<br/>every minute]
   subgraph CR[Cloud Run service canon]
     API[FastAPI /api]
     MCP[MCP server /mcp]
     ADK[ADK agent /a2a]
-    CORE[Core: ingest, reconcile,<br/>ask, briefing, check]
+    SYNC[Discord sync<br/>and interactions]
+    CORE[Core: ingest, reconcile, authority,<br/>ask, briefing, check]
   end
   subgraph GCP[Google Cloud]
-    GEM[Vertex AI<br/>gemini-3.5-flash-lite]
+    GEM[Vertex AI<br/>gemini-3.5-flash-lite<br/>structured output, PDFs, images]
     EMB[gemini-embedding-001<br/>768 dims]
     FS[(Firestore database canon<br/>vector search, workspace prefilter)]
   end
-  W -->|/api via Hosting rewrite| API
+  W -->|Hosting rewrite| API
   CC -->|streamable HTTP| MCP
   A2 --> ADK
-  GH --> API
+  DC -->|slash commands| SYNC
+  SCH -->|POST /hooks/discord/sync| SYNC
+  SYNC -->|reads channels, replies| DC
   API --> CORE
   MCP --> CORE
   ADK --> CORE
-  CORE -->|structured output| GEM
+  SYNC --> CORE
+  CORE --> GEM
   CORE --> EMB
   CORE <--> FS
 ```
 
-Ingest flow: a source is chunked and embedded, Gemini extracts decisions with quotes, each quote is checked against the source, and each new decision is compared with its nearest existing decisions (same, update, contradiction). Then Canon scans wiki chunks for pages a newer decision contradicts, and active decisions whose assumptions the new text breaks. Each finding becomes an open alert with both quotes.
+Ingest flow: a source is chunked and embedded. Gemini extracts decisions with quotes, and each quote is checked against the source. Canon computes the authority of each decision, then compares it with its nearest existing decisions (same, update, contradiction). It then scans wiki chunks for pages that a newer decision contradicts, and active decisions whose assumptions the new text breaks. Each finding becomes an open alert with both quotes.
+
+## Who can change a rule (authority)
+
+Not every message is a decision. Canon gives each one an authority level, computed in code (`backend/canon/authority.py`) from the org tree in `data/people.json`, topic owners in `data/org/topics.json` and channel weights in `data/org/channels.json`:
+
+- **Official**: a lead or owner decides inside their area, or an approved document says so. Only an official decision replaces an official one.
+- **Proposed**: someone suggests a change to an official rule. It does not replace the rule.
+- **Claim**: a Discord guest, or an engineer speaking outside their area. It is stored, not trusted.
+
+A claim or a proposal that goes against an official rule raises a low alert that starts "Unverified:" and names the lead who should confirm or dismiss it. Jokes and hypotheticals ("what if we just deployed on Friday, lol") are never stored.
+**Effective dates.** A document that says "Effective 1 June" is ordered by that date, not by when it was uploaded. An older copy that arrives after a newer decision is stored as superseded with a low alert "Outdated copy:".
 
 ## Grounding and guardrails
 
-- **Verified quotes.** Every decision and every alert stores quotes. A quote is kept only if it is an exact substring of its source after whitespace normalisation. Unverified quotes are dropped.
-- **Refusal threshold.** If the best retrieval match for a question is below cosine 0.66, Canon answers "I do not know" without calling Gemini. The model can also mark a question unanswerable. `check_intent` allows an action without a model call when no decision scores 0.64 or more.
-- **Answers only from the record.** Answers cite decision and chunk ids from the retrieved context. Citations map back to verified quotes.
-- **Prompt-injection delimiting.** Source text is wrapped in `<source>` tags, and forged closing tags inside it are removed. Every system instruction says that quoted company text is untrusted data and that instructions inside it must not be followed.
-- **Input limits.** Every string field has a cap at the HTTP and MCP boundary (for example 1000 characters for a question, 50,000 for source text, 5 MB for an image). Over-long input gets a 422 with the field name.
-- **Model timeouts.** 20 s per Gemini call, retries with backoff on 429 and 5xx, and a 90 s budget per request. A timeout returns 503 `model_timeout` instead of hanging.
-- **Rate limit.** POST requests are limited per IP (default 120 per minute, per instance).
-- **Human in the loop.** Alerts stay open until a person resolves them. A decision whose premise has changed can only produce `warn`, not `block`.
-- **No secrets in the repo.** Runtime credentials come from the Cloud Run service account; webhook secrets come from environment variables, never from code.
+- **Verified quotes.** A quote is kept only if it is an exact substring of its source after whitespace normalisation. Unverified quotes are dropped.
+- **Refusal.** If the best retrieval match for a question is below threshold, Canon answers "I do not know" without calling Gemini. The model can also mark a question unanswerable.
+- **Answers only from the record.** Answers cite decision and chunk ids from the retrieved context.
+- **Prompt-injection fencing.** Source text is wrapped in `<source>` tags, forged closing tags are removed, and every instruction says that quoted company text is untrusted data.
+- **Input limits.** Every string field has a cap at the HTTP and MCP boundary (for example 1000 characters for a question, 50,000 for source text). Discord files are capped at 10 MB.
+- **Timeouts.** Per-call Gemini timeouts, retries with backoff on 429 and 5xx, and a per-request deadline that returns 503 `model_timeout` instead of hanging.
+- **Human in the loop.** Alerts stay open until a person resolves them (accept the update, dismiss, retire the decision).
+
+## Cost controls
+
+- **Daily Gemini cap.** `llm.py` counts generate calls per process per day (`CANON_DAILY_LLM_CALLS`, default 1500) and stops calling past the cap.
+- **Discord caps.** Sync ingests at most 200 messages per UTC day (`CANON_DISCORD_DAILY_LIMIT`) and 20 per user. Slash commands answer "Canon has reached today's Discord limit" past the cap.
+- **Rate limit.** POST requests are limited per IP (120 per minute per instance).
+- **Cheap paths.** Refusals below threshold and `check_intent` with no near decision skip the model call.
+- **Scale to zero.** Cloud Run minimum instances 0, no per-hour resources.
+- **Labels.** Cloud Run, Gemini calls, Artifact Registry and the Hosting site carry `app=canon` for cost attribution. Embeddings cannot carry labels; they are attributed by SKU.
 
 ## Benchmark
 
-Canon is scored against a hand-labelled gold set, `data/gold/gold.json`, over the full synthetic corpus (259 sources, about 100 of them pure noise).
-Numbers below are from the committed report `backend/canon/eval_report.json`, run at 2026-10-17 12:47 UTC on `gemini-3.5-flash-lite`.
+Canon is scored against a hand-labelled gold set, `data/gold/gold.json`, over the full synthetic corpus (380 sources, about 100 of them pure noise, 14 roles), dataset `acme4`.
+Numbers are from the committed report `backend/canon/eval_report.json`, run on 2026-10-17 19:10 UTC on `gemini-3.5-flash-lite`. The `check_intent` score was re-measured on 2026-10-18 on `acme4` after a rule change. The web app serves this report at `GET /api/eval`.
 
 | Task | Planted | Found | Score |
 |---|---|---|---|
-| Decisions extracted | 38 | 37 | 97% |
-| Contradictions and updates | 17 | 13 | 76% |
+| Decisions extracted | 82 | 82 | 100% |
+| Contradictions and updates | 39 | 35 | 90% |
 | False positive contradiction alerts | | 2 | |
-| Stale wiki pages | 8 | 7 | 88% |
-| Premise changes | 5 | 4 | 80% |
-| `check_intent` verdicts (allow, warn, block) | 15 | 13 | 87% |
+| Out-of-date wiki pages | 19 | 18 | 95% |
+| Premise changes | 5 | 2 | 40% |
+| `check_intent` verdicts (allow, warn, block) | 37 | 32 | 86% |
 | Unanswerable questions refused | 5 | 5 | 100% |
-| Answerable questions answered with an expected decision cited | 10 | 10 | 100% |
+| Answerable questions answered, citing an expected decision | 21 | 21 | 100% |
 | Live paste samples, relation correct | 3 | 3 | 100% |
 
-- Updates found 7 of 9, contradictions 6 of 8.
-- All 206 stored quotes were verified word for word against their sources.
-- Misses we know about: `check-05` expected allow and got block; `check-09` expected block and got allow.
-- Latency, ask and check: p50 1079 ms, p95 1325 ms over 30 sequential calls, client to Vertex AI and Firestore in `asia-south1`. Ingest of a live paste: p50 2249 ms.
+- Updates found 19 of 20, contradictions 16 of 19.
+- All 579 stored quotes were verified word for word against their sources.
+- Latency, ask and check: p50 1221 ms, p95 1795 ms over 63 sequential calls, client to Vertex AI and Firestore in `asia-south1`. Ingest of a live paste: p50 3567 ms.
+- `check_intent` misses lean to caution: in the first run, 6 of the 8 misses were `warn` where the gold set expects `block` or `allow`, and 2 were `block` where it expects `warn`. The report notes list each case id. The re-measure after the rule change gave 32 of 37.
 
-Reproduce (needs a seeded workspace and Vertex access):
+### Memory health
 
-```sh
-cd backend
-uv run python scripts/seed.py --data ../data          # load the corpus into workspace acme
-uv run python scripts/eval.py --data ../data          # writes canon/eval_report.json
-```
+A second test replays `data/gold/authority_cases.json` in time order (live Gemini, in-memory store) and checks that the record stays clean as it grows.
 
-The web app serves the last committed report at `GET /api/eval`.
+| Check | Result |
+|---|---|
+| Decisions stored | 10 |
+| Decisions with no traceable source | 0 |
+| Duplicate decisions | 0 |
+| Quarter checkpoints with the correct active rule | 3 of 3 |
+| Supersession chains correct | 1 of 1 |
+| Authority cases (official, proposed, claim, joke, outdated copy) | 12 of 12 |
 
-### Latency on the live service
+### Live spot checks
 
-Spot checks from a laptop in India against https://canon.tn07.dev on 2026-10-17 (single calls, warm instance). `latency_ms` is server time; total includes the network.
+From a laptop in India against https://canon.tn07.dev on 2026-10-18, warm instance. `latency_ms` is server time; total includes the network.
 
 | Call | Server `latency_ms` | Total |
 |---|---|---|
-| `POST /api/ask`, answered (Friday deploys) | 1201 | 1.6 s |
-| `POST /api/ask`, refused below threshold | 683 | 0.7 s |
-| `POST /api/check`, block (Friday cron) | 913 | 1.3 s |
-| `POST /api/briefing`, PM since 2026-03-01 | not measured | 2.9 s |
-| `POST /api/ingest`, Friday paste sample | 2436 | 2.6 s |
+| `POST /api/check`, Friday cron, verdict block | 1118 | 1.2 s |
+| `POST /api/ask`, refused below threshold | 297 | 0.4 s |
+
+Reproduce (needs Vertex access; a full seed costs real money, see `AGENTS.md`):
+
+```sh
+cd backend
+uv run python scripts/seed.py --data ../data
+uv run python scripts/eval.py --data ../data     # writes canon/eval_report.json
+```
 
 ## Limitations
 
-- Results come from a language model and vary between runs. In one live probe on 2026-10-17 the Friday paste sample was classed as an `update` with a `premise_changed` alert, not as a `contradiction`. The committed benchmark run got all three paste samples right.
-- 4 of 17 planted contradictions and updates are missed, and 2 contradiction alerts are false positives.
-- 2 of 15 `check_intent` cases are wrong (see the benchmark notes).
-- The benchmark runs on synthetic data written for this project. Real company archives are noisier.
-- No authentication or permissions yet. Workspaces isolate visitors, but anyone can read the seeded corpus. That is deliberate for judging.
-- The rate limiter is in-process, so it is per Cloud Run instance.
-- Embeddings cannot carry cost labels; they are attributed by SKU.
-
-## Synthetic data notice
-
-Every person, customer, message, domain and event in `data/` is fictional and labelled `synthetic: true`. Links use the reserved `.example` domain. The data is evaluation material, not a record of a real company.
+- The data is synthetic, written for this project. Real company archives are noisier.
+- Results come from a language model and vary between runs. The benchmark is one run, not an average.
+- Premise watch is the weakest part: 2 of 5 planted premise changes found.
+- Discord messages carry their post time. Canon cannot know that a message describes an older event unless the text says so.
+- The daily Gemini cap, the rate limit and the Discord counters per process are per Cloud Run instance, not global.
+- No authentication or permissions. Workspaces isolate visitors, and anyone can read the seeded corpus. That is deliberate for judging.
+- Embeddings cannot carry cost labels.
 
 ## Repo layout
 
 | Path | What |
 |---|---|
-| `backend/canon/` | FastAPI app, MCP server, ADK/A2A agent, ingest, reconcile, ask, briefing, check, eval, Firestore store, Gemini client |
-| `backend/tests/` | pytest suite; Gemini calls replay recorded fixtures from `tests/fixtures/llm/` |
-| `backend/scripts/` | `seed.py`, `eval.py`, `agent_demo.py`, `register_discord.py` |
-| `backend/MCP.md` | MCP, A2A, GitHub and Discord integration notes |
-| `web/` | Vite + React + TypeScript web app |
-| `mocks/` | Static HTML design mocks and their screenshots |
-| `data/` | Synthetic corpus, gold set, judge samples, validator |
-| `deploy/` | Cloudflare Worker for the custom domain |
+| `backend/canon/` | FastAPI app, MCP server, ADK/A2A agent, ingest, reconcile, authority, ask, briefing, check, eval, Firestore store, Gemini client |
+| `backend/canon/connectors/` | Discord pull sync and its Firestore cursors |
+| `backend/tests/` | pytest suite; Gemini calls replay recorded fixtures |
+| `backend/scripts/` | `seed.py`, `eval.py`, `agent_demo.py`, `register_discord.py`, `setup_discord.md` |
+| `backend/MCP.md` | MCP, A2A, GitHub and Discord notes |
+| `web/` | Vite + React + TypeScript web app; `web/shots/` holds screenshots |
+| `data/` | Synthetic corpus, org tree, gold set, judge samples, validator |
+| `brand/final/` | Canon logo ("The Ribbon") |
+| `deploy/edge/` | Cloudflare Worker for `canon.tn07.dev` and the monitoring relay |
 | `firebase.json` | Hosting site and rewrites to Cloud Run |
 | `SPEC.md` | Build contract: data model, API, MCP tools |
 | `docs/` | Submission description and demo video script |
@@ -223,11 +256,11 @@ Backend (Python 3.12, `uv`):
 ```sh
 cd backend
 uv sync
-uv run pytest -q                                   # 42 tests, no network: in-memory store and recorded Gemini fixtures
+uv run pytest -q          # 85 tests, no network: in-memory store and recorded Gemini fixtures
 CANON_MEMORY_STORE=1 CANON_FAKE_LLM=1 uv run uvicorn canon.app:app --port 8080   # offline
 ```
 
-To use real Vertex AI and Firestore, set `GOOGLE_APPLICATION_CREDENTIALS` to a service-account key with Vertex AI user and Firestore access to the `canon` database, then run `uv run uvicorn canon.app:app --port 8080`.
+For real Vertex AI and Firestore, set `GOOGLE_APPLICATION_CREDENTIALS` to a service-account key with Vertex AI user and access to the `canon` database, then run `uv run uvicorn canon.app:app --port 8080`.
 
 Web:
 
@@ -244,3 +277,7 @@ Data checks (no packages, no cloud):
 python3 data/validate.py
 python3 -m unittest discover -s data -p 'test_*.py' -v
 ```
+
+## Synthetic data notice
+
+Every person, customer, message, domain and event in `data/` and on the Discord demo server is made up. Sources carry `synthetic: true`, and links use the reserved `.example` domain.
