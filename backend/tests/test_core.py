@@ -98,6 +98,13 @@ def test_relation_decided_in_code_from_flags():
     # Two one-off actions that disagree (who covers a pager) are coordination, not a contradiction.
     chore = {"id": "d-chore", "owner": "Yuki Mori", "kind": "action"}
     assert decide([a("D1", c=True)], {"D1": chore}, no)[0] == "new"
+    # Revision wording in the source stands in for a missed explicit_supersede, but never for authority.
+    assert decide([a("D2", c=True)], labels, yes, revises=True)[0] == "update"
+    assert decide([a("D2", c=True)], labels, no, revises=True)[0] == "contradiction"
+    from canon.reconcile import REVISION
+    assert REVISION.search("Use three rounds. This replaces our January agreement.")
+    assert REVISION.search("Lower the timeout from 800 to 600 milliseconds.")
+    assert not REVISION.search("Please hold that packet while I replace the attachment.")
 
 
 async def test_contradiction_flags_the_stale_doc_it_relies_on():
