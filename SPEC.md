@@ -102,7 +102,7 @@ Pydantic models live in `backend/canon/models.py` (the code is the exact contrac
 | `ask_why` | question | F5 |
 | `catch_me_up` | persona, since | F6 |
 | `record_decision` | statement, rationale, source_text, actor | F1+F2+F3 from an agent; returns reconciliation |
-| `flag_conflict` | description, source_text, actor | agent-raised alert |
+| `flag_conflict` | description, source_text, actor | agent-raised alert (returns `Alert`, kind agent_violation) |
 
 Every tool call writes an `activity` row with `actor = agent:<actor or client name>`.
 
