@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Canon - Benchmark</title>
+<link rel="stylesheet" href="canon.css">
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
+  .kpis > div { padding: 18px 20px 20px 0; }
+  .kpis > div + div { padding-left: 20px; border-left: 1px solid var(--rule); }
+  .big { font-family: var(--serif); font-size: 72px; line-height: .95; font-weight: 500; letter-spacing: -.04em; margin-top: 10px; }
+  .big small { font-size: 30px; color: var(--ink-3); letter-spacing: -.01em; }
+  .meter { height: 8px; background: var(--rule-2); margin-top: 12px; }
+  .meter b { display: block; height: 8px; background: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th { text-align: left; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 400; padding: 8px 0; border-bottom: 1px solid var(--ink); }
+  td { padding: 10px 0; border-bottom: 1px solid var(--rule-2); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13.5px; }
+  .lat { display: grid; grid-template-columns: 70px 1fr 96px; gap: 12px; align-items: center; padding: 8px 0; font-size: 14px; }
+  .lat .label { white-space: nowrap; }
+  .lat .track { position: relative; height: 18px; background: var(--rule-2); }
+  .lat .p50 { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); }
+  .lat .p95 { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--signal); }
+  .banner { background: var(--warn-bg); color: var(--warn); font-family: var(--mono); font-size: 12px; padding: 6px 12px; text-transform: uppercase; letter-spacing: .06em; display: inline-block; }
+</style></head><body>
+<script src="bar.js"></script>
+<main class="page">
+  <div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div><div class="label">Benchmark / labelled gold set / run 17 Oct 2026 16:40 IST / gemini-3.5-flash-lite</div>
+    <h1 class="h1" style="margin-top:8px">We planted the problems. <span style="color:var(--ink-3)">Here is what Canon found.</span></h1></div>
+    <span class="banner">mock: placeholder numbers</span>
+  </div>
+
+  <div class="kpis" style="margin-top:24px">
+    <div><span class="label ink">Contradictions found</span><div class="big tnum">11<small> / 12</small></div><div class="meter"><b style="width:91.7%"></b></div><div class="small muted" style="margin-top:8px">planted across Slack, wiki, PRs</div></div>
+    <div><span class="label ink">False positives</span><div class="big tnum">2</div><div class="meter"><b style="width:8%;background:var(--signal)"></b></div><div class="small muted" style="margin-top:8px">on 212 sources with no planted conflict</div></div>
+    <div><span class="label ink">Refused correctly</span><div class="big tnum">5<small> / 5</small></div><div class="meter"><b style="width:100%"></b></div><div class="small muted" style="margin-top:8px">unanswerable questions, said "I do not know"</div></div>
+    <div><span class="label ink">Latency p50 / p95</span><div class="big tnum">1.3<small> / 3.9 s</small></div><div class="meter"><b style="width:33%"></b></div><div class="small muted" style="margin-top:8px">end to end, ingest excluded</div></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.2fr 1fr;gap:40px;margin-top:30px">
+    <section>
+      <div class="sec"><h2 class="h3">By task</h2><span class="label">gold.json</span></div>
+      <table>
+        <tr><th>Task</th><th class="n">Planted</th><th class="n">Found</th><th class="n">Score</th></tr>
+        <tr><td>Decisions extracted</td><td class="n">25</td><td class="n">24</td><td class="n">96%</td></tr>
+        <tr><td>Contradictions and updates</td><td class="n">12</td><td class="n">11</td><td class="n">92%</td></tr>
+        <tr><td>Stale wiki pages flagged</td><td class="n">8</td><td class="n">8</td><td class="n">100%</td></tr>
+        <tr><td>Premise changes</td><td class="n">5</td><td class="n">3</td><td class="n">60%</td></tr>
+        <tr><td>check_intent verdicts (allow / warn / block)</td><td class="n">15</td><td class="n">14</td><td class="n">93%</td></tr>
+        <tr><td>Answerable questions, cited correctly</td><td class="n">10</td><td class="n">9</td><td class="n">90%</td></tr>
+        <tr><td>Unanswerable questions, refused</td><td class="n">5</td><td class="n">5</td><td class="n">100%</td></tr>
+        <tr><td>Quotes rejected by word-for-word check</td><td class="n">-</td><td class="n">7</td><td class="n">0 stored</td></tr>
+      </table>
+    </section>
+    <section>
+      <div class="sec"><h2 class="h3">Latency by call</h2><span class="label"><span style="display:inline-block;width:10px;height:10px;background:var(--ink);vertical-align:-1px"></span> p50 &nbsp;<span style="display:inline-block;width:2px;height:10px;background:var(--signal);vertical-align:-1px"></span> p95</span></div>
+      <div class="lat"><span class="actor">check</span><div class="track"><span class="p50" style="width:12%"></span><span class="p95" style="left:24%"></span></div><span class="label tnum" style="text-align:right">0.6 / 1.2 s</span></div>
+      <div class="lat"><span class="actor">search</span><div class="track"><span class="p50" style="width:8%"></span><span class="p95" style="left:14%"></span></div><span class="label tnum" style="text-align:right">0.4 / 0.7 s</span></div>
+      <div class="lat"><span class="actor">ask</span><div class="track"><span class="p50" style="width:28%"></span><span class="p95" style="left:56%"></span></div><span class="label tnum" style="text-align:right">1.4 / 2.8 s</span></div>
+      <div class="lat"><span class="actor">briefing</span><div class="track"><span class="p50" style="width:42%"></span><span class="p95" style="left:78%"></span></div><span class="label tnum" style="text-align:right">2.1 / 3.9 s</span></div>
+      <div class="lat"><span class="actor">ingest</span><div class="track"><span class="p50" style="width:76%"></span><span class="p95" style="left:98%"></span></div><span class="label tnum" style="text-align:right">3.8 / 4.9 s</span></div>
+      <div class="label" style="display:flex;justify-content:space-between;margin:4px 0 0 82px;padding-right:108px"><span>0</span><span>2.5 s</span><span>5 s</span></div>
+
+      <div class="sheet pad" style="margin-top:22px">
+        <div class="label ink" style="margin-bottom:6px">Misses, in the open</div>
+        <ul class="small" style="padding-left:16px;line-height:1.7">
+          <li>Missed one contradiction phrased as a question in Slack.</li>
+          <li>Two premise changes needed a second source to be clear.</li>
+          <li>One false positive: a draft wiki page, not a published one.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</main>
+</body></html>
