@@ -1,0 +1,32 @@
+{
+  "run_at": "2026-10-17T19:10:22.003197Z",
+  "model": "gemini-3.5-flash-lite",
+  "decisions_planted": 82,
+  "decisions_found": 82,
+  "contradictions_planted": 39,
+  "contradictions_found": 35,
+  "false_positives": 2,
+  "check_cases": 37,
+  "check_correct": 29,
+  "unanswerable": 5,
+  "refused_correctly": 5,
+  "p50_ms": 1221,
+  "p95_ms": 1795,
+  "notes": [
+    "stale docs found 18/19",
+    "premise changes found 2/5",
+    "updates found 19/20, contradictions found 16/19",
+    "answerable questions answered 21/21, citing an expected decision 21",
+    "579 stored quotes, every one verified word for word against its source",
+    "latency over 63 ask and check calls, sequential, client to Vertex AI and Firestore in asia-south1",
+    "check miss check-01: expected block, got warn",
+    "check miss check-02: expected block, got warn",
+    "check miss check-04: expected allow, got warn",
+    "check miss check-05: expected allow, got warn",
+    "check miss check-13: expected warn, got block",
+    "check miss check-14: expected warn, got block",
+    "check miss check-design-old: expected block, got warn",
+    "check miss check-design-current: expected allow, got warn",
+    "live paste samples: relation correct 3/3, ingest p50 3567 ms"
+  ]
+}
