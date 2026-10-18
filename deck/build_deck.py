@@ -354,15 +354,12 @@ def build(shots: Path, mocks: Path, out: Path):
         caps = {"1-general": "Threads in #general, posted as the people who wrote them",
                 "2-engineering": "#engineering: the stale Friday release window, as a screenshot",
                 "3-sales": "#sales: the old USD 99 pricing page and the sales FAQ file",
-                "4-reply": "Canon replies under a message that breaks a decision"}
-        dw, dh = Inches(3.0), Inches(2.05)
+                "0-reply": "A real post at 21:14; Canon replied in about a minute. Join: discord.gg/HwSgjmcgF5"}
+        dw, dh = Inches(4.55), Inches(1.75)
         for i, f in enumerate(disc[:4]):
-            x = X0 + (i % 3) * (dw + Inches(0.15)); y = Y0 + (i // 3) * (dh + Inches(0.4))
+            x = X0 + (i % 2) * (dw + Inches(0.2)); y = Y0 + (i // 2) * (dh + Inches(0.45))
             picture(d, f, x, y, dw, dh, tmp)
             caption(d, x, y + dh, dw, caps.get(f.stem, ""))
-        text(d, X0, Y0 + Inches(2.55) if len(disc) <= 3 else Y0 + Inches(4.9), Inches(9.3), Inches(0.6), [
-            "Synced every minute with no always-on bot: threads, files, PDFs, screenshots and voice notes. "
-            "Join: discord.gg/HwSgjmcgF5"], size=11)
 
     # 11. Benchmark
     set_title(s[10], "Prototype performance report / benchmarking")
