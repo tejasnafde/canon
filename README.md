@@ -6,6 +6,8 @@
 
 ## For judges: try this in two minutes
 
+**Demo video (3:55):** https://youtu.be/tPJenhhhjI8
+
 No login, no setup. Open https://canon.tn07.dev and follow these steps.
 
 | # | Do this | What you should see |

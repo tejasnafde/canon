@@ -29,7 +29,7 @@ APP_URL = "https://canon-tn07.web.app"
 RUN_URL = "https://canon-ezvux7gqxa-el.a.run.app"
 DISCORD_URL = "https://discord.gg/HwSgjmcgF5"
 REPO_URL = "https://github.com/tejasnafde/canon"
-VIDEO_URL = "(add the video link)"  # the lead fills this in
+VIDEO_URL = "https://youtu.be/tPJenhhhjI8"
 SNAPSHOTS = [("home-1080.png", "Home: four stories and live counts"), ("new-hire-1080.png", "I am new here: out-of-date page, who to ask"),
              ("catch-up-sales-1080.png", "Catch me up: sales, ranked to-do list"), ("agent-1080.png", "An AI agent gets stopped: Block"),
              ("ask-1080.png", "Ask why: cited answer and timeline"), ("org-1080.png", "People: org tree, who left, successors")]
