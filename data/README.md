@@ -233,3 +233,89 @@ The deterministic rebuild test verifies all other artifacts byte-for-byte and th
 six original person fields structurally. It does not claim org rebuild support.
 The lead should add the new Person fields and org JSON shapes to SPEC.md. This
 workstream does not edit the lead-owned contract or the corpus serializer.
+
+## Company basics supplement (W27)
+
+`corpus_basics/basics.jsonl` adds 30 synthetic sources for workspace `acme4`.
+It is separate from the 380-source benchmark corpus and does not change gold.
+The Northwind product stack described here is fictional company knowledge, not
+Canon's implementation stack. Current pages preserve the Friday production ban,
+Tuesday/Thursday morning slots, USD 149 new-subscription pricing and the signed
+pilot exception, current Kestrel concurrency, and Sakura residency requirements.
+The team directory follows `people.json`, including historical departures.
+
+ADR B08 explicitly supersedes B07. The September dispatch settings Slack thread
+quietly contradicts B06 without naming that ADR. Both versions remain in the
+file so Canon can detect drift. These new cases have no benchmark gold labels.
+The supplement excludes all five refusal topics and excluded leave policies.
+Benefits content covers enrollment routing, equipment and learning purchases.
+
+Run the offline checks from the repository root:
+
+```sh
+python3 data/validate.py
+uv run --project backend pytest data/test_validate.py data/corpus_basics -q
+```
+
+The validator checks supplement fields, date range and timezone, known authors
+and departures, unique titles and URLs, fake deep links, workspace, synthetic
+labels, prohibited characters and refusal-topic terms. The topic check is a
+conservative text screen; the content also receives manual review.
+
+The lead can append the file to an existing workspace with sources. This command
+makes paid Gemini calls and is not part of validation. W27 does not run it.
+Use the authorized key directly, never ADC:
+
+```sh
+cd backend
+GOOGLE_APPLICATION_CREDENTIALS=/Users/tejas/Desktop/projects/google-hackathon/canon/.secrets/sa-canon.json \
+  uv run python scripts/add_sources.py ../data/corpus_basics/basics.jsonl --workspace acme4
+```
+
+The script validates all input before ingestion, sorts by timestamp and title,
+then calls `core.ingest` sequentially. It reads only the target workspace when
+checking exact titles. It skips titles already present, including duplicates in
+the same input, and prints progress and the process Gemini generate call count
+from `llm._spent`. It never resets a workspace or imports people. An empty or
+unknown workspace fails before ingestion. Run only one importer per workspace;
+title skipping does not provide a distributed lock. If an ingest fails after
+saving its source but before completing its decisions, inspect that source
+before resuming: a rerun skips any saved title. Embedding calls are not included
+in the generate counter. Retrieval and live extraction remain untested here.
+
+Supplement titles:
+
+1. ADR B01: Postgres over MySQL
+2. ADR B02: Kafka carrier event log
+3. ADR B03: One application monorepo
+4. ADR B04: Tenant feature flags
+5. ADR B05: Grafana Cloud telemetry
+6. ADR B06: Dispatch tuning in environment variables
+7. ADR B07: Legacy scanner shell
+8. ADR B08: React Native scanner client
+9. Architecture overview
+10. Tech stack
+11. Engineering onboarding guide
+12. Product overview
+13. Glossary
+14. Security and access policy
+15. On-call runbook
+16. Team directory
+17. Benefits FAQ
+18. Dispatch settings before the depot rehearsal
+19. Local development troubleshooting
+20. Carrier connector field guide
+21. Data store ownership map
+22. Mobile scanner working session
+23. Build and release checklist
+24. Telemetry field guide
+25. Customer demo tenant guide
+26. New hire office hours: where things live
+27. Architecture review: tenant boundaries
+28. Feature flag cleanup thread
+29. Database migration rehearsal
+30. Stack walkthrough for Support
+
+No runtime Source contract change is needed. The supplement's workspace is
+explicitly `acme4` as requested. The lead must select the deployed base workspace
+and ingest there before judges can retrieve these sources.
