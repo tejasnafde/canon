@@ -13,7 +13,7 @@ from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from nacl.signing import SigningKey
 
-from canon import app as app_mod, core, discord, hooks
+from canon import app as app_mod, core, discord, hooks, llm
 from canon.models import AskResult, CheckResult, Decision, IngestResult, Quote
 
 NOW = datetime(2026, 10, 17, tzinfo=timezone.utc)
@@ -237,3 +237,69 @@ async def test_agent_card(client):
     card = (await client.get("/.well-known/agent-card.json")).json()
     assert card["name"] == "canon"
     assert {s["name"] for s in card["skills"]} >= {"check_intent"} or card["skills"]
+
+
+# ---- W25 QA: edge cases found against the live API ----
+
+QA_WS = {"X-Canon-Workspace": "v-qa"}
+
+
+@pytest.mark.parametrize("path,body", [
+    ("/api/ask", {"question": ""}), ("/api/ask", {"question": "   "}), ("/api/check", {"intent": "\n"}),
+    ("/api/expert", {"person_id": "p", "question": ""}),
+])
+async def test_blank_text_is_422_not_500(client, calls, path, body):
+    r = await client.post(path, json=body, headers=QA_WS)
+    assert r.status_code == 422 and r.json()["error"] == "validation"
+    assert not [c for c in calls if c[0] in ("ask", "check")]  # no Gemini/embed spent
+
+
+async def test_activity_bad_since_is_422(client):
+    r = await client.get("/api/activity?since=garbage", headers=QA_WS)
+    assert r.status_code == 422 and r.json()["field"] == "since"
+
+
+async def test_budget_cap_says_so(client, monkeypatch):
+
+    async def broke(req, ws):
+        raise llm.BudgetExceeded("cap")
+    monkeypatch.setattr(core, "ask", broke)
+    r = await client.post("/api/ask", json={"question": "why?"}, headers=QA_WS)
+    assert r.status_code == 503 and r.json()["error"] == "budget_exceeded"
+
+
+async def test_mcp_blank_and_unknown_tool(running_app, calls):
+    async with mcp_session(running_app, QA_WS) as s:
+        r = await s.call_tool("ask_why", {"question": "  "})
+        assert r.is_error and "must not be empty" in r.content[0].text
+        r = await s.call_tool("ask_why", {"question": "a" * 1001})
+        assert r.is_error and "longer than 1000" in r.content[0].text
+        r = await s.call_tool("catch_me_up", {"since": "yesterday"})
+        assert r.is_error and "ISO date" in r.content[0].text
+        r = await s.call_tool("no_such_tool", {})
+        assert r.is_error
+        r = await s.call_tool("check_intent", {})  # missing required arg
+        assert r.is_error
+        tools = {t.name: t for t in (await s.list_tools()).tools}
+        assert "security" in json.dumps(tools["catch_me_up"].input_schema)  # all 14 roles, as in the API
+
+
+async def test_discord_missing_option_and_failure_answer_inline(client, monkeypatch):
+    key = SigningKey.generate()
+    monkeypatch.setenv("DISCORD_PUBLIC_KEY", key.verify_key.encode().hex())
+
+    def cmd(sub, opts):
+        return {"type": 2, "application_id": "a", "token": "t", "user": {"username": "u"},
+                "data": {"name": "canon", "options": [{"name": sub, "type": 1, "options": opts}]}}
+    r = (await _discord_post(client, key, cmd("ask", []))).json()
+    assert r["type"] == 4 and r["data"]["content"].startswith("Usage: /canon ask")
+    r = (await _discord_post(client, key, cmd("catchup", [{"name": "days", "value": "x"}]))).json()
+    assert r["data"]["content"].startswith("Usage: /canon catchup")
+    r = (await _discord_post(client, key, cmd("dance", []))).json()
+    assert r["data"]["content"] == "Unknown subcommand dance"
+
+    async def boom(*a):
+        raise RuntimeError("x")
+    monkeypatch.setattr(discord, "answer", boom)
+    r = (await _discord_post(client, key, cmd("ask", [{"name": "question", "value": "why?"}]))).json()
+    assert r["type"] == 4 and r["data"]["content"] == "Canon failed: RuntimeError"

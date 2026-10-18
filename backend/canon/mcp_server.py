@@ -6,14 +6,13 @@ when to call Canon, so they say plainly WHEN to call each tool.
 import os
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Literal
-
 from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from canon import core
-from canon.limits import enforce
+from canon.limits import TooLong, enforce as _enforce
 from canon.models import (
-    Alert, AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest, CheckResult, Decision,
+    Alert, AskRequest, Persona, AskResult, Briefing, BriefingRequest, CheckRequest, CheckResult, Decision,
     IngestRequest, IngestResult, Source,
 )
 
@@ -30,6 +29,28 @@ def scope(header: str | None, default: str = AGENTS) -> list[str]:
     """
     ws = header if header and (header == AGENTS or _VISITOR.match(header)) else default
     return [BASE, ws]
+
+
+class Blank(ToolError):
+    """A required text field is empty or only whitespace (the embed call fails on it)."""
+
+    def __init__(self, field: str):
+        super().__init__(f"{field} must not be empty")
+        self.field = field
+
+
+def enforce(fields: dict) -> None:
+    """limits.enforce, but an over-length field reaches the MCP client as a readable tool error."""
+    try:
+        _enforce(fields)
+    except TooLong as e:
+        raise ToolError(str(e)) from e
+
+
+def require(**fields: str) -> None:
+    for k, v in fields.items():
+        if not (v or "").strip():
+            raise Blank(k)
 
 
 def _scope(ctx: Context) -> list[str]:
@@ -77,6 +98,7 @@ async def check_intent(intent: str, ctx: Context, actor: str = "") -> CheckResul
     the user. `actor` is your agent name, e.g. "claude-code".
     """
     enforce({"intent": intent, "actor": actor})
+    require(intent=intent)
     ws = _scope(ctx)
     return await core.check(CheckRequest(intent=intent, actor=_actor(ctx, actor)), ws)
 
@@ -90,6 +112,7 @@ async def search_decisions(query: str, ctx: Context, limit: int = 5) -> list[Dec
     decisions with statement, rationale, owner, date and source quotes.
     """
     enforce({"query": query})
+    require(query=query)
     ws = _scope(ctx)
     found = await core.search_decisions(query, ws, limit=max(1, min(limit, 20)))
     await core.log_activity(ws[-1], _actor(ctx, ""), "search", f"search: {query}",
@@ -106,22 +129,26 @@ async def ask_why(question: str, ctx: Context, actor: str = "") -> AskResult:
     timeline. If `refused` is true, the record has no answer: say so and do not guess.
     """
     enforce({"question": question, "actor": actor})
+    require(question=question)
     ws = _scope(ctx)
     return await core.ask(AskRequest(question=question, actor=_actor(ctx, actor)), ws)
 
 
 @mcp.tool()
-async def catch_me_up(ctx: Context, persona: Literal["engineer", "pm", "new_hire"] = "engineer",
+async def catch_me_up(ctx: Context, persona: Persona = "engineer",
                       since: str = "", actor: str = "") -> Briefing:
     """Briefing on what changed in the decision record since a date.
 
-    `persona` is engineer, pm or new_hire. `since` is an ISO date (default: 7 days
+    `persona` is a role, e.g. engineer, pm, security or new_hire. `since` is an ISO date (default: 7 days
     ago). Returns a summary, highlights and a ranked next-best-action list with
     reasons and citations. Use at the start of a task or when joining a project.
     """
     enforce({"since": since, "actor": actor})
     ws = _scope(ctx)
-    when = datetime.fromisoformat(since) if since else datetime.now(timezone.utc) - timedelta(days=7)
+    try:
+        when = datetime.fromisoformat(since) if since else datetime.now(timezone.utc) - timedelta(days=7)
+    except ValueError as e:
+        raise ToolError("since must be an ISO date, e.g. 2026-10-01") from e
     req = BriefingRequest(persona=persona, since=when, actor=_actor(ctx, actor))
     return await core.briefing(req, ws)
 
@@ -138,6 +165,7 @@ async def record_decision(statement: str, rationale: str, source_text: str, ctx:
     alert is raised for a human).
     """
     enforce({"statement": statement, "rationale": rationale, "source_text": source_text, "actor": actor})
+    require(statement=statement)
     ws = _scope(ctx)
     who = _actor(ctx, actor)
     src = Source(workspace=ws[-1], kind="agent", title=statement[:120], author=who,
@@ -156,4 +184,5 @@ async def flag_conflict(description: str, source_text: str, ctx: Context, actor:
     conflicting text. Returns the open alert, linked to the closest decision.
     """
     enforce({"description": description, "source_text": source_text, "actor": actor})
+    require(description=description)
     return await core.raise_alert(description, source_text, _actor(ctx, actor), _scope(ctx))

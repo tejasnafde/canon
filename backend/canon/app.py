@@ -15,13 +15,14 @@ import traceback
 import uuid
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse, Response
 
 from canon import a2a, core, discord, hooks, llm, media, store
 from canon.limits import TooLong, enforce
-from canon.mcp_server import AGENTS, BASE, mcp, scope
+from canon.mcp_server import AGENTS, BASE, Blank, mcp, require, scope
 from canon.models import (
     Activity, Alert, AskRequest, AskResult, Briefing, BriefingRequest, CheckRequest,
     CheckResult, Decision, DecisionDetail, EvalReport, ExpertRequest, IngestRequest,
@@ -176,6 +177,8 @@ async def _missing(request: Request, exc: FileNotFoundError):
 @app.exception_handler(llm.ModelTimeout)
 async def _model_timeout(request: Request, exc: llm.ModelTimeout):
     log.error("model_timeout: %s", exc, extra={"fields": {"path": request.url.path}})
+    if isinstance(exc, llm.BudgetExceeded):
+        return _err("budget_exceeded", 503, detail="Canon has used today's Gemini budget, try again tomorrow")
     resp = _err("model_timeout", 503, detail="the model did not answer in time, try again")
     resp.headers["Retry-After"] = "5"
     return resp
@@ -189,6 +192,11 @@ async def _media_refused(request: Request, exc: media.Refused):  # raised before
 @app.exception_handler(TooLong)
 async def _too_long(request: Request, exc: TooLong):
     return _err("validation", 422, field=exc.field, max=exc.limit, detail=str(exc))
+
+
+@app.exception_handler(Blank)
+async def _blank(request: Request, exc: Blank):
+    return _err("validation", 422, field=exc.field, detail=str(exc))
 
 
 @app.exception_handler(Exception)
@@ -266,6 +274,7 @@ async def ingest(req: IngestRequest, x: str | None = Ws):
 @app.post("/api/ask", response_model=AskResult)
 async def ask(req: AskRequest, x: str | None = Ws):
     enforce(req)
+    require(question=req.question)
     return await core.ask(req, scope(x))
 
 
@@ -278,12 +287,14 @@ async def briefing(req: BriefingRequest, x: str | None = Ws):
 @app.post("/api/check", response_model=CheckResult)
 async def check(req: CheckRequest, x: str | None = Ws):
     enforce(req)
+    require(intent=req.intent)
     return await core.check(req, scope(x))
 
 
 @app.post("/api/expert", response_model=AskResult)
 async def expert(req: ExpertRequest, x: str | None = Ws):
     enforce(req)
+    require(question=req.question)
     return await core.expert(req, scope(x))
 
 
@@ -315,6 +326,11 @@ async def source(source_id: str, x: str | None = Ws):
 
 @app.get("/api/activity", response_model=list[Activity])
 async def activity(since: str | None = None, x: str | None = Ws):
+    try:
+        if since:
+            datetime.fromisoformat(since.replace("Z", "+00:00"))
+    except ValueError:
+        return _err("validation", 422, field="since", detail="since must be an ISO 8601 timestamp")
     # Visitors also see agent traffic (MCP/A2A write to "agents") and Discord, so the feed shows both live.
     return await core.list_activity(list(dict.fromkeys([BASE, AGENTS, DISCORD, *scope(x)])), since_iso=since or None)
 

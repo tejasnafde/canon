@@ -1321,3 +1321,16 @@ a.plain:hover {
   filter: grayscale(1);
   opacity: 0.6;
 }
+
+@media (max-width: 760px) {
+  /* the decision count drops under the name, or deep org levels scroll sideways on a phone */
+  .org .who {
+    grid-template-columns: 28px minmax(0, 1fr);
+    row-gap: 2px;
+  }
+  .org .who .n {
+    grid-column: 2;
+    text-align: left;
+    white-space: normal;
+  }
+}
