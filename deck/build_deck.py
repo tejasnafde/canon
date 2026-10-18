@@ -202,7 +202,7 @@ def build(shots: Path, mocks: Path, out: Path):
             "Canon does all three on one record, and knows who may change a rule: official, proposed or claim, from the org tree.",
             "Its users include AI agents, not only people."]),
         ("How it solves the problem", [
-            "Extracts decisions with verified quotes from chats, meetings, wiki, PRs, PDFs and screenshots.",
+            "Extracts decisions with verified quotes from chats, meetings, wiki, PRs, PDFs, screenshots and voice recordings.",
             "Reconciles each one: same, update or contradiction, ordered by effective date.",
             "Flags out-of-date documents and broken premises, and sends unverified claims to the right lead.",
             "Answers why with citations, or says I do not know."]),
@@ -219,7 +219,7 @@ def build(shots: Path, mocks: Path, out: Path):
 
     # 4. Features
     set_title(s[3], "List of features offered by the solution")
-    left = [("Ingest anything:", "Slack, meetings, wiki, PRs, commits, email, paste, PDFs and screenshots (Gemini reads them)."),
+    left = [("Ingest anything:", "Slack, meetings, wiki, PRs, commits, email, paste, PDFs, screenshots, audio and video (Gemini reads them; 10 min audio, 2 min video, 30 min a day)."),
             ("Decision extraction:", "statement, rationale, assumptions, owner, date, quotes verified word for word."),
             ("Reconciliation:", "same, update (supersedes) or contradiction, ordered by effective date. Older copies marked outdated."),
             ("Authority:", "official, proposed or claim from the org tree. Unverified claims go to the right lead. Jokes are ignored."),
@@ -228,7 +228,7 @@ def build(shots: Path, mocks: Path, out: Path):
     right = [("I am new here:", "five things you must know, a page not to trust, people to ask."),
              ("Catch me up:", "14 roles, a summary and a ranked to-do list with reasons."),
              ("Agent guard over MCP:", "check_intent gives allow, warn or block. Six tools for Claude Code and Codex. ADK agent over A2A."),
-             ("Discord, live:", "synced every minute (threads, files, PDFs, screenshots); replies under the message; /canon ask, check, catchup, remember."),
+             ("Discord, live:", "synced every minute (threads, files, PDFs, screenshots, voice notes); replies under the message; /canon ask, check, catchup, remember."),
              ("People and org:", "who owns what, who left, who took over."),
              ("Measured:", "gold-set benchmark and a memory-health replay, served in the app."),
              ("Cost controls:", "daily Gemini cap, Discord caps, scale to zero.")]
