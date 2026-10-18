@@ -125,3 +125,18 @@ def test_daily_llm_cap(monkeypatch):
     import pytest
     with pytest.raises(llm.BudgetExceeded):
         llm._charge()
+
+
+def test_shared_answer_cache_skips_second_call(monkeypatch):
+    import asyncio
+    from canon import app as appmod
+    calls = []
+
+    async def compute():
+        calls.append(1)
+        return "answer"
+    appmod._ANSWERS.clear()
+    ws = ["acme", "v-nodata"]
+    assert asyncio.run(appmod._shared(("k",), ws, compute)) == "answer"
+    assert asyncio.run(appmod._shared(("k",), ws, compute)) == "answer"
+    assert len(calls) == 1

@@ -271,17 +271,39 @@ async def ingest(req: IngestRequest, x: str | None = Ws):
     return await core.ingest(req, ws)
 
 
+# ponytail: per-instance answer cache for visitors with no data of their own, so page loads
+# (Ask examples, Catch me up, New hire) do not each cost a Gemini call. 10-minute TTL; at most
+# max-instances (3) calls per key per window. Move to Firestore if instances grow.
+_ANSWERS: dict[tuple, tuple[float, object]] = {}
+ANSWER_TTL = 600
+
+
+async def _shared(key: tuple, ws: list[str], compute):
+    own = ws[-1]
+    if own.startswith("v-") and await store.get_store().query("sources", [own]):
+        return await compute()  # the visitor added data: their answer is their own
+    hit = _ANSWERS.get(key)
+    if hit and hit[0] > time.monotonic():
+        return hit[1]
+    result = await compute()
+    _ANSWERS[key] = (time.monotonic() + ANSWER_TTL, result)
+    return result
+
+
 @app.post("/api/ask", response_model=AskResult)
 async def ask(req: AskRequest, x: str | None = Ws):
     enforce(req)
     require(question=req.question)
-    return await core.ask(req, scope(x))
+    ws = scope(x)
+    return await _shared(("ask", " ".join(req.question.lower().split()), ws[0]), ws, lambda: core.ask(req, ws))
 
 
 @app.post("/api/briefing", response_model=Briefing)
 async def briefing(req: BriefingRequest, x: str | None = Ws):
     enforce(req)
-    return await core.briefing(req, scope(x))
+    ws = scope(x)
+    return await _shared(("brief", req.persona, req.since.date().isoformat(), ws[0]), ws,
+                         lambda: core.briefing(req, ws))
 
 
 @app.post("/api/check", response_model=CheckResult)
