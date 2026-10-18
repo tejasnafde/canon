@@ -671,6 +671,40 @@ table.rows td.owner {
 .stories li.minor h3 {
   font-size: 22px;
 }
+.judges {
+  margin-top: 48px;
+}
+.tryit {
+  list-style: none;
+  counter-reset: tryit;
+  border-top: 1px solid var(--ink);
+}
+.tryit li {
+  counter-increment: tryit;
+  display: grid;
+  grid-template-columns: 32px 120px minmax(0, 1fr);
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tryit li::before {
+  content: counter(tryit);
+  font: 500 20px/1 var(--serif);
+  color: var(--ink-3);
+}
+.tryit li > a:first-child {
+  font-weight: 500;
+}
+.tryit span {
+  color: var(--ink-2);
+}
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin-top: 14px;
+}
 
 /* new hire */
 .must li {
@@ -1163,6 +1197,12 @@ table.rows td.owner {
   }
   .stories h3 {
     font-size: 24px;
+  }
+  .tryit li {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+  .tryit span {
+    grid-column: 2;
   }
   .term {
     padding: 18px;

@@ -5,6 +5,9 @@ import { q } from '@/lib/query'
 import { DISCORD_INVITE, quotedSourceCount, staleDocIds } from '@/lib/record'
 import { useTitle } from '@/lib/title'
 
+const REFUSAL = 'What is Northwind Labs annual recurring revenue for 2026?'
+const ask = (question: string) => `/ask?q=${encodeURIComponent(question)}`
+
 export default function HomePage() {
   useTitle()
   const stats = useQuery(q.stats())
@@ -59,6 +62,48 @@ export default function HomePage() {
             requests, January 2025 to October 2026.
           </p>
         </div>
+      </div>
+
+      <div className="section judges">
+        <h2>For judges: try this in two minutes</h2>
+        <ol className="tryit">
+          <li>
+            <Link to="/new-hire">New hire</Link>
+            <span>Open it. The Release process wiki is flagged as out of date, with the newer decision beside it.</span>
+          </li>
+          <li>
+            <Link to="/agent">For agents</Link>
+            <span>
+              Under Try it yourself, type <q>Add a cron job that deploys the dispatch service to production every Friday at 15:00</q>. The verdict is
+              Block.
+            </span>
+          </li>
+          <li>
+            <Link to="/paste">Paste</Link>
+            <span>Click the sample Friday deploy job, then Check this message. You see the conflict and the stale wiki.</span>
+          </li>
+          <li>
+            <Link to={ask("What's our tech stack?")}>Ask why</Link>
+            <span>
+              Ask <Link to={ask("What's our tech stack?")}>What's our tech stack?</Link> or{' '}
+              <Link to={ask('Why did we choose Postgres?')}>Why did we choose Postgres?</Link> Then <Link to={ask(REFUSAL)}>{REFUSAL}</Link> Canon
+              says it does not know.
+            </span>
+          </li>
+          <li>
+            <a href={DISCORD_INVITE} target="_blank" rel="noreferrer">
+              Discord
+            </a>
+            <span>Join the server and post in #engineering. Canon replies under your message within about a minute.</span>
+          </li>
+        </ol>
+        <p className="proof small">
+          <a href="https://github.com/tejasnafde/canon">GitHub repo</a>
+          <a href="https://canon-tn07.web.app">Firebase Hosting</a>
+          <a href="https://canon-ezvux7gqxa-el.a.run.app/health">Cloud Run</a>
+          <a href="https://canon.tn07.dev/mcp">MCP endpoint</a>
+          <Link to="/benchmark">How well does it work</Link>
+        </p>
       </div>
 
       <div className="section">

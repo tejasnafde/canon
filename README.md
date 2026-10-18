@@ -4,6 +4,22 @@
 
 **The shared memory of a company, for its people and its AI agents.**
 
+## For judges: try this in two minutes
+
+No login, no setup. Open https://canon.tn07.dev and follow these steps.
+
+| # | Do this | What you should see |
+|---|---|---|
+| 1 | Open **[New hire](https://canon.tn07.dev/new-hire)**. | A red warning that the Release process wiki is out of date, with the old line and the newer decision side by side. |
+| 2 | Open **[For agents](https://canon.tn07.dev/agent)**. Under "Try it yourself", type `Add a cron job that deploys the dispatch service to production every Friday at 15:00`. | The verdict **Block**, with the Friday deploy ban, its owner and the incident behind it. |
+| 3 | Open **[Paste](https://canon.tn07.dev/paste)**. Click the sample **Friday deploy job**, then **Check this message**. | The conflict with the Friday ban, and the stale Release process wiki, in a few seconds. |
+| 4 | Open **[Ask why](https://canon.tn07.dev/ask)**. Ask `What's our tech stack?` or `Why did we choose Postgres?`. Then ask `What is Northwind Labs annual recurring revenue for 2026?` | Short answers with verified quotes. For the revenue question, Canon says it does not know. It does not guess. |
+| 5 | Join the Discord server https://discord.gg/HwSgjmcgF5 and post in **#engineering**, for example `lets ship the dispatch cron this friday`. | Canon replies under your message within about a minute, with the decision it breaks. |
+
+Proof links: [GitHub repo](https://github.com/tejasnafde/canon) · [Firebase Hosting](https://canon-tn07.web.app) · [Cloud Run health](https://canon-ezvux7gqxa-el.a.run.app/health) · [MCP endpoint](https://canon.tn07.dev/mcp) · [How well does it work](https://canon.tn07.dev/benchmark)
+
+**Built on Google Cloud:** Gemini on Vertex AI (extraction, checks, answers, embeddings), Firestore (the decision record), Cloud Run (API, MCP and A2A in one service), Firebase Hosting (the web app), Cloud Scheduler (Discord sync every minute), ADK and A2A (the agent interface).
+
 Teams decide things in Slack threads, meetings and pull requests, then forget. New hires follow a wiki page that was overruled months ago. Coding agents ship changes that break a rule nobody wrote into the code.
 Canon keeps one record of every decision and the reason behind it. Each decision is backed by a quote that is checked word for word against its source. Canon checks every new message, document and agent action against that record, and it warns when a person, a document or an AI agent is about to break a decision.
 
@@ -52,6 +68,10 @@ Open https://canon.tn07.dev. Home shows the live counts (380 items read, 345 off
 
 More inputs: two more paste samples (an update and a new decision) in `data/samples/live_paste.json`, one example per MCP tool in `data/samples/agent_playground.json`, and these questions:
 
+- What's our tech stack?
+- Why did we choose Postgres?
+- How do we deploy to production?
+- Who approves access to the production database?
 - What should we quote a new Route Lens customer, and why did the price change?
 - When did Route Lens GA move, and what gate held it up?
 - What is Northwind Labs annual recurring revenue for 2026? (Canon refuses: the record has no answer)
