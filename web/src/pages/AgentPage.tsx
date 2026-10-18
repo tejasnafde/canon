@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Bar, ErrorState, TextSkeleton, friendly } from '@/components/states'
 import { callTool } from '@/lib/mcp'
 import { q } from '@/lib/query'
@@ -164,14 +164,16 @@ export default function AgentPage() {
 }
 
 function TryIt() {
-  const [intent, setIntent] = useState(FIRST)
+  const [params] = useSearchParams()
+  // /agent?intent=... pre-fills the box (the judge path on Home links here), capped like the API.
+  const [intent, setIntent] = useState(params.get('intent')?.slice(0, 2000) || FIRST)
   const run = useMutation({
     mutationFn: async (i: string) => CheckResult.parse(await callTool('check_intent', { intent: i, actor: 'playground' })),
   })
   const r = run.data
   const cite = r?.citations[0]
   return (
-    <div>
+    <div id="try">
       <h2>Try it yourself</h2>
       <p className="muted" style={{ margin: '8px 0 24px' }}>
         Describe something an agent wants to do. Canon tells you if it is allowed.

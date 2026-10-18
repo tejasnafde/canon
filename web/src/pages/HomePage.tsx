@@ -5,6 +5,8 @@ import { q } from '@/lib/query'
 import { DISCORD_INVITE, quotedSourceCount, staleDocIds } from '@/lib/record'
 import { useTitle } from '@/lib/title'
 
+const FRIDAY_CRON = 'Add a cron job that deploys the dispatch service to production every Friday at 15:00'
+
 const REFUSAL = 'What is Northwind Labs annual recurring revenue for 2026?'
 const ask = (question: string) => `/ask?q=${encodeURIComponent(question)}`
 
@@ -72,9 +74,9 @@ export default function HomePage() {
             <span>Open it. The Release process wiki is flagged as out of date, with the newer decision beside it.</span>
           </li>
           <li>
-            <Link to="/agent">For agents</Link>
+            <Link to={`/agent?intent=${encodeURIComponent(FRIDAY_CRON)}#try`}>For agents</Link>
             <span>
-              Under Try it yourself, type <q>Add a cron job that deploys the dispatch service to production every Friday at 15:00</q>. The verdict is
+              Try it yourself opens with <q>{FRIDAY_CRON}</q> filled in. Run the check. The verdict is
               Block.
             </span>
           </li>
