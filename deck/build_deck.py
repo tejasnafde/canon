@@ -7,6 +7,7 @@ Snapshot slide uses SNAPSHOTS (file names inside --shots); missing files are ski
 Needs python-pptx and Pillow. Export to PDF with deck/export_pdf.sh (Keynote).
 """
 import argparse
+import copy
 import json
 import subprocess
 import tempfile
@@ -337,6 +338,29 @@ def build(shots: Path, mocks: Path, out: Path):
         x, y = X0 + (i % 3) * (sw + Inches(0.18)), Y0 + (i // 3) * (sh + Inches(0.36))
         picture(s[9], shots / n, x, y, sw, sh, tmp)
         caption(s[9], x, y + sh, sw, cap)
+
+    # 10b. Live in Discord: real screenshots of the public demo server, placed right after Snapshots
+    disc = sorted((ROOT / "deck" / "discord").glob("*.png"))
+    if disc:
+        d = prs.slides.add_slide(s[9].slide_layout)
+        ids = prs.slides._sldIdLst
+        el = ids[-1]; ids.remove(el); ids.insert(10, el)  # after Snapshots (index 9)
+        # the bare layout has no title box: clone the Snapshots title (same position and style)
+        src = next(x for x in s[9].shapes if x.has_text_frame and x.text_frame.text.strip())
+        d.shapes._spTree.append(copy.deepcopy(src._element))
+        set_title(d, "Live in Discord: Canon learns from a real server")
+        caps = {"1-general": "Threads in #general, posted as the people who wrote them",
+                "2-engineering": "#engineering: the stale Friday release window, as a screenshot",
+                "3-sales": "#sales: the old USD 99 pricing page and the sales FAQ file",
+                "4-reply": "Canon replies under a message that breaks a decision"}
+        dw, dh = Inches(3.0), Inches(2.05)
+        for i, f in enumerate(disc[:4]):
+            x = X0 + (i % 3) * (dw + Inches(0.15)); y = Y0 + (i // 3) * (dh + Inches(0.4))
+            picture(d, f, x, y, dw, dh, tmp)
+            caption(d, x, y + dh, dw, caps.get(f.stem, ""))
+        text(d, X0, Y0 + Inches(2.55) if len(disc) <= 3 else Y0 + Inches(4.9), Inches(9.3), Inches(0.6), [
+            "Synced every minute with no always-on bot: threads, files, PDFs, screenshots and voice notes. "
+            "Join: discord.gg/HwSgjmcgF5"], size=11)
 
     # 11. Benchmark
     set_title(s[10], "Prototype performance report / benchmarking")
