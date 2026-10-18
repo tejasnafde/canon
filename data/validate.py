@@ -16,6 +16,71 @@ PERSONAS = set(ROLE_MINIMUMS) | {'engineer', 'pm', 'new_hire'}
 MINIMUMS = {'decision': 25, 'stale_doc': 8, 'premise_change': 5}
 
 
+def validate_basics(rows, people):
+    """Validate the additive acme4 file without changing the benchmark corpus."""
+    import re
+    from urllib.parse import urlsplit
+
+    errors = []
+    names = {p['name']: p for p in people}
+    titles, urls = set(), set()
+    fields = {'workspace', 'kind', 'title', 'author', 'ts', 'url', 'text', 'synthetic'}
+    forbidden = re.compile(
+        r'parental|maternity|paternity|annual recurring revenue|\bARR\b|acqui(?:red|sition)|'
+        r'replacement.{0,40}cache|cache.{0,40}interval|password|regional model|'
+        r'replac\w*.{0,40}model|model.{0,40}replac\w*', re.I | re.S)
+    for i, row in enumerate(rows, 1):
+        label = f'basics.jsonl:{i}'
+        if not isinstance(row, dict):
+            errors.append(f'{label}: source must be an object')
+            continue
+        problems = []
+        if set(row) != fields:
+            problems.append('unexpected or missing Source fields')
+        for field in ('title', 'author', 'text', 'url', 'ts'):
+            if not isinstance(row.get(field), str) or not row[field].strip():
+                problems.append(f'invalid {field}')
+        if row.get('workspace') != 'acme4' or row.get('synthetic') is not True:
+            problems.append('requires workspace acme4 and synthetic true')
+        if not isinstance(row.get('kind'), str) or row['kind'] not in KINDS:
+            problems.append('invalid kind')
+        author = names.get(row.get('author')) if isinstance(row.get('author'), str) else None
+        if not author:
+            problems.append('unknown author')
+        try:
+            dt = datetime.fromisoformat(row['ts'].replace('Z', '+00:00'))
+            if not (datetime(2025, 1, 1, tzinfo=timezone.utc) <= dt <
+                    datetime(2026, 11, 1, tzinfo=timezone.utc)):
+                problems.append('timestamp outside corpus range')
+            if author and author.get('left_at') and dt >= datetime.fromisoformat(author['left_at'].replace('Z', '+00:00')):
+                problems.append('author already departed')
+        except (KeyError, ValueError, TypeError, AttributeError):
+            problems.append('invalid timezone-aware timestamp')
+        url = row.get('url', '')
+        try:
+            parsed = urlsplit(url)
+            if parsed.scheme != 'https' or not (parsed.hostname or '').endswith('.example') or not parsed.path.strip('/'):
+                problems.append('URL must be a fake .example deep link')
+        except (TypeError, ValueError, AttributeError):
+            problems.append('invalid URL')
+        title = row.get('title')
+        if isinstance(title, str):
+            if title in titles:
+                problems.append('duplicate title')
+            titles.add(title)
+        if isinstance(url, str):
+            if url in urls:
+                problems.append('duplicate URL')
+            urls.add(url)
+        content = ' '.join(v for v in row.values() if isinstance(v, str))
+        if '\u2014' in content or any(ord(c) >= 0x1F000 or 0x2600 <= ord(c) <= 0x27BF or ord(c) in (0xFE0F, 0x20E3) for c in content):
+            problems.append('forbidden em dash or emoji')
+        if forbidden.search(content):
+            problems.append('unanswerable benchmark topic or excluded leave policy')
+        errors.extend(f'{label}: {problem}' for problem in problems)
+    return errors
+
+
 def validate(root):
     errors = []
 
@@ -143,6 +208,16 @@ def validate(root):
             require(row.get('author') in names, f'Unknown author: {row.get("author")}')
     else:
         errors.append('people.json must be a list')
+
+    basics_path = root / 'corpus_basics' / 'basics.jsonl'
+    if basics_path.exists():
+        basics = []
+        for number, line in enumerate(basics_path.read_text(encoding='utf-8').splitlines(), 1):
+            try:
+                basics.append(json.loads(line))
+            except ValueError as exc:
+                errors.append(f'basics.jsonl:{number}: {exc}')
+        errors.extend(validate_basics(basics, people if isinstance(people, list) else []))
 
     gold = read(root / 'gold' / 'gold.json')
     counts = Counter()
