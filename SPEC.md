@@ -132,6 +132,11 @@ Every tool call writes an `activity` row with `actor = agent:<actor or client na
   id; quotes are verified by exact substring match after whitespace normalisation;
   refuse when top retrieval score is below threshold.
 
+
+### Media ingest
+
+PDF, image, audio (mp3, m4a, wav, ogg/opus, Discord voice messages) and video (mp4, mov, webm) go to Gemini as one inline part; Gemini returns a transcript plus decisions, and quotes are verified against the transcript. Hard caps before any call (backend/canon/media.py): audio 10 min, video 2 min, a shared daily budget of 30 min (Firestore counter), refusals never reach Gemini. Media calls count toward the daily call cap.
+
 ## Synthetic corpus (`data/`)
 
 Company: "Northwind Labs", a 60-person B2B SaaS (logistics software), Jan 2025 to Oct 2026.
