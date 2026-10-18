@@ -35,8 +35,18 @@ def verify(public_key: str, body: bytes, signature: str | None, timestamp: str |
         return False
 
 
+USAGE = {"ask": "question", "check": "intent", "remember": "text"}
+
+
 async def answer(sub: str, opts: dict, user: str) -> str:
     actor = f"human:discord/{user}"[:100]
+    if (need := USAGE.get(sub)) and not str(opts.get(need, "")).strip():
+        return f"Usage: /canon {sub} {need}:<text>"
+    if sub == "catchup":
+        try:
+            days = max(1, min(int(opts.get("days", 7)), 3650))
+        except (TypeError, ValueError):
+            return "Usage: /canon catchup days:<number>"
     if sub == "ask":
         r = await core.ask(AskRequest(question=opts["question"], actor=actor), WORKSPACES)
         cites = "\n".join(f"- {c.title} ({c.ts:%Y-%m-%d}): \"{c.quote[:150]}\"" for c in r.citations[:3])
@@ -46,7 +56,7 @@ async def answer(sub: str, opts: dict, user: str) -> str:
         decs = "\n".join(f"- {d.statement} ({d.owner}, {d.ts:%Y-%m-%d})" for d in r.decisions[:3])
         return f"**{r.verdict.upper()}**: {r.explanation}\n{decs}".strip()
     if sub == "catchup":
-        since = datetime.now(timezone.utc) - timedelta(days=int(opts.get("days", 7)))
+        since = datetime.now(timezone.utc) - timedelta(days=days)
         role = opts.get("role") or opts.get("persona") or "engineer"
         r = await core.briefing(BriefingRequest(persona=role, since=since, actor=actor),
                                 WORKSPACES)
@@ -88,7 +98,11 @@ async def interactions(request: Request, background: BackgroundTasks):
     task = asyncio.create_task(answer(sub["name"], opts, user))
     done, _ = await asyncio.wait({task}, timeout=INLINE_SECONDS)
     if done:
-        return {"type": 4, "data": {"content": task.result()[:2000]}}
+        try:
+            content = task.result()
+        except Exception as e:  # answer inline instead of failing the interaction
+            content = f"Canon failed: {type(e).__name__}"
+        return {"type": 4, "data": {"content": content[:2000]}}
     # ponytail: follow-up runs after the response; on Cloud Run use --no-cpu-throttling
     # (or keep min instances) if follow-ups stall.
     background.add_task(follow_up, i["application_id"], i["token"], task)
