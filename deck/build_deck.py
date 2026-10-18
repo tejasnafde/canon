@@ -249,6 +249,7 @@ def build(shots: Path, mocks: Path, out: Path):
     rec = box(s[4], X0 + Inches(1.9), y1 + Inches(1.15), Inches(4.3), Inches(0.6),
               "Firestore record: decisions, alerts, activity, people\nvector search, workspace prefilter", size=11, fill=PAPER, bold=True)
     arrow(s[4], a[4], rec, "v")
+    arrow(s[4], a[5], rec, "v")  # the drift scan writes stale-doc and premise alerts into the record
     text(s[4], X0, Y0 + Inches(3.5), Inches(6), Inches(0.3), ("B. A person or an agent asks or acts", ""), size=11)
     row2 = ["Question, briefing\nor intended action", "Embed query\nnearest decisions", "Below threshold?\nrefuse / allow, no LLM",
             "Gemini judges\nanswer or verdict", "Cite verified quotes\nallow / warn / block", "Recorded\nweb, MCP, A2A, Discord"]
@@ -261,6 +262,7 @@ def build(shots: Path, mocks: Path, out: Path):
 
     # 6. Wireframes (the v2 HTML mocks the web app was built from)
     set_title(s[5], "Wireframes / mock diagrams")
+    text(s[5], X0, Y0 + Inches(3.95), W, Inches(0.3), "Early wireframes: the approved mocks the web app was built from. The live app (current numbers) is on the Snapshots slide.", size=10, color=MUTED)
     names = [("home.png", "Home: stories and live counts"), ("new-hire.png", "I am new here"), ("agent.png", "For agents: the block")]
     spots = [(X0, Y0, Inches(5.6), Inches(3.5)), (X0 + Inches(5.8), Y0, Inches(3.5), Inches(1.65)),
              (X0 + Inches(5.8), Y0 + Inches(1.95), Inches(3.5), Inches(1.65))]
@@ -376,7 +378,7 @@ def build(shots: Path, mocks: Path, out: Path):
         ["check_intent verdicts", ev["check_cases"], ev["check_correct"], pct(ev["check_correct"], ev["check_cases"])],
         ["Unanswerable, refused", ev["unanswerable"], ev["refused_correctly"], pct(ev["refused_correctly"], ev["unanswerable"])],
         ["Latency p50 / p95 (ask, check)", "", f"{ev['p50_ms']} / {ev['p95_ms']} ms", ""],
-    ], [0.52, 0.15, 0.2, 0.13], size=10, row_h=Inches(0.34))
+    ], [0.46, 0.13, 0.29, 0.12], size=10, row_h=Inches(0.34))
     text(s[10], X0, Y0 + Inches(2.85), Inches(5.2), Inches(1.2), [
         f"Run {ev['run_at'][:16].replace('T', ' ')} UTC, model {ev['model']}, dataset acme4: 380 synthetic sources (about 100 pure noise), 14 roles. "
         "check_intent re-measured 2026-10-18.",
@@ -414,15 +416,21 @@ def build(shots: Path, mocks: Path, out: Path):
 
     # 13. Links
     set_title(s[12], "Links")
-    text(s[12], X0, Y0, W, H, [
+    links = text(s[12], X0, Y0, W, H, [
         ("GitHub public repository:", REPO_URL),
         ("Demo video:", VIDEO_URL),
-        ("Final product link:", f"{APP_URL}  (also https://canon.tn07.dev)"),
+        ("Final product link:", APP_URL),
+        ("Same app, custom domain:", "https://canon.tn07.dev"),
         ("Cloud Run:", RUN_URL + "/health"),
         ("Live Discord demo:", DISCORD_URL),
         ("Connect your agent:", "claude mcp add --transport http canon https://canon.tn07.dev/mcp"),
         ("", "No login needed. All company data is synthetic and labelled as such."),
     ], size=14, gap=10)
+    for p in links.text_frame.paragraphs:  # clickable URLs, same ink colour
+        for r in p.runs:
+            if r.text.startswith("https://"):
+                r.hyperlink.address = r.text.split()[0]
+                r.font.color.rgb = INK
     logo(s[12], Inches(7.6), Inches(4.7), Inches(2.0), tmp)
 
     prs.save(str(out))
