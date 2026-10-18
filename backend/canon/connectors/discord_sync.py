@@ -12,6 +12,7 @@ import asyncio
 import base64
 import logging
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -19,7 +20,7 @@ import httpx
 
 from canon import core, llm, media, store
 from canon.connectors import state
-from canon.models import IngestRequest, Source
+from canon.models import AskRequest, CheckRequest, IngestRequest, Source
 
 log = logging.getLogger("canon.discord_sync")
 API = "https://discord.com/api/v10"
@@ -162,6 +163,41 @@ def target(msgs: list[dict], alert) -> dict:
     return msgs[-1]
 
 
+ACTION = re.compile(r"^(can|could|should|shall|may|am i allowed|are we allowed|is it ok|is it okay)\b", re.I)
+QUESTION = re.compile(r"^(can|could|should|shall|may|is|are|am|do|does|did|will|would|why|what|who|whom|whose|"
+                      r"when|where|which|how)\b", re.I)
+MENTION = re.compile(r"<@!?(\d+)>")
+
+
+def question_of(m: dict) -> tuple[str, bool] | None:
+    """The question a human asked Canon in the channel, or None. A question ends with '?', starts with a
+    question word, or mentions the Canon bot."""
+    raw = m.get("content", "")
+    bot = os.environ.get("CANON_DISCORD_APP_ID") or os.environ.get("CANON_DISCORD_APPLICATION_ID") or ""
+    named = bool(bot) and bot in MENTION.findall(raw)
+    q = MENTION.sub("", raw).strip()
+    if len(q) < 8:
+        return None
+    return (q[:1000], named) if named or q.endswith("?") or QUESTION.match(q) else None
+
+
+async def answer_line(q: str, user: str, named: bool = False) -> str | None:
+    """Guard for 'can I / should we' (allow, warn or block), Ask why for the rest. One Gemini call.
+    An unanswerable question stays silent unless Canon was mentioned, so office chatter gets no noise."""
+    actor = f"human:discord/{user}"[:100]
+    url = os.environ.get("CANON_PUBLIC_URL", "https://canon.tn07.dev").rstrip("/")
+    if ACTION.match(q):
+        r = await core.check(CheckRequest(intent=q, actor=actor), SCOPE)
+        line = f"{r.verdict.capitalize()}: {r.explanation}"
+        if r.decisions:
+            line += f" {url}/decisions/{r.decisions[0].id}"
+        return line
+    r = await core.ask(AskRequest(question=q, actor=actor), SCOPE)
+    if r.refused or not r.citations:
+        return r.answer if named else None
+    return f"{r.answer} (source: {r.citations[0].title})"
+
+
 def title_of(channel: dict) -> str:
     if channel.get("parent_name"):
         return f"Discord #{channel['parent_name']} / {channel['name']}"[:300]
@@ -235,6 +271,21 @@ async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
             refused.append((m, e.message))
         except Exception:  # one unreadable image must not drop the rest of the group
             log.exception("discord image ingest failed for %s", a.get("filename"))
+    for m in msgs:  # a question asked in the channel gets an answer, once
+        if m["id"] in replied or not (asked := question_of(m)):
+            continue
+        try:
+            line = await answer_line(asked[0], m["author"]["username"], asked[1])
+        except Exception:
+            log.exception("discord question failed")
+            continue
+        if not line:
+            continue
+        replied.add(m["id"])
+        await client.post(f"/channels/{channel['id']}/messages",
+                          {"content": line[:2000], "message_reference": {"message_id": m["id"]},
+                           "allowed_mentions": {"parse": []}})
+        sent.append(line)
     for m, why in refused:  # one reply per message, in the channel or thread it came from
         if m["id"] in replied:
             continue

@@ -57,7 +57,12 @@ def ingested(monkeypatch, fresh):
     return calls
 
 
-async def test_sync_groups_skips_replies_and_advances_cursor(ingested):
+async def test_sync_groups_skips_replies_and_advances_cursor(ingested, monkeypatch):
+    from canon.models import AskResult
+
+    async def ask(req, ws):  # the projector question is unanswerable, so Canon stays silent
+        return AskResult(answer="I do not know.", citations=[], refused=True, latency_ms=1)
+    monkeypatch.setattr(core, "ask", ask)
     fake = FakeDiscord([
         msg(1, "We should move the billing service to Postgres."),
         msg(2, "ok"),  # too short
@@ -142,3 +147,24 @@ def test_register_lists_every_persona():
     sub = {o["name"]: o for o in COMMAND["options"]}
     assert set(sub) == {"ask", "check", "catchup", "remember"}
     assert [c["value"] for c in sub["catchup"]["options"][0]["choices"]] == list(get_args(Persona))
+
+
+async def test_questions_get_answers(ingested, monkeypatch):
+    from canon.connectors import discord_sync as ds
+    from canon.models import AskResult, CheckResult
+    assert ds.question_of(msg(1, "Can i migrate my service to convex")) == ("Can i migrate my service to convex", False)
+    assert ds.question_of(msg(2, "what is our tech stack")) and ds.question_of(msg(3, "lunch is here")) is None
+    monkeypatch.setenv("CANON_DISCORD_APP_ID", "99")
+    assert ds.question_of(msg(4, "<@99> tech stack please")) == ("tech stack please", True)
+
+    async def check(req, ws):
+        return CheckResult(verdict="warn", explanation="No decision covers Convex yet.", decisions=[], citations=[], latency_ms=1)
+
+    async def ask(req, ws):
+        return AskResult(answer="Python and Postgres.", citations=[], refused=False, latency_ms=1)
+    monkeypatch.setattr(core, "check", check)
+    monkeypatch.setattr(core, "ask", ask)
+    fake = FakeDiscord([msg(10, "Can i migrate my service to convex"), msg(11, "lunch is here today folks")])
+    sent = await ds.ingest_group(fake.msgs, CHAN, fake)
+    assert sent == ["Warn: No decision covers Convex yet."]
+    assert fake.posts[-1][1]["message_reference"] == {"message_id": "10"}
