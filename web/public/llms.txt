@@ -1,0 +1,43 @@
+# Canon
+
+> Canon is the shared memory of a company, for its people and its AI agents. It keeps one record of decisions, each backed by a quote checked word for word against its source, knows who has the authority to change a rule, and flags drift: a message that breaks a decision, an out-of-date document, or an AI agent about to act against the record.
+
+Entry for the Google Cloud AI Builder Cup 2026, track: Future of Work and Enterprise Productivity. Team: Localhost.
+All company data belongs to "Northwind Labs", a made-up 60-person logistics software company (synthetic, labelled as such).
+
+## Links
+- Live app: https://canon.tn07.dev (same app on Firebase Hosting: https://canon-tn07.web.app)
+- Cloud Run API health: https://canon-ezvux7gqxa-el.a.run.app/health
+- MCP server for AI agents (streamable HTTP, JSON): https://canon.tn07.dev/mcp
+- A2A agent card: https://canon.tn07.dev/.well-known/agent-card.json
+- Live Discord demo (Canon reads new messages within about a minute): https://discord.gg/HwSgjmcgF5
+- Source code: https://github.com/tejasnafde/canon
+
+## Try it in two minutes (web)
+1. /new-hire : the out-of-date "Release process" wiki is flagged against the newer Friday deploy ban.
+2. /agent : the Friday cron deploy check is pre-filled; the verdict is Block, citing the decision, its owner and the incident behind it.
+3. /paste : click the Friday sample; Canon finds the conflict and the stale wiki in a few seconds.
+4. /ask : "What's our tech stack?", "Why did we choose Postgres?", "Can an AI agent deploy to production?"; and "What is Northwind Labs annual recurring revenue for 2026?" returns an honest "I do not know".
+5. /catch-up : a role briefing for any of 14 roles; /org : the org tree, who owns what, who left.
+
+## Verify with curl (no login, no key)
+curl -s https://canon.tn07.dev/api/stats
+curl -s https://canon.tn07.dev/api/eval
+curl -s https://canon.tn07.dev/api/ask -H 'Content-Type: application/json' -d '{"question":"Why can we not deploy on Fridays?"}'
+curl -s https://canon.tn07.dev/api/check -H 'Content-Type: application/json' -d '{"intent":"Add a cron job that deploys the dispatch service to production every Friday at 15:00"}'
+curl -s -X POST https://canon.tn07.dev/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+Connect a coding agent: claude mcp add --transport http canon https://canon.tn07.dev/mcp
+
+## How it uses Google Cloud
+- Gemini 3.5 Flash-Lite on Vertex AI: extracts decisions with structured output, reconciles them (same, update, contradiction), judges agent actions (allow, warn, block), answers with citations, and reads PDFs, images and audio. Refuses when the record has no answer.
+- gemini-embedding-001: embeddings for chunks and decisions.
+- Firestore (named database): the record (sources, decisions, alerts, activity, people) and vector search with a per-workspace prefilter.
+- Cloud Run: the API, the MCP server, an ADK agent over A2A, the Discord connector; scales to zero.
+- Firebase Hosting: the React web app. Cloud Scheduler: the Discord sync every minute.
+
+## Benchmark (labelled synthetic gold set, live dataset)
+decisions 82/82, contradictions and updates 35/39, false positives 2, guard verdicts 32/37, unanswerable refused 5/5, latency p50 1221 ms / p95 1795 ms.
+Memory health: authority cases, duplicates, quarter checkpoints and lineage are reported at /benchmark and /api/eval.
+
+## Guardrails and limits
+Quotes verified by exact substring; prompt-injection text in sources is treated as data; input length limits; authority model (guests and casual channels can only raise unverified claims); daily Gemini call cap and media caps (audio 10 min, video 2 min, 30 min a day). Synthetic data only; Discord message times are the time they were posted.

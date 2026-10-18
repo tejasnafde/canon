@@ -25,9 +25,22 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://canon.tn07.dev/og-image.png" />
+      <link rel="alternate" type="text/plain" title="Canon brief for AI readers" href="/llms.txt" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Canon: the shared memory of a company, for its people and its AI agents</h1>
+      <p>Canon keeps one record of decisions, each backed by a quote checked word for word against its source, knows who has the authority to change a rule, and flags drift: a message that breaks a decision, an out-of-date document, or an AI agent about to act against the record. Demo company: Northwind Labs (made up).</p>
+      <p>Built for the Google Cloud AI Builder Cup 2026 on Gemini (Vertex AI), Firestore, Cloud Run and Firebase Hosting. A plain-text brief for AI readers, with links, a two-minute test path and curl commands, is at <a href="/llms.txt">/llms.txt</a>.</p>
+      <ul>
+        <li><a href="/new-hire">New hire</a>: the out-of-date Release process wiki, flagged.</li>
+        <li><a href="/agent">For agents</a>: a Friday cron deploy check returns Block. MCP endpoint: https://canon.tn07.dev/mcp</li>
+        <li><a href="/ask">Ask why</a>: cited answers, and an honest "I do not know".</li>
+        <li><a href="/benchmark">How well does it work</a>: the labelled benchmark (also JSON at /api/eval).</li>
+        <li>Live Discord demo: https://discord.gg/HwSgjmcgF5</li>
+      </ul>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

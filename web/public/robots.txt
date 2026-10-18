@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://canon.tn07.dev/sitemap.xml
