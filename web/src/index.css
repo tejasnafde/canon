@@ -878,6 +878,29 @@ table.rows td.owner {
   align-items: baseline;
   margin-top: 36px;
 }
+.drop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px dashed var(--ink-3);
+  border-radius: 3px;
+}
+.drop.over {
+  border-color: var(--ink);
+  border-style: solid;
+}
+.linkish {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .progress {
   margin-top: 14px;
   font-size: 15px;

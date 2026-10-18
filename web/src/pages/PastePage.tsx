@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, ErrorState } from '@/components/states'
-import { api } from '@/lib/api'
+import { ApiError, api } from '@/lib/api'
 import { invalidateRecord, q } from '@/lib/query'
 import { fmtLong, quoteFrom, secs, srcLine } from '@/lib/record'
 import type { Alert, Decision, IngestResult, Reconciliation } from '@/lib/schemas'
@@ -22,27 +22,75 @@ const RELATION: Record<Reconciliation, string> = {
   contradiction: 'Goes against a decision that is still active.',
 }
 
+const MAX_MB = 15
+const TEXT_FILE = /\.(md|txt|csv)$/i
+const ACCEPT = 'application/pdf,image/*,audio/*,video/*,.md,.txt,.csv,.ogg,.opus,.m4a,.mov,.webm'
+const isMedia = (f: File | null) => !!f && /^(audio|video)\//.test(f.type)
+
+/** The file as plain base64, without the data: URL prefix. */
+function toB64(f: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(typeof r.result === 'string' ? (r.result.split(',')[1] ?? '') : '')
+    r.onerror = () => reject(new Error('Canon could not read this file.'))
+    r.readAsDataURL(f)
+  })
+}
+
+/** The server's own words for a refused recording ("This recording is 14 minutes; ..."). */
+function refusal(e: unknown): string | null {
+  if (!(e instanceof ApiError) || (e.status !== 413 && e.status !== 429)) return null
+  const i = e.message.indexOf('media_refused: ')
+  return i < 0 ? null : e.message.slice(i + 'media_refused: '.length)
+}
+
 export default function PastePage() {
   useTitle('paste a message and see what it breaks')
   const decisions = useQuery(q.decisions())
   const [pick, setPick] = useState(samples[0]?.key ?? '')
   const [text, setText] = useState(samples[0]?.source.text ?? '')
+  const [file, setFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState('')
+  const [over, setOver] = useState(false)
+  const picker = useRef<HTMLInputElement>(null)
   const sample = samples.find(s => s.key === pick)
   const run = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const base = sample?.source
       return api.ingest({
         kind: 'paste',
-        title: base && base.text === text ? base.title : 'Pasted message',
-        author: base && base.text === text ? base.author : 'Visitor',
+        title: file ? file.name : base && base.text === text ? base.title : 'Pasted message',
+        author: base && base.text === text && !file ? base.author : 'Visitor',
         ts: new Date().toISOString(),
         text,
         synthetic: true,
+        image_b64: file ? await toB64(file) : null,
       })
     },
     onSuccess: () => void invalidateRecord(),
   })
   const n = decisions.data?.length
+  const choose = (f: File | undefined) => {
+    run.reset()
+    setFileError('')
+    if (!f) return
+    if (TEXT_FILE.test(f.name) || f.type.startsWith('text/')) {
+      void f.text().then(t => {
+        setText(t.slice(0, 50_000))
+        setPick('')
+        setFile(null)
+      })
+      return
+    }
+    if (f.size > MAX_MB * 1024 * 1024) {
+      setFile(null)
+      setFileError(`This file is ${Math.round(f.size / 1024 / 1024)} MB; Canon accepts files up to ${MAX_MB} MB.`)
+      return
+    }
+    setFile(f)
+    setPick('')
+  }
+  const refused = run.isError ? refusal(run.error) : null
 
   return (
     <main className="wrap">
@@ -77,7 +125,7 @@ export default function PastePage() {
       <form
         onSubmit={e => {
           e.preventDefault()
-          if (text.trim()) run.mutate()
+          if (text.trim() || file) run.mutate()
         }}
       >
         <textarea
@@ -90,24 +138,81 @@ export default function PastePage() {
             setPick('')
           }}
         />
+        <div
+          className={over ? 'drop over' : 'drop'}
+          onDragOver={e => {
+            e.preventDefault()
+            setOver(true)
+          }}
+          onDragLeave={() => setOver(false)}
+          onDrop={e => {
+            e.preventDefault()
+            setOver(false)
+            choose(e.dataTransfer.files[0])
+          }}
+        >
+          <input
+            ref={picker}
+            type="file"
+            accept={ACCEPT}
+            hidden
+            aria-label="Upload a file"
+            onChange={e => {
+              choose(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+          <button type="button" className="btn ghost" onClick={() => picker.current?.click()}>
+            Upload a file
+          </button>
+          <span className="small">
+            {file ? (
+              <>
+                {file.name}, {(file.size / 1024 / 1024).toFixed(1)} MB.{' '}
+                <button type="button" className="linkish" onClick={() => setFile(null)}>
+                  Remove
+                </button>
+              </>
+            ) : (
+              'Or drop a file here: PDF, image, audio, video or text.'
+            )}
+          </span>
+          <p className="small muted" style={{ margin: '8px 0 0', flexBasis: '100%' }}>
+            Limits: audio up to 10 minutes, video up to 2 minutes, any file up to {MAX_MB} MB. Canon reads 30 minutes of recordings a day in total,
+            for all visitors together. Text you type above goes in with the file as context.
+          </p>
+          {fileError && (
+            <p className="small breaks" role="alert" style={{ margin: '8px 0 0', flexBasis: '100%' }}>
+              {fileError}
+            </p>
+          )}
+        </div>
         <div style={{ marginTop: 20, display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="submit" className="btn" disabled={run.isPending || !text.trim()}>
-            {run.isPending ? 'Checking...' : 'Check this message'}
+          <button type="submit" className="btn" disabled={run.isPending || (!text.trim() && !file)}>
+            {run.isPending ? 'Checking...' : file ? 'Check this file' : 'Check this message'}
           </button>
           <span className="small muted">Your paste stays in your own space. Other visitors do not see it.</span>
         </div>
       </form>
       <p className="progress" aria-live="polite">
         {run.isPending ? (
-          <Stages n={n} />
+          <Stages n={n} file={file} />
         ) : run.data ? (
-          `Read the message. Checked ${n ?? 'all'} decisions. Done in ${secs(run.data.latency_ms)}.`
+          `Read the ${file ? 'file' : 'message'}. Checked ${n ?? 'all'} decisions. Done in ${secs(run.data.latency_ms)}.`
         ) : (
           ''
         )}
       </p>
 
-      {run.isError && <ErrorState error={run.error} retry={() => run.mutate()} title="Canon could not check this message." />}
+      {refused && (
+        <div className="flag plain" role="alert" style={{ marginTop: 24 }}>
+          <h3>Canon did not read this file.</h3>
+          <p className="muted" style={{ marginTop: 6 }}>
+            {refused} Nothing was sent to the model.
+          </p>
+        </div>
+      )}
+      {run.isError && !refused && <ErrorState error={run.error} retry={() => run.mutate()} title="Canon could not check this message." />}
       {run.isPending && (
         <div className="section split" role="status" aria-label="Checking the message" aria-busy="true">
           <div className="flag">
@@ -129,13 +234,18 @@ export default function PastePage() {
 }
 
 /** Honest staged progress: the steps the ingest runs, advanced on a timer while the one request is in flight. */
-function Stages({ n }: { n: number | undefined }) {
+function Stages({ n, file }: { n: number | undefined; file: File | null }) {
   const [t, setT] = useState(0)
   useEffect(() => {
     const i = setInterval(() => setT(x => x + 1), 1000)
     return () => clearInterval(i)
   }, [])
-  const steps = ['Reading the message.', 'Pulling out decisions and checking every quote word for word.', `Comparing with ${n ?? 'all'} decisions.`]
+  const first = !file
+    ? 'Reading the message.'
+    : isMedia(file)
+      ? 'Uploading the recording. Listening to it and writing a transcript.'
+      : 'Uploading the file. Reading every page.'
+  const steps = [first, 'Pulling out decisions and checking every quote word for word.', `Comparing with ${n ?? 'all'} decisions.`]
   return <>{steps.slice(0, Math.min(steps.length, 1 + Math.floor(t / 1.2))).join(' ')}</>
 }
 
@@ -186,6 +296,7 @@ function Result({ r, decisions }: { r: IngestResult; decisions: Decision[] }) {
       </div>
       <aside className="understood">
         <h2>What Canon understood</h2>
+        <Transcript text={r.source.text} />
         {r.decisions.length === 0 && (
           <p className="muted" style={{ marginTop: 20 }}>
             No decision in this message. Canon kept it as context.
@@ -281,5 +392,23 @@ function Stale({ a }: { a: Alert }) {
         </p>
       )}
     </div>
+  )
+}
+
+/** The start of what Gemini read out of an uploaded file (ingest appends it after a [transcript] or [attachment] tag). */
+function Transcript({ text }: { text: string }) {
+  const m = /\[(transcript|attachment)\]\n([\s\S]*)$/.exec(text)
+  if (!m?.[2]) return null
+  const body = m[2].trim()
+  return (
+    <>
+      <span className="label" style={{ display: 'block', marginTop: 20 }}>
+        {m[1] === 'transcript' ? 'Transcript' : 'Text in the file'}
+      </span>
+      <blockquote className="small">
+        {body.slice(0, 400)}
+        {body.length > 400 ? '...' : ''}
+      </blockquote>
+    </>
   )
 }
