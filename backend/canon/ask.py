@@ -11,7 +11,7 @@ from canon.models import AskRequest, AskResult, Citation, Decision, TimelineEntr
 from canon.reconcile import NO_LABELS, norm, pick, unlabel, verified
 from canon.store import get_store, utc
 
-ASK_MIN = 0.66  # query-to-record cosine below this means "I do not know" without calling Gemini
+ASK_MIN = 0.58  # below this, "I do not know" without calling Gemini. Gemini is the real refusal judge (benchmark unanswerables score 0.68 to 0.77 and are refused by it); 0.66 also cut real answers (the March incident scored 0.635)
 ASK_SPREAD = 0.12  # cosine below the best match beyond which a record item is left out of the prompt
 REFUSAL = "I do not know. The record has no decision or document that answers this."
 
