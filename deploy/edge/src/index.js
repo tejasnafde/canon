@@ -41,10 +41,14 @@ export default {
     url.port = "";
     url.host = RUN_PREFIXES.some((p) => url.pathname.startsWith(p)) ? RUN : HOSTING;
 
+    const fresh = ["/robots.txt", "/llms.txt", "/sitemap.xml"].includes(url.pathname);
+    if (fresh) url.searchParams.set("v", "2"); // new CDN key upstream (Firebase/Fastly cached the old SPA page)
     const proxied = new Request(url, request);
     proxied.headers.set("X-Forwarded-Host", clientHost);
     proxied.headers.set("X-Forwarded-Proto", "https");
-    const response = await fetch(proxied);
+    // Small text files for crawlers and AI readers: never serve an edge-cached copy of the
+    // SPA page that answered these paths before the files existed.
+    const response = await fetch(proxied, fresh ? { cf: { cacheTtl: 0, cacheEverything: false } } : undefined);
 
     const location = response.headers.get("Location");
     if (location) {
