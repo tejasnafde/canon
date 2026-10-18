@@ -199,6 +199,10 @@ async def prepare(src: Source, workspace: str, actor: str = "human:web", scope: 
     return p
 
 
+async def _nothing() -> list:
+    return []
+
+
 def authority_decider(d: dict, old: dict, src: dict, org) -> str:
     """Who confirms or dismisses an unverified claim: the owner of the topic it touches, else the decider."""
     if not org:
@@ -231,8 +235,11 @@ async def commit(p: Prepared, scope: list[str], actor: str = "human:web", log: b
 
     judged, broken, stales = await asyncio.gather(
         asyncio.gather(*(judge(d) for d in p.decisions)),
+        # A source whose every decision is only a claim (a guest, a casual channel) cannot
+        # cast doubt on another decision's premise; it raises an Unverified alert instead.
         reconcile.premise_check(p.source["text"], p.facts + p.decisions,
-                                [i["embedding"] for i in p.facts + p.decisions], scope),
+                                [i["embedding"] for i in p.facts + p.decisions], scope)
+        if not (p.decisions and all(d.get("authority") == "claim" for d in p.decisions)) else _nothing(),
         asyncio.gather(*(reconcile.stale_check(d, d["embedding"], scope, sid) for d in p.decisions)),
     )
     # A sibling that conflicts with a decision this same source deliberately revises is part of the revision.

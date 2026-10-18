@@ -119,14 +119,17 @@ async def test_versions_by_date_and_claims(fresh):
     assert v2.alerts[0].explanation.startswith("Outdated copy:")
     assert (await fresh.get("decisions", v4.decisions[0].decision.id))["status"] == "active"
 
-    # an engineer posting a leave policy is a claim: unverified, addressed to the topic owner, no supersede
+    # an engineer posting a leave policy is a claim: unverified, addressed to the topic owner, no supersede,
+    # and a claim never runs the premise check (it would raise a premise alert on the real policy)
     llm.FAKE_RESPONSES["Extraction"] = ex("Staff get 30 days of leave.", "30 days of leave", "leave policy")
+    llm.FAKE_RESPONSES["PremiseCheck"] = lambda _p: (_ for _ in ()).throw(AssertionError("premise check ran for a claim"))
     c = await ing(src("New rule: staff get 30 days of leave.", "Pranav Menon", "2026-10-16T00:00:00Z", "chat", "slack"))
     a = c.alerts[0]
     assert c.decisions[0].decision.authority == "claim" and (a.kind, a.severity) == ("contradiction", "low")
     assert a.explanation.startswith("Unverified:") and "Amina Yusuf (People operations partner) should confirm" in a.explanation
     assert (await fresh.get("decisions", v4.decisions[0].decision.id))["status"] == "active"
 
+    llm.FAKE_RESPONSES["PremiseCheck"] = {"broken": []}
     # a joke is never stored
     llm.FAKE_RESPONSES["Extraction"] = ex("Leave is unlimited on Fridays.", "unlimited on Fridays", "leave", joke=True)
     j = await ing(src("lol leave is unlimited on Fridays", "Pranav Menon", "2026-10-16T01:00:00Z", "chat", "slack"))
