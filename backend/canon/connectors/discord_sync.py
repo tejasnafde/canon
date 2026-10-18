@@ -188,6 +188,11 @@ async def answer_line(q: str, user: str, named: bool = False) -> str | None:
     url = os.environ.get("CANON_PUBLIC_URL", "https://canon.tn07.dev").rstrip("/")
     if ACTION.match(q):
         r = await core.check(CheckRequest(intent=q, actor=actor), SCOPE)
+        if r.verdict == "allow" and not r.decisions:
+            # nothing forbids it; a bare "allow" is thin, so add what the record says around it
+            a = await core.ask(AskRequest(question=q, actor=actor), SCOPE)
+            if not a.refused and a.citations:
+                return f"Allow: no decision forbids this. Context: {a.answer} (source: {a.citations[0].title})"
         line = f"{r.verdict.capitalize()}: {r.explanation}"
         if r.decisions:
             line += f" {url}/decisions/{r.decisions[0].id}"

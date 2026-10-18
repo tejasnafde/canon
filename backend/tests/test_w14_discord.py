@@ -168,3 +168,22 @@ async def test_questions_get_answers(ingested, monkeypatch):
     sent = await ds.ingest_group(fake.msgs, CHAN, fake)
     assert sent == ["Warn: No decision covers Convex yet."]
     assert fake.posts[-1][1]["message_reference"] == {"message_id": "10"}
+
+
+async def test_bare_allow_gets_context(monkeypatch):
+    from canon.connectors import discord_sync as ds
+    from canon.models import AskResult, CheckResult, Citation
+
+    async def check(req, ws):
+        return CheckResult(verdict="allow", explanation="No decision in the record covers this action.",
+                           decisions=[], citations=[], latency_ms=1)
+
+    async def ask(req, ws):
+        return AskResult(answer="Dispatch runs on PostgreSQL 16 (ADR B01).", refused=False, latency_ms=1,
+                         citations=[Citation(source_id="s", quote="q", title="ADR B01: Postgres over MySQL",
+                                             kind="wiki", ts=T0)])
+    monkeypatch.setattr(core, "check", check)
+    monkeypatch.setattr(core, "ask", ask)
+    line = await ds.answer_line("can i migrate my service to convex?", "tj")
+    assert line.startswith("Allow: no decision forbids this. Context: Dispatch runs on PostgreSQL 16")
+    assert line.endswith("(source: ADR B01: Postgres over MySQL)")
