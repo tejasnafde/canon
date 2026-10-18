@@ -214,6 +214,22 @@ def validate(root):
                 teams = case.get('teams', [])
                 require(isinstance(teams, list) and bool(teams) and all(t in PERSONAS for t in teams),
                         f'{case["key"]}: missing or invalid teams')
+    depth_path = root / 'corpus_basics' / 'depth.jsonl'
+    if depth_path.exists():
+        depth, taken = [], set(titles)
+        basics_titles = root / 'corpus_basics' / 'basics.jsonl'
+        if basics_titles.exists():
+            for line in basics_titles.read_text(encoding='utf-8').splitlines():
+                try:
+                    taken.add(json.loads(line).get('title'))
+                except (ValueError, AttributeError):
+                    pass
+        for number, line in enumerate(depth_path.read_text(encoding='utf-8').splitlines(), 1):
+            try:
+                depth.append(json.loads(line))
+            except ValueError as exc:
+                errors.append(f'depth.jsonl:{number}: {exc}')
+        errors.extend(validate_depth(depth, people if isinstance(people, list) else [], taken))
     samples = read(root / 'samples' / 'live_paste.json')
     if isinstance(samples, list):
         require(len(samples) == 3, 'Expected three paste samples')
@@ -232,6 +248,71 @@ def validate(root):
         if path.is_file() and path.suffix in {'.py', '.md', '.json', '.jsonl'}:
             require('\u2014' not in path.read_text(encoding='utf-8'), f'{path}: forbidden em dash')
     return errors, dict(sources=len(rows), people=len(people) if isinstance(people, list) else 0, planted=dict(counts), role_decisions=role_counts)
+
+DEPTH_FIELDS = {'workspace', 'kind', 'title', 'author', 'ts', 'url', 'text', 'synthetic'}
+DEPTH_FORBIDDEN = (
+    r'parental|maternity|paternity|annual recurring revenue|\bARR\b|acqui(?:red|sition)|'
+    r'replacement.{0,40}cache|cache.{0,40}interval|password|regional model|'
+    r'replac\w*.{0,40}model|model.{0,40}replac\w*')
+
+
+def validate_depth(rows, people, taken_titles=()):
+    """Validate corpus_basics/depth.jsonl: workspace acme4, real authors, no benchmark refusal topics."""
+    import re
+    from urllib.parse import urlsplit
+
+    errors = []
+    by_name = {p['name']: p for p in people}
+    forbidden = re.compile(DEPTH_FORBIDDEN, re.I | re.S)
+    taken = set(taken_titles)
+    titles, urls = set(), set()
+    if not 45 <= len(rows) <= 55:
+        errors.append(f'depth.jsonl: expected 45-55 sources, got {len(rows)}')
+    for i, row in enumerate(rows, 1):
+        label = f'depth.jsonl:{i}'
+        if not isinstance(row, dict):
+            errors.append(f'{label}: source must be an object')
+            continue
+        if set(row) != DEPTH_FIELDS:
+            errors.append(f'{label}: unexpected or missing Source fields')
+        for field in ('title', 'author', 'text', 'url', 'ts'):
+            if not isinstance(row.get(field), str) or not row[field].strip():
+                errors.append(f'{label}: invalid {field}')
+        if row.get('workspace') != 'acme4' or row.get('synthetic') is not True:
+            errors.append(f'{label}: requires workspace acme4 and synthetic true')
+        if row.get('kind') not in KINDS:
+            errors.append(f'{label}: invalid kind')
+        author = by_name.get(row.get('author')) if isinstance(row.get('author'), str) else None
+        if not author:
+            errors.append(f'{label}: unknown author')
+        try:
+            dt = datetime.fromisoformat(row['ts'].replace('Z', '+00:00'))
+            if dt.tzinfo is None or not (datetime(2025, 1, 1, tzinfo=timezone.utc) <= dt <
+                                         datetime(2026, 11, 1, tzinfo=timezone.utc)):
+                errors.append(f'{label}: timestamp outside corpus range')
+            elif author and author.get('left_at') and dt >= datetime.fromisoformat(author['left_at'].replace('Z', '+00:00')):
+                errors.append(f'{label}: author already departed')
+        except (KeyError, ValueError, TypeError, AttributeError):
+            errors.append(f'{label}: invalid timezone-aware timestamp')
+        url = row.get('url')
+        parsed = urlsplit(url) if isinstance(url, str) else None
+        if not parsed or parsed.scheme != 'https' or not (parsed.hostname or '').endswith('.example') \
+                or not parsed.path.strip('/'):
+            errors.append(f'{label}: URL must be a fake .example deep link')
+        title = row.get('title')
+        if title in titles or title in taken:
+            errors.append(f'{label}: duplicate title {title!r}')
+        titles.add(title)
+        if url in urls:
+            errors.append(f'{label}: duplicate URL')
+        urls.add(url)
+        content = ' '.join(v for v in row.values() if isinstance(v, str))
+        if '\u2014' in content or any(ord(c) >= 0x1F000 or 0x2600 <= ord(c) <= 0x27BF or ord(c) in (0xFE0F, 0x20E3)
+                                       for c in content):
+            errors.append(f'{label}: forbidden em dash or emoji')
+        if forbidden.search(content):
+            errors.append(f'{label}: unanswerable benchmark topic or excluded leave policy')
+    return errors
 
 
 def main():
