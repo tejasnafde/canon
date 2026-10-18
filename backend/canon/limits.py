@@ -5,7 +5,7 @@ MAX = {
     "question": 1000, "intent": 2000, "query": 1000, "statement": 1000, "rationale": 2000,
     "description": 2000, "note": 2000, "text": 50_000, "source_text": 50_000, "title": 300,
     "author": 200, "url": 2048, "actor": 100, "person_id": 100, "persona": 20, "since": 40,
-    "image_b64": 5 * 1024 * 1024 * 4 // 3 + 4,  # 5 MB decoded
+    "image_b64": 15 * 1024 * 1024 * 4 // 3 + 4,  # 15 MB decoded (video); media.py applies the per-kind caps
 }
 DEFAULT = 2000
 

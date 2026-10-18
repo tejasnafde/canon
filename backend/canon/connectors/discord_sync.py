@@ -5,6 +5,8 @@ archived public thread we fetch messages after the last seen id (one cursor per 
 group them (a thread is one group, a channel is split into 10-minute windows), ingest each group into
 workspace "discord", and reply to the message that breaks a decision (inside the thread if it is one).
 Text attachments (.md .txt .csv) join the group text; each image goes through multimodal ingest alone.
+Audio and video (voice messages included) take the same path, behind media.py's caps; a refused file gets
+one reply in the channel or thread saying why.
 """
 import asyncio
 import base64
@@ -15,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from canon import core, llm, store
+from canon import core, llm, media, store
 from canon.connectors import state
 from canon.models import IngestRequest, Source
 
@@ -31,6 +33,8 @@ USER_DAILY_LIMIT = 20
 TEXT, THREADS = {0, 5}, {10, 11, 12}  # text/announcement channels, thread channels
 TEXT_FILES, TEXT_MAX = (".md", ".txt", ".csv"), 200_000
 IMAGE_FILES, IMAGE_MAX = (".png", ".jpg", ".jpeg", ".webp", ".pdf"), 10_000_000  # Gemini reads PDFs natively
+MEDIA_FILES = (".mp3", ".m4a", ".wav", ".ogg", ".opus", ".flac", ".aiff", ".webm", ".mp4", ".mov")
+VOICE_MESSAGE = 1 << 13  # message flag IS_VOICE_MESSAGE
 ARCHIVED_DAYS = 14  # archived threads older than this are not read again
 ARCHIVED_EVERY = timedelta(minutes=30)  # archived threads are listed at most this often (one call per channel)
 _lock = asyncio.Lock()  # ponytail: per instance; overlapping syncs on 2+ instances could double ingest
@@ -75,20 +79,24 @@ def ts(m: dict) -> datetime:
     return datetime.fromisoformat(m["timestamp"])
 
 
-def file_kind(a: dict) -> str | None:
-    """'text' or 'image' for an attachment we read, None for anything else or anything too big."""
+def file_kind(a: dict, m: dict | None = None) -> str | None:
+    """'text', 'image' or 'media' for an attachment we read, None for anything else or a text/image too big.
+    Media of any size counts: media.py refuses big ones, and the sender gets told why."""
     name, size = a.get("filename", "").lower(), a.get("size", 0)
     if name.endswith(TEXT_FILES) and size <= TEXT_MAX:
         return "text"
     if name.endswith(IMAGE_FILES) and size <= IMAGE_MAX:
         return "image"
+    if (name.endswith(MEDIA_FILES) or (a.get("content_type") or "").startswith(("audio/", "video/"))
+            or (m or {}).get("flags", 0) & VOICE_MESSAGE):
+        return "media"
     return None
 
 
 def eligible(m: dict) -> bool:
     return (not m["author"].get("bot") and not m.get("webhook_id") and m.get("type", 0) in (0, 19)
             and (len(m.get("content", "").strip()) >= MIN_CHARS
-                 or any(file_kind(a) for a in m.get("attachments", []))))
+                 or any(file_kind(a, m) for a in m.get("attachments", []))))
 
 
 def group(msgs: list[dict], is_thread: bool) -> list[list[dict]]:
@@ -184,19 +192,25 @@ async def ingest_source(src: Source, msgs: list[dict], channel: dict, client, re
 async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
     """One text Source for the group (with text attachments inlined), plus one Source per image."""
     first, title = msgs[0], title_of(channel)
-    lines, images, docs = [], [], 0
+    lines, images, docs, refused = [], [], 0, []
     for m in msgs:
         who = m["author"]["username"]
         parts = [f"{who}: {m['content']}"] if m.get("content", "").strip() else []
         for a in m.get("attachments", []):
-            kind = file_kind(a)
+            kind = file_kind(a, m)
             try:
+                if kind == "media" and a.get("size", 0) > media.MAX_MB * media.MB:  # never downloaded
+                    refused.append((m, f"This file is {a['size'] / media.MB:.0f} MB; Canon accepts recordings "
+                                       f"up to {media.MAX_MB:.0f} MB."))
+                    continue
                 if kind == "text":
                     body = (await client.download(a["url"], TEXT_MAX)).decode("utf-8", "replace")
                     parts.append(f"{who} attached {a['filename']}:\n{body}")
                     docs += 1
                 elif kind == "image":
                     images.append((m, a, await client.download(a["url"], IMAGE_MAX)))
+                elif kind == "media":
+                    images.append((m, a, await client.download(a["url"], int(media.MAX_MB * media.MB) + 1)))
             except httpx.HTTPError as e:
                 log.warning("discord attachment %s unreadable: %s", a.get("filename"), e)
         lines += parts
@@ -209,14 +223,26 @@ async def ingest_group(msgs: list[dict], channel: dict, client) -> list[str]:
         sent += await ingest_source(src, msgs, channel, client, replied)
     for m, a, data in images:
         who = m["author"]["username"]
-        context = m.get("content", "").strip() or f"Image shared by {who} in {title}."
+        what = "Voice message" if m.get("flags", 0) & VOICE_MESSAGE else \
+            "Recording" if file_kind(a, m) == "media" else "Image"
+        context = m.get("content", "").strip() or f"{what} shared by {who} in {title}."
         src = Source(workspace=WS, kind="paste", title=f"{title} / {a['filename']}"[:300], author=who, ts=ts(m),
                      url=jump(channel["guild_id"], channel["id"], m["id"]), synthetic=False,
                      text=f"{who}: {context}", image_b64=base64.b64encode(data).decode())
         try:
             sent += await ingest_source(src, [m], channel, client, replied)
+        except media.Refused as e:
+            refused.append((m, e.message))
         except Exception:  # one unreadable image must not drop the rest of the group
             log.exception("discord image ingest failed for %s", a.get("filename"))
+    for m, why in refused:  # one reply per message, in the channel or thread it came from
+        if m["id"] in replied:
+            continue
+        replied.add(m["id"])
+        await client.post(f"/channels/{channel['id']}/messages",
+                          {"content": f"Canon did not read this recording. {why}"[:2000],
+                           "message_reference": {"message_id": m["id"]}, "allowed_mentions": {"parse": []}})
+        sent.append(why)
     return sent
 
 

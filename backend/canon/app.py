@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse, Response
 
-from canon import a2a, core, discord, hooks, llm, store
+from canon import a2a, core, discord, hooks, llm, media, store
 from canon.limits import TooLong, enforce
 from canon.mcp_server import AGENTS, BASE, mcp, scope
 from canon.models import (
@@ -179,6 +179,11 @@ async def _model_timeout(request: Request, exc: llm.ModelTimeout):
     resp = _err("model_timeout", 503, detail="the model did not answer in time, try again")
     resp.headers["Retry-After"] = "5"
     return resp
+
+
+@app.exception_handler(media.Refused)
+async def _media_refused(request: Request, exc: media.Refused):  # raised before any Gemini call
+    return _err("media_refused", exc.status, detail=exc.message)
 
 
 @app.exception_handler(TooLong)

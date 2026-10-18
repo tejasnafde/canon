@@ -9,6 +9,7 @@ dependencies = [
     "google-genai",
     "httpx",
     "mcp>=2",
+    "mutagen>=1.48.1",
     "pydantic>=2",
     "pynacl",
     "uvicorn[standard]",

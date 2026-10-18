@@ -34,6 +34,7 @@ FAKE_RESPONSES: dict[str, Any] = {}
 GEN_TIMEOUT = float(os.environ.get("CANON_GEN_TIMEOUT", "20"))      # seconds per generate call
 EMBED_TIMEOUT = float(os.environ.get("CANON_EMBED_TIMEOUT", "10"))   # seconds per embed call
 RETRY_BUDGET = float(os.environ.get("CANON_RETRY_BUDGET", "45"))     # total seconds one logical call may take
+MEDIA_TIMEOUT = float(os.environ.get("CANON_MEDIA_TIMEOUT", "75"))   # seconds for one audio/video call
 
 # Absolute monotonic deadline for the current HTTP request, set by the app middleware.
 deadline: contextvars.ContextVar[float | None] = contextvars.ContextVar("canon_deadline", default=None)
@@ -109,11 +110,11 @@ def _record(key: str, value: Any) -> None:
     (FIXTURES / f"{key}.json").write_text(json.dumps(value))
 
 
-async def _retry(fn, timeout: float):
+async def _retry(fn, timeout: float, budget: float | None = None):
     """Exponential backoff with jitter on 429 / 5xx / timeout, capped by RETRY_BUDGET and the request deadline."""
     import httpx
     from google.genai import errors
-    end = time.monotonic() + RETRY_BUDGET
+    end = time.monotonic() + (budget or RETRY_BUDGET)
     if (d := deadline.get()) is not None:
         end = min(end, d)
     for attempt in range(6):
@@ -138,15 +139,36 @@ async def _retry(fn, timeout: float):
 
 
 def _mime(b64: str) -> str:
-    if b64.startswith("JVBER"):
+    """Mime type from the magic bytes at the start of a base64 payload (image, PDF, audio or video)."""
+    h = base64.b64decode(b64[:4096] + "=" * (-len(b64[:4096]) % 4), validate=False)
+    if h.startswith(b"%PDF"):
         return "application/pdf"
-    if b64.startswith("/9j/"):
+    if h.startswith(b"\xff\xd8\xff"):
         return "image/jpeg"
-    if b64.startswith("R0lG"):
+    if h.startswith(b"GIF8"):
         return "image/gif"
-    if b64.startswith("UklG"):
-        return "image/webp"
+    if h[:4] == b"RIFF":
+        return {b"WEBP": "image/webp", b"WAVE": "audio/wav"}.get(h[8:12], "image/png")
+    if h[:4] == b"FORM" and h[8:12] in (b"AIFF", b"AIFC"):
+        return "audio/aiff"
+    if h.startswith(b"OggS"):
+        return "audio/ogg"  # Discord voice messages are Ogg Opus
+    if h.startswith(b"fLaC"):
+        return "audio/flac"
+    if h.startswith(b"ID3") or (len(h) > 1 and h[0] == 0xFF and h[1] & 0xE0 == 0xE0):
+        return "audio/mpeg"
+    if h.startswith(b"\x1a\x45\xdf\xa3"):  # EBML: webm / matroska; a video track names a V_ codec
+        return "video/webm" if re.search(rb"V_(VP8|VP9|AV1|MPEG4)", h) else "audio/webm"
+    if h[4:8] == b"ftyp":
+        brand = h[8:12]
+        if brand in (b"M4A ", b"M4B ", b"F4A "):
+            return "audio/mp4"
+        return "video/quicktime" if brand == b"qt  " else "video/mp4"
     return "image/png"
+
+
+def is_media(mime: str) -> bool:
+    return mime.startswith(("audio/", "video/"))
 
 
 async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | None = None,
@@ -167,8 +189,12 @@ async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | N
     _charge()
     from google.genai import types
     parts: list[Any] = [prompt]
+    timeout, budget = GEN_TIMEOUT, None
     if image_b64:
-        parts.insert(0, types.Part.from_bytes(data=base64.b64decode(image_b64), mime_type=_mime(image_b64)))
+        mime = _mime(image_b64)
+        parts.insert(0, types.Part.from_bytes(data=base64.b64decode(image_b64), mime_type=mime))
+        if is_media(mime):  # a 10 minute recording takes longer than a text prompt to read
+            timeout, budget = MEDIA_TIMEOUT, MEDIA_TIMEOUT + 10
     cfg = types.GenerateContentConfig(
         system_instruction=guarded(system), temperature=temperature, labels=LABELS,
         response_mime_type="application/json", response_schema=schema,
@@ -180,7 +206,7 @@ async def generate_json(prompt: str, schema: type[BaseModel], *, system: str | N
         async with _sem:
             return await client().aio.models.generate_content(model=MODEL, contents=parts, config=c)
 
-    resp = await _retry(call, GEN_TIMEOUT)
+    resp = await _retry(call, timeout, budget)
     out = resp.parsed.model_dump() if isinstance(resp.parsed, BaseModel) else json.loads(resp.text)
     if recording():
         _record(key, out)
