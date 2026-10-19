@@ -140,3 +140,25 @@ def test_shared_answer_cache_skips_second_call(monkeypatch):
     assert asyncio.run(appmod._shared(("k",), ws, compute)) == "answer"
     assert asyncio.run(appmod._shared(("k",), ws, compute)) == "answer"
     assert len(calls) == 1
+
+
+def test_errors_are_posted_to_discord_once_a_minute(monkeypatch):
+    import logging, time
+    from canon import app as appmod
+    sent = []
+    monkeypatch.setenv("CANON_ALERT_WEBHOOK", "https://discord.example/hook")
+    monkeypatch.setattr(appmod.httpx, "post", lambda url, json, timeout: sent.append(json["content"]))
+
+    class Now:  # run the post inline so the test is deterministic
+        def __init__(self, target, daemon): self.t = target
+        def start(self): self.t()
+    monkeypatch.setattr(appmod.threading, "Thread", Now)
+    h = appmod._DiscordErrors()
+    try:
+        raise RuntimeError("Discord said 503")
+    except RuntimeError:
+        import sys
+        rec = logging.LogRecord("canon", logging.ERROR, __file__, 1, "unhandled", None, sys.exc_info())
+    rec.fields = {"path": "/hooks/discord/sync"}
+    h.emit(rec); h.emit(rec)  # second one inside the minute is dropped
+    assert len(sent) == 1 and "RuntimeError: Discord said 503" in sent[0] and "/hooks/discord/sync" in sent[0]

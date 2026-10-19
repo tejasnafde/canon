@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 import traceback
 import uuid
@@ -17,6 +18,7 @@ from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from datetime import datetime
 
+import httpx
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse, Response
 
@@ -60,9 +62,44 @@ class _JsonFormatter(logging.Formatter):
         return json.dumps(out, default=str)
 
 
+class _DiscordErrors(logging.Handler):
+    """Post ERROR logs to the alert webhook (CANON_ALERT_WEBHOOK, from canon-config) so they can be read in
+    Discord, not only in the console. Same error at most once a minute; posted on a daemon thread so a
+    request never waits on Discord. ponytail: per-instance dedupe, fine at max 3 instances."""
+
+    def __init__(self):
+        super().__init__(logging.ERROR)
+        self.seen: dict[str, float] = {}
+
+    def emit(self, record):
+        url = os.environ.get("CANON_ALERT_WEBHOOK")
+        if not url:
+            return
+        exc = record.exc_info and record.exc_info[1]
+        what = f"{type(exc).__name__}: {exc}" if exc else record.getMessage()
+        fields = getattr(record, "fields", {})
+        key = f"{fields.get('path')}|{what[:120]}"
+        now_s = time.monotonic()
+        if now_s - self.seen.get(key, -1e9) < 60:
+            return
+        self.seen[key] = now_s
+        tail = ""
+        if record.exc_info:
+            tail = "\n".join(traceback.format_exception(*record.exc_info)[-3:])[-900:]
+        body = (f"**Canon error** on `{fields.get('path', '?')}` (revision {SERVICE.get('version', '?')})\n"
+                f"{what[:400]}\nrequest id: `{request_id.get() or '-'}`" + (f"\n```\n{tail}\n```" if tail else ""))
+
+        def send():
+            try:
+                httpx.post(url, json={"content": body[:1900], "allowed_mentions": {"parse": []}}, timeout=5)
+            except Exception:  # never let alerting break the app
+                pass
+        threading.Thread(target=send, daemon=True).start()
+
+
 _handler = logging.StreamHandler(sys.stdout)
 _handler.setFormatter(_JsonFormatter())
-logging.basicConfig(level=logging.INFO, handlers=[_handler], force=True)
+logging.basicConfig(level=logging.INFO, handlers=[_handler, _DiscordErrors()], force=True)
 log = logging.getLogger("canon")
 
 mcp_app = mcp.streamable_http_app(
