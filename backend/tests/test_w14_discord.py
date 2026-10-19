@@ -187,3 +187,17 @@ async def test_bare_allow_gets_context(monkeypatch):
     line = await ds.answer_line("can i migrate my service to convex?", "tj")
     assert line.startswith("Allow: no decision forbids this. Context: Dispatch runs on PostgreSQL 16")
     assert line.endswith("(source: ADR B01: Postgres over MySQL)")
+
+
+async def test_discord_outage_skips_the_run_without_error(monkeypatch):
+    import httpx as _httpx
+    from canon.connectors import discord_sync as ds
+
+    class Down:
+        async def get(self, path, params=None):
+            req = _httpx.Request("GET", "https://discord.com/api/v10" + path)
+            raise _httpx.HTTPStatusError("503", request=req, response=_httpx.Response(503, request=req))
+
+    monkeypatch.setenv("CANON_DISCORD_GUILD_ID", "g1")
+    monkeypatch.delenv("CANON_DISCORD_CHANNELS", raising=False)
+    assert await ds.sync(Down()) == {"skipped": "discord unavailable"}

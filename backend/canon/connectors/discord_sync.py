@@ -50,11 +50,14 @@ class DiscordClient:
         # One kept-alive connection for the whole sync: a fresh TLS handshake per call was most of a quiet run.
         if self._c is None:
             self._c = httpx.AsyncClient(timeout=10)
-        for _ in range(3):
+        for attempt in range(3):
             r = await self._c.get(API + path, params=params, headers=self.h)
-            if r.status_code != 429:
+            if r.status_code == 429:
+                await asyncio.sleep(min(float(r.json().get("retry_after", 1)), 5))
+            elif r.status_code >= 500 and attempt < 2:  # Discord blips (a 503 paged us on 2026-10-19)
+                await asyncio.sleep(1 + attempt)
+            else:
                 break
-            await asyncio.sleep(min(float(r.json().get("retry_after", 1)), 5))
         r.raise_for_status()
         return r.json()
 
@@ -391,7 +394,13 @@ async def sync(client=None) -> dict:
         own = client is None
         client = client or DiscordClient(os.environ["CANON_DISCORD_BOT_TOKEN"])
         out = []
-        chans = await channels(client)
+        try:
+            chans = await channels(client)
+        except httpx.HTTPError as e:  # Discord itself is down: skip this run, the next one catches up
+            log.warning("discord unavailable, sync skipped: %s", e)
+            if own:
+                await client.aclose()
+            return {"skipped": "discord unavailable"}
         cursors = await state.get_many([f"discord-{c['id']}" for c in chans])  # one read, not one per channel
         for c in chans:
             try:
