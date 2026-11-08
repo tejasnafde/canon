@@ -26,7 +26,7 @@ curl -s https://canon.tn07.dev/api/eval
 curl -s https://canon.tn07.dev/api/ask -H 'Content-Type: application/json' -d '{"question":"Why can we not deploy on Fridays?"}'
 curl -s https://canon.tn07.dev/api/check -H 'Content-Type: application/json' -d '{"intent":"Add a cron job that deploys the dispatch service to production every Friday at 15:00"}'
 curl -s -X POST https://canon.tn07.dev/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-Connect a coding agent: claude mcp add --transport http canon https://canon.tn07.dev/mcp
+Connect a coding agent (no key): Claude Code `claude mcp add --transport http canon https://canon.tn07.dev/mcp`, Codex `codex mcp add canon --url https://canon.tn07.dev/mcp`. Setups for Cursor, VS Code (GitHub Copilot), Windsurf, Gemini CLI and Claude Desktop: open https://canon.tn07.dev/mcp in a browser.
 
 ## How it uses Google Cloud
 - Gemini 3.5 Flash-Lite on Vertex AI: extracts decisions with structured output, reconciles them (same, update, contradiction), judges agent actions (allow, warn, block), answers with citations, and reads PDFs, images and audio. Refuses when the record has no answer.

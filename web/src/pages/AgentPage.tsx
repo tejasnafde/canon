@@ -146,14 +146,19 @@ export default function AgentPage() {
           <p className="muted" style={{ marginTop: 8 }}>
             Canon speaks MCP, the standard plug that lets AI assistants use outside tools. One line connects it.
           </p>
-          <p className="label" style={{ marginTop: 28 }}>
-            Claude Code
+          <p className="small muted" style={{ marginTop: 16 }}>
+            Works with any MCP client. No key needed. Pick yours:
           </p>
-          <code className="line">claude mcp add --transport http canon {PUBLIC_URL}/mcp</code>
-          <p className="label" style={{ marginTop: 20 }}>
-            Codex
-          </p>
-          <code className="line">codex mcp add canon --url {PUBLIC_URL}/mcp</code>
+          {connectClients(`${PUBLIC_URL}/mcp`).map(([name, where, snippet], i) => (
+            <details key={name} open={i === 0} style={{ marginTop: 12 }}>
+              <summary className="label" style={{ cursor: 'pointer' }}>
+                {name} <span className="muted">· {where}</span>
+              </summary>
+              <code className="line" style={{ marginTop: 8, display: 'block', whiteSpace: 'pre-wrap' }}>
+                {snippet}
+              </code>
+            </details>
+          ))}
           <p className="small muted" style={{ marginTop: 20 }}>
             Your agent gets six tools: search decisions, ask why, catch me up, check an action, record a decision, and flag a conflict.
           </p>
@@ -237,4 +242,18 @@ function TryIt() {
       </div>
     </div>
   )
+}
+
+/** One-line or config setups for the common MCP clients (same list as the /mcp browser page). */
+function connectClients(url: string): [string, string, string][] {
+  return [
+    ['Claude Code', 'terminal', `claude mcp add --transport http canon ${url}`],
+    ['Codex CLI', 'terminal', `codex mcp add canon --url ${url}`],
+    ['Cursor', '~/.cursor/mcp.json', JSON.stringify({ mcpServers: { canon: { url } } })],
+    ['VS Code (GitHub Copilot)', '.vscode/mcp.json', JSON.stringify({ servers: { canon: { type: 'http', url } } })],
+    ['Windsurf', '~/.codeium/windsurf/mcp_config.json', JSON.stringify({ mcpServers: { canon: { serverUrl: url } } })],
+    ['Gemini CLI', '~/.gemini/settings.json', JSON.stringify({ mcpServers: { canon: { httpUrl: url } } })],
+    ['Claude Desktop / claude.ai', 'Settings, Connectors', `Add custom connector, URL: ${url}`],
+    ['Any other MCP client', 'its MCP settings', `Streamable HTTP server, no auth: ${url}`],
+  ]
 }

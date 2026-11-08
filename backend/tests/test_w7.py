@@ -162,3 +162,28 @@ def test_errors_are_posted_to_discord_once_a_minute(monkeypatch):
     rec.fields = {"path": "/hooks/discord/sync"}
     h.emit(rec); h.emit(rec)  # second one inside the minute is dropped
     assert len(sent) == 1 and "RuntimeError: Discord said 503" in sent[0] and "/hooks/discord/sync" in sent[0]
+
+
+def test_browser_on_mcp_gets_setup_page_and_clients_do_not():
+    from fastapi.testclient import TestClient
+    from canon.app import app
+    c = TestClient(app)
+    r = c.get("/mcp", headers={"accept": "text/html,application/xhtml+xml"})
+    assert r.status_code == 200 and "MCP endpoint" in r.text and "Cursor" in r.text and "codex mcp add" in r.text
+    # an MCP client never gets the page (it asks for an event stream); the MCP tests cover its path
+    r = c.get("/mcp", headers={"accept": "text/event-stream"})
+    assert "MCP endpoint" not in r.text
+
+
+def test_decisions_list_is_cached_and_shared(monkeypatch):
+    import asyncio
+    from canon import app as appmod
+    calls = []
+
+    async def compute():
+        calls.append(1)
+        return ["d"]
+    appmod._LISTS.clear()
+    async def twice():
+        return await asyncio.gather(appmod._listed(("k",), compute), appmod._listed(("k",), compute))
+    assert asyncio.run(twice()) == [["d"], ["d"]] and len(calls) == 1

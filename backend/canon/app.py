@@ -184,6 +184,12 @@ async def access_log_and_limit(request: Request, call_next):
     llm.deadline.set(time.monotonic() + REQUEST_DEADLINE)
     ip = _client_ip(request)
     path = request.url.path
+    accept = request.headers.get("accept", "")
+    if (request.method == "GET" and path.rstrip("/") == "/mcp" and "text/html" in accept
+            and "text/event-stream" not in accept):  # a person opened the endpoint in a browser
+        from fastapi.responses import HTMLResponse
+        from canon.mcp_page import page
+        return HTMLResponse(page(f"{os.environ.get('CANON_PUBLIC_URL', 'https://canon.tn07.dev').rstrip('/')}/mcp"))
     if (request.method == "POST" or path == "/health/deep") and not path.startswith(_EXEMPT) and _limited(ip):
         resp = _err("rate_limited", 429, detail=f"max {RATE_LIMIT} POST/min")
         resp.headers["Retry-After"] = "60"
@@ -308,11 +314,18 @@ async def ingest(req: IngestRequest, x: str | None = Ws):
     return await core.ingest(req, ws)
 
 
-# ponytail: per-instance answer cache for visitors with no data of their own, so page loads
-# (Ask examples, Catch me up, New hire) do not each cost a Gemini call. 10-minute TTL; at most
-# max-instances (3) calls per key per window. Move to Firestore if instances grow.
+# Shared answers for visitors with no data of their own, so page loads (Ask examples, Catch me up,
+# New hire) cost no Gemini call and no wait. Two layers: memory (per instance) and Firestore
+# (survives cold starts, shared by instances). The base corpus does not change, so 7 days is safe;
+# ponytail: bump ANSWER_VERSION after re-seeding or a prompt change to invalidate everything.
 _ANSWERS: dict[tuple, tuple[float, object]] = {}
-ANSWER_TTL = 600
+ANSWER_TTL = 7 * 24 * 3600
+ANSWER_VERSION = "v1"
+
+
+def _cache_id(key: tuple) -> str:
+    import hashlib
+    return "ans-" + hashlib.sha1(repr((ANSWER_VERSION, key)).encode()).hexdigest()[:24]
 
 
 async def _shared(key: tuple, ws: list[str], compute):
@@ -320,11 +333,47 @@ async def _shared(key: tuple, ws: list[str], compute):
     if own.startswith("v-") and await store.get_store().query("sources", [own]):
         return await compute()  # the visitor added data: their answer is their own
     hit = _ANSWERS.get(key)
-    if hit and hit[0] > time.monotonic():
+    if hit and hit[0] > time.time():
         return hit[1]
+    cid = _cache_id(key)
+    try:
+        doc = await store.get_store().get("answer_cache", cid)
+        if doc and doc.get("expires", 0) > time.time():
+            result = json.loads(doc["json"])
+            _ANSWERS[key] = (doc["expires"], result)
+            return result
+    except Exception:
+        log.warning("answer cache read failed", exc_info=True)
     result = await compute()
-    _ANSWERS[key] = (time.monotonic() + ANSWER_TTL, result)
+    expires = time.time() + ANSWER_TTL
+    _ANSWERS[key] = (expires, result)
+    try:
+        body = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
+        await store.get_store().put("answer_cache", {"id": cid, "workspace": "cache", "expires": expires,
+                                                     "json": json.dumps(body)})
+    except Exception:
+        log.warning("answer cache write failed", exc_info=True)
     return result
+
+
+# The decisions list is the slowest read on Home (2 to 7 s for ~700 decisions). It changes only when
+# something is ingested, so a 2-minute memory cache per view is safe; requests that arrive while a read
+# is running share it. ponytail: per instance; a cold instance pays one read.
+_LISTS: dict[tuple, tuple[float, asyncio.Future]] = {}
+LIST_TTL = 120
+
+
+async def _listed(key: tuple, compute):
+    hit = _LISTS.get(key)
+    if hit and hit[0] > time.time():
+        return await hit[1]
+    fut = asyncio.ensure_future(compute())
+    _LISTS[key] = (time.time() + LIST_TTL, fut)
+    try:
+        return await fut
+    except Exception:
+        _LISTS.pop(key, None)
+        raise
 
 
 @app.post("/api/ask", response_model=AskResult)
@@ -359,7 +408,11 @@ async def expert(req: ExpertRequest, x: str | None = Ws):
 
 @app.get("/api/decisions", response_model=list[Decision])
 async def decisions(status: str | None = None, topic: str | None = None, x: str | None = Ws):
-    return await core.list_decisions(view(x), status=status or None, topic=topic or None)
+    ws = view(x)
+    own = ws[-1]
+    shared = not (own.startswith("v-") and await store.get_store().query("sources", [own]))
+    key = ("decisions", status or "", topic or "", tuple(w for w in ws if not w.startswith("v-")) if shared else tuple(ws))
+    return await _listed(key, lambda: core.list_decisions(ws, status=status or None, topic=topic or None))
 
 
 @app.get("/api/decisions/{decision_id}", response_model=DecisionDetail)
