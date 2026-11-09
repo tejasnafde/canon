@@ -4,11 +4,17 @@
 
 **The shared memory of a company, for its people and its AI agents.**
 
-## For judges: try this in two minutes
+> **Status: the live demo is offline.** Canon ran live at canon.tn07.dev from 17 October to 9 November 2026,
+> through the judging of the Google Cloud AI Builder Cup 2026. After the Top 50 results were announced on
+> 9 November, we shut down the hosted app, the API, the MCP endpoint and the Discord connector, so the links
+> below no longer work. The [demo video](https://youtu.be/tPJenhhhjI8) shows the working product, and all the
+> code and data are in this repo: see "Local dev" to run it yourself.
+
+## What judges could try (the live demo is now offline)
 
 **Demo video (3:55):** https://youtu.be/tPJenhhhjI8
 
-No login, no setup. Open https://canon.tn07.dev and follow these steps.
+While it was live: no login, no setup. You opened https://canon.tn07.dev and followed these steps.
 
 | # | Do this | What you should see |
 |---|---|---|
@@ -27,7 +33,7 @@ Canon keeps one record of every decision and the reason behind it. Each decision
 
 Built by team **Localhost** (Tejas Nafde, Ishank Giri, Mitushi) for the Google Cloud AI Builder Cup 2026, track "Future of Work & Enterprise Productivity".
 
-## Live links
+## Live links (offline since 9 November 2026)
 
 | What | URL |
 |---|---|
